@@ -1,6 +1,8 @@
 *.class
-
-# Package Files #
-*.jar
-*.war
-*.ear
+*.iml
+*.ipr
+*.iws
+.idea
+.mavenrc.override
+out
+target
