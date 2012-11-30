@@ -165,8 +165,6 @@ public class AccessibleObject implements AnnotatedElement {
     // outside this package.
     boolean override;
 
-    AccessibleObject root;
-
     // Reflection factory used by subclasses for creating field,
     // method, and constructor accessors. Note that this is called
     // very early in the bootstrapping process.
