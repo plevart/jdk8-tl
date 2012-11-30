@@ -1,6 +1,6 @@
 diff -r 72d3d07b625d src/share/classes/java/lang/Class.java
 --- a/src/share/classes/java/lang/Class.java	Fri Nov 30 11:18:16 2012 +0000
-+++ b/src/share/classes/java/lang/Class.java	Fri Nov 30 17:37:11 2012 +0100
++++ b/src/share/classes/java/lang/Class.java	Fri Nov 30 17:53:17 2012 +0100
 @@ -2213,39 +2213,72 @@
  
      // Caches for certain reflective results
@@ -311,7 +311,7 @@ diff -r 72d3d07b625d src/share/classes/java/lang/Class.java
      }
  
      /**
-@@ -3099,51 +3100,69 @@
+@@ -3099,51 +3100,73 @@
      public <A extends Annotation> A[] getDeclaredAnnotations(Class<A> annotationClass) {
          Objects.requireNonNull(annotationClass);
  
@@ -374,17 +374,16 @@ diff -r 72d3d07b625d src/share/classes/java/lang/Class.java
 +            if (annotations != null) return annotations;
 +        }
 +
-+        annotations = new HashMap<>();
          Class<?> superClass = getSuperclass();
 -        if (superClass == null) {
 -            annotations = declaredAnnotations;
 -        } else {
--            annotations = new HashMap<>();
++        if (superClass != null) {
+             annotations = new HashMap<>();
 -            superClass.initAnnotationsIfNecessary();
 -            for (Map.Entry<Class<? extends Annotation>, Annotation> e : superClass.annotations.entrySet()) {
 -                Class<? extends Annotation> annotationClass = e.getKey();
-+        // fill-in inherited
-+        if (superClass != null) {
++            // fill-in inherited
 +            for (Map.Entry<Class<? extends Annotation>, Annotation> entry : superClass.privateGetAnnotations().entrySet()) {
 +                Class<? extends Annotation> annotationClass = entry.getKey();
                  if (AnnotationType.getInstance(annotationClass).isInherited())
@@ -392,9 +391,13 @@ diff -r 72d3d07b625d src/share/classes/java/lang/Class.java
 +                    annotations.put(annotationClass, entry.getValue());
              }
 -            annotations.putAll(declaredAnnotations);
++            // override with declared
++            annotations.putAll(privateGetDeclaredAnnotations(vd));
          }
-+        // override with declared
-+        annotations.putAll(privateGetDeclaredAnnotations(vd));
++        else {
++            // the same as declared for Object or interface
++            annotations = privateGetDeclaredAnnotations(vd);
++        }
 +
 +        if (vd != null) {
 +            vd.annotations = annotations;
@@ -406,7 +409,7 @@ diff -r 72d3d07b625d src/share/classes/java/lang/Class.java
      // Annotation types cache their internal (AnnotationType) form
 diff -r 72d3d07b625d src/share/classes/java/lang/reflect/Constructor.java
 --- a/src/share/classes/java/lang/reflect/Constructor.java	Fri Nov 30 11:18:16 2012 +0000
-+++ b/src/share/classes/java/lang/reflect/Constructor.java	Fri Nov 30 17:37:11 2012 +0100
++++ b/src/share/classes/java/lang/reflect/Constructor.java	Fri Nov 30 17:53:17 2012 +0100
 @@ -93,6 +93,12 @@
      // and potentially many Constructor objects pointing to it.)
      private Constructor<T>      root;
@@ -422,7 +425,7 @@ diff -r 72d3d07b625d src/share/classes/java/lang/reflect/Constructor.java
       * instantiation of these objects in Java code from the java.lang
 diff -r 72d3d07b625d src/share/classes/java/lang/reflect/Executable.java
 --- a/src/share/classes/java/lang/reflect/Executable.java	Fri Nov 30 11:18:16 2012 +0000
-+++ b/src/share/classes/java/lang/reflect/Executable.java	Fri Nov 30 17:37:11 2012 +0100
++++ b/src/share/classes/java/lang/reflect/Executable.java	Fri Nov 30 17:53:17 2012 +0100
 @@ -58,6 +58,11 @@
  
      abstract ConstructorRepository getGenericInfo();
@@ -457,7 +460,7 @@ diff -r 72d3d07b625d src/share/classes/java/lang/reflect/Executable.java
                  getConstantPool(getDeclaringClass()),
 diff -r 72d3d07b625d src/share/classes/java/lang/reflect/Field.java
 --- a/src/share/classes/java/lang/reflect/Field.java	Fri Nov 30 11:18:16 2012 +0000
-+++ b/src/share/classes/java/lang/reflect/Field.java	Fri Nov 30 17:37:11 2012 +0100
++++ b/src/share/classes/java/lang/reflect/Field.java	Fri Nov 30 17:53:17 2012 +0100
 @@ -999,7 +999,7 @@
                      dimensions++;
                      cl = cl.getComponentType();
@@ -488,7 +491,7 @@ diff -r 72d3d07b625d src/share/classes/java/lang/reflect/Field.java
                  getDeclaringClass());
 diff -r 72d3d07b625d src/share/classes/java/lang/reflect/Method.java
 --- a/src/share/classes/java/lang/reflect/Method.java	Fri Nov 30 11:18:16 2012 +0000
-+++ b/src/share/classes/java/lang/reflect/Method.java	Fri Nov 30 17:37:11 2012 +0100
++++ b/src/share/classes/java/lang/reflect/Method.java	Fri Nov 30 17:53:17 2012 +0100
 @@ -80,6 +80,11 @@
      // potentially many Method objects pointing to it.)
      private Method              root;
