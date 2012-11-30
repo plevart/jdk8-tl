@@ -58,6 +58,11 @@ public abstract class Executable extends AccessibleObject
 
     abstract ConstructorRepository getGenericInfo();
 
+    /**
+     * Root instance or null if this is root
+     */
+    abstract Executable getRoot();
+
     boolean equalParamTypes(Class<?>[] params1, Class<?>[] params2) {
         /* Avoid unnecessary cloning */
         if (params1.length == params2.length) {
@@ -393,6 +398,10 @@ public abstract class Executable extends AccessibleObject
     private volatile transient Map<Class<? extends Annotation>, Annotation> declaredAnnotations;
 
     private Map<Class<? extends Annotation>, Annotation> declaredAnnotations() {
+        Executable root = getRoot();
+        if (root != null)
+            return root.declaredAnnotations();
+
         Map<Class<? extends Annotation>, Annotation> declaredAnnotations = this.declaredAnnotations;
         if (declaredAnnotations == null) {
             this.declaredAnnotations = declaredAnnotations = AnnotationParser.parseAnnotations(

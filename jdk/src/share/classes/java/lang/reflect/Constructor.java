@@ -93,6 +93,12 @@ public final class Constructor<T> extends Executable {
     // and potentially many Constructor objects pointing to it.)
     private Constructor<T>      root;
 
+    // Root instance
+    @Override
+    Executable getRoot() {
+        return root;
+    }
+
     /**
      * Package-private constructor used by ReflectAccess to enable
      * instantiation of these objects in Java code from the java.lang
@@ -474,10 +480,7 @@ public final class Constructor<T> extends Executable {
      * @since 1.5
      */
     public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
-        if (root != null)
-            return root.getAnnotation(annotationClass);
-        else
-            return super.getAnnotation(annotationClass);
+        return super.getAnnotation(annotationClass);
     }
 
     /**
@@ -485,10 +488,7 @@ public final class Constructor<T> extends Executable {
      * @since 1.5
      */
     public Annotation[] getDeclaredAnnotations()  {
-        if (root != null)
-            return root.getDeclaredAnnotations();
-        else
-            return super.getDeclaredAnnotations();
+        return super.getDeclaredAnnotations();
     }
 
     /**

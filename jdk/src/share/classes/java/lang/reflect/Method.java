@@ -80,6 +80,11 @@ public final class Method extends Executable {
     // potentially many Method objects pointing to it.)
     private Method              root;
 
+    // Root instance
+    @Override
+    Executable getRoot() {
+        return root;
+    }
 
     // Generics infrastructure
     private String getGenericSignature() {return signature;}
@@ -575,10 +580,7 @@ public final class Method extends Executable {
      * @since 1.5
      */
     public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
-        if (root != null)
-            return root.getAnnotation(annotationClass);
-        else
-            return super.getAnnotation(annotationClass);
+        return super.getAnnotation(annotationClass);
     }
 
     /**
@@ -586,10 +588,7 @@ public final class Method extends Executable {
      * @since 1.5
      */
     public Annotation[] getDeclaredAnnotations()  {
-        if (root != null)
-            return root.getDeclaredAnnotations();
-        else
-            return super.getDeclaredAnnotations();
+        return super.getDeclaredAnnotations();
     }
 
     /**
