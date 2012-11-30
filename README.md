@@ -1,4 +1,5 @@
 jdk8-tl
 =======
 
-OpenJDK 8 clone
+Clone of a subset of http://hg.openjdk.java.net/jdk8/tl repos
+ith custom branches which represent patches and experiments
