@@ -999,7 +999,7 @@ class Field extends AccessibleObject implements Member {
                     dimensions++;
                     cl = cl.getComponentType();
                 }
-                StringBuffer sb = new StringBuffer();
+                StringBuilder sb = new StringBuilder(cl.getName().length() + dimensions + dimensions);
                 sb.append(cl.getName());
                 for (int i = 0; i < dimensions; i++) {
                     sb.append("[]");
@@ -1038,11 +1038,15 @@ class Field extends AccessibleObject implements Member {
         return AnnotationSupport.unpackToArray(declaredAnnotations());
     }
 
-    private transient Map<Class<? extends Annotation>, Annotation> declaredAnnotations;
+    private volatile transient Map<Class<? extends Annotation>, Annotation> declaredAnnotations;
 
-    private synchronized  Map<Class<? extends Annotation>, Annotation> declaredAnnotations() {
+    private Map<Class<? extends Annotation>, Annotation> declaredAnnotations() {
+        if (root != null)
+            return root.declaredAnnotations();
+
+        Map<Class<? extends Annotation>, Annotation> declaredAnnotations = this.declaredAnnotations;
         if (declaredAnnotations == null) {
-            declaredAnnotations = AnnotationParser.parseAnnotations(
+            this.declaredAnnotations = declaredAnnotations = AnnotationParser.parseAnnotations(
                 annotations, sun.misc.SharedSecrets.getJavaLangAccess().
                 getConstantPool(getDeclaringClass()),
                 getDeclaringClass());

@@ -474,7 +474,10 @@ public final class Constructor<T> extends Executable {
      * @since 1.5
      */
     public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
-        return super.getAnnotation(annotationClass);
+        if (root != null)
+            return root.getAnnotation(annotationClass);
+        else
+            return super.getAnnotation(annotationClass);
     }
 
     /**
@@ -482,7 +485,10 @@ public final class Constructor<T> extends Executable {
      * @since 1.5
      */
     public Annotation[] getDeclaredAnnotations()  {
-        return super.getDeclaredAnnotations();
+        if (root != null)
+            return root.getDeclaredAnnotations();
+        else
+            return super.getDeclaredAnnotations();
     }
 
     /**

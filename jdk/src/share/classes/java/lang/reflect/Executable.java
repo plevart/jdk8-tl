@@ -390,11 +390,12 @@ public abstract class Executable extends AccessibleObject
         return AnnotationSupport.unpackToArray(declaredAnnotations());
     }
 
-    private transient Map<Class<? extends Annotation>, Annotation> declaredAnnotations;
+    private volatile transient Map<Class<? extends Annotation>, Annotation> declaredAnnotations;
 
-    private synchronized  Map<Class<? extends Annotation>, Annotation> declaredAnnotations() {
+    private Map<Class<? extends Annotation>, Annotation> declaredAnnotations() {
+        Map<Class<? extends Annotation>, Annotation> declaredAnnotations = this.declaredAnnotations;
         if (declaredAnnotations == null) {
-            declaredAnnotations = AnnotationParser.parseAnnotations(
+            this.declaredAnnotations = declaredAnnotations = AnnotationParser.parseAnnotations(
                 getAnnotationBytes(),
                 sun.misc.SharedSecrets.getJavaLangAccess().
                 getConstantPool(getDeclaringClass()),
