@@ -1,5 +1,7 @@
 package test;
 
+import sun.reflect.annotation.AnnotationType;
+
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Inherited;
@@ -9,6 +11,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.*;
 
 public class ReflectionTest {
     @Retention(RetentionPolicy.RUNTIME)
@@ -46,7 +49,27 @@ public class ReflectionTest {
     public @interface NonexistentAnn {
     }
 
+    @Retention(RetentionPolicy.RUNTIME)
+    @Recursive0
+    @Inherited
+    public @interface Recursive0 {
+    }
 
+    @Retention(RetentionPolicy.RUNTIME)
+    @RecursiveB
+    @Inherited
+    public @interface RecursiveA {
+    }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @RecursiveA
+    @Inherited
+    public @interface RecursiveB {
+    }
+
+    @Recursive0
+    @RecursiveA
+    @RecursiveB
     public static class Class0 {}
 
     @InheritedAnn("A")
@@ -425,5 +448,71 @@ public class ReflectionTest {
         runTest(TestAnnotationNonexistent.class, 32, 100000, t);
         runTest(TestAnnotationNonexistent.class, 128, 100000, t);
         System.out.println();
+    }
+
+    public static class Dump {
+
+        static final Set<String> skippedMethods = new HashSet<>(Arrays.asList("wait", "notify", "notifyAll", "toString", "equals", "hashCode", "getClass"));
+
+        static StringBuilder dump(Annotation ann, StringBuilder sb) throws Exception {
+            Class<? extends Annotation> annotationType = ann.annotationType();
+            sb.append("@").append(annotationType.getSimpleName()).append("(");
+            boolean first = true;
+            for (Map.Entry<String, Method> e : AnnotationType.getInstance(annotationType).members().entrySet()) {
+                if (first) first = false;
+                else sb.append(", ");
+                sb.append(e.getKey()).append("=").append(e.getValue().invoke(ann));
+            }
+            sb.append(")");
+            return sb;
+        }
+
+        static StringBuilder dump(Annotation[] anns, String prefix, StringBuilder sb) throws Exception {
+            Arrays.sort(
+                anns, new Comparator<Annotation>() {
+                @Override
+                public int compare(Annotation a1, Annotation a2) {
+                    return a1.annotationType().getName().compareTo(a2.annotationType().getName());
+                }
+            }
+            );
+            for (Annotation ann : anns) {
+                dump(ann, sb.append(prefix)).append("\n");
+            }
+            return sb;
+        }
+
+        static StringBuilder dump(Class<?> clazz, StringBuilder sb) throws Exception {
+            dump(clazz.getAnnotations(), "", sb.append("\n"));
+            sb.append("class ").append(clazz.getSimpleName()).append(" {\n");
+            for (Field f : clazz.getFields()) {
+                dump(f.getAnnotations(), "    ", sb.append("\n"));
+                sb.append("    ").append(f.toGenericString()).append(";\n");
+            }
+            for (Constructor c : clazz.getConstructors()) {
+                dump(c.getAnnotations(), "    ", sb.append("\n"));
+                sb.append("    ").append(c.toGenericString()).append(";\n");
+            }
+            for (Method m : clazz.getMethods()) {
+                if (!skippedMethods.contains(m.getName())) {
+                    dump(m.getAnnotations(), "    ", sb.append("\n"));
+                    sb.append("    ").append(m.toGenericString()).append(";\n");
+                }
+            }
+            return sb.append("}\n");
+        }
+
+        public static void main(String[] args) {
+            try {
+                StringBuilder sb = new StringBuilder();
+                dump(ClassA.class, sb);
+                dump(ClassB.class, sb);
+                dump(ClassC.class, sb);
+                System.out.println(sb);
+            }
+            catch (Throwable e) {
+                e.printStackTrace(System.out);
+            }
+        }
     }
 }

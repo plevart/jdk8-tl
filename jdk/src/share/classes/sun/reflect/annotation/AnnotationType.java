@@ -70,6 +70,16 @@ public class AnnotationType {
     private final boolean inherited;
 
     /**
+     * The in-construction instance that can be obtained half-constructed from recursive calls
+     */
+    private static final ClassValue<ThreadLocal<AnnotationType>> IN_CONSTRUCTION = new ClassValue<ThreadLocal<AnnotationType>>() {
+        @Override
+        protected ThreadLocal<AnnotationType> computeValue(Class<?> type) {
+            return new ThreadLocal<>();
+        }
+    };
+
+    /**
      * Returns an AnnotationType instance for the specified annotation type.
      *
      * @throw IllegalArgumentException if the specified class object for
@@ -78,12 +88,19 @@ public class AnnotationType {
     public static AnnotationType getInstance(
         Class<? extends Annotation> annotationClass)
     {
+        if (!annotationClass.isAnnotation())
+            throw new IllegalArgumentException("Not an annotation type");
+
         AnnotationType result = sun.misc.SharedSecrets.getJavaLangAccess().
             getAnnotationType(annotationClass);
         if (result == null) {
-            result = new AnnotationType(annotationClass);
-            sun.misc.SharedSecrets.getJavaLangAccess().
-                setAnnotationType(annotationClass, result);
+            result = IN_CONSTRUCTION.get(annotationClass).get();
+            if (result == null) {
+                result = new AnnotationType(annotationClass);
+                sun.misc.SharedSecrets.getJavaLangAccess().
+                    setAnnotationType(annotationClass, result);
+                IN_CONSTRUCTION.get(annotationClass).remove();
+            }
         }
 
         return result;
@@ -97,8 +114,6 @@ public class AnnotationType {
      *     does not represent a valid annotation type
      */
     private AnnotationType(final Class<? extends Annotation> annotationClass) {
-        if (!annotationClass.isAnnotation())
-            throw new IllegalArgumentException("Not an annotation type");
 
         Method[] methods =
             AccessController.doPrivileged(new PrivilegedAction<Method[]>() {
@@ -126,11 +141,15 @@ public class AnnotationType {
         // of the corresponding annotation types breaks infinite recursion.
         if (annotationClass != Retention.class &&
             annotationClass != Inherited.class) {
-            Retention ret = annotationClass.getAnnotation(Retention.class);
+            // make available to constructing thread a half-initialized instance
+            IN_CONSTRUCTION.get(annotationClass).set(this);
+            // following calls can be recursive
+            Retention ret = annotationClass.getDeclaredAnnotation(Retention.class);
             retention = (ret == null ? RetentionPolicy.CLASS : ret.value());
-            inherited = annotationClass.isAnnotationPresent(Inherited.class);
+            inherited = annotationClass.getDeclaredAnnotation(Inherited.class) != null;
         }
-        else {
+        else
+        {
             retention = RetentionPolicy.RUNTIME;
             inherited = false;
         }
@@ -193,13 +212,19 @@ public class AnnotationType {
      * Returns the retention policy for this annotation type.
      */
     public RetentionPolicy retention() {
+        RetentionPolicy retention = this.retention;
+        if (retention == null) {
+            // default when called recursively into a half-initialized instance
+            retention = RetentionPolicy.RUNTIME;
+        }
         return retention;
     }
 
     /**
-     * Returns true if this this annotation type is inherited.
+     * Returns true if this annotation type is inherited.
      */
     public boolean isInherited() {
+        // default is false if called recursively into a half-initialized instance
         return inherited;
     }
 
@@ -210,8 +235,8 @@ public class AnnotationType {
         StringBuffer s = new StringBuffer("Annotation Type:" + "\n");
         s.append("   Member types: " + memberTypes + "\n");
         s.append("   Member defaults: " + memberDefaults + "\n");
-        s.append("   Retention policy: " + retention + "\n");
-        s.append("   Inherited: " + inherited);
+        s.append("   Retention policy: " + retention() + "\n");
+        s.append("   Inherited: " + isInherited());
         return s.toString();
     }
 }
