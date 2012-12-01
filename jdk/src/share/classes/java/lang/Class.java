@@ -3144,22 +3144,29 @@ public final
             annotations = vd.annotations;
             if (annotations != null) return annotations;
         }
+        else {
+            annotations = null;
+        }
 
         Class<?> superClass = getSuperclass();
         if (superClass != null) {
-            annotations = new HashMap<>();
             // fill-in inherited
             for (Map.Entry<Class<? extends Annotation>, Annotation> entry : superClass.privateGetAnnotations().entrySet()) {
                 Class<? extends Annotation> annotationClass = entry.getKey();
-                if (AnnotationType.getInstance(annotationClass).isInherited())
+                if (AnnotationType.getInstance(annotationClass).isInherited()) {
+                    if (annotations == null) annotations = new HashMap<>();
                     annotations.put(annotationClass, entry.getValue());
+                }
             }
-            // override with declared
-            annotations.putAll(privateGetDeclaredAnnotations(vd));
+        }
+
+        if (annotations == null) {
+            // the same as declared for Object or interface or a class without any inherited annotations
+            annotations = privateGetDeclaredAnnotations(vd);
         }
         else {
-            // the same as declared for Object or interface
-            annotations = privateGetDeclaredAnnotations(vd);
+            // override with declared
+            annotations.putAll(privateGetDeclaredAnnotations(vd));
         }
 
         if (vd != null) {
