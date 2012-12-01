@@ -1,50 +1,53 @@
 package test;
 
 import java.io.IOException;
-import java.lang.annotation.*;
+import java.lang.annotation.Annotation;
+import java.lang.annotation.Inherited;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Objects;
 
-public class ReflectionTest
-{
+public class ReflectionTest {
     @Retention(RetentionPolicy.RUNTIME)
     @Inherited
-    public @interface InheritedAnn
-    {
+    public @interface InheritedAnn {
         String value();
     }
 
     @Retention(RetentionPolicy.RUNTIME)
-    public @interface Ann1
-    {
+    public @interface Ann1 {
         String value();
     }
 
     @Retention(RetentionPolicy.RUNTIME)
-    public @interface Ann2
-    {
+    public @interface Ann2 {
         String value();
     }
 
     @Retention(RetentionPolicy.RUNTIME)
-    public @interface Ann3
-    {
+    public @interface Ann3 {
         String value();
     }
 
     @Retention(RetentionPolicy.RUNTIME)
-    public @interface Ann4
-    {
+    public @interface Ann4 {
         String value();
     }
 
     @Retention(RetentionPolicy.RUNTIME)
-    public @interface Ann5
-    {
+    public @interface Ann5 {
         String value();
     }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    public @interface NonexistentAnn {
+    }
+
+
+    public static class Class0 {}
 
     @InheritedAnn("A")
     @Ann1("A")
@@ -52,8 +55,7 @@ public class ReflectionTest
     @Ann3("A")
     @Ann4("A")
     @Ann5("A")
-    public static class ClassA
-    {
+    public static class ClassA extends Class0 {
         @Ann1("A.f1")
         @Ann2("A.f1")
         @Ann3("A.f1")
@@ -66,8 +68,7 @@ public class ReflectionTest
         @Ann3("A.<init>")
         @Ann4("A.<init>")
         @Ann5("A.<init>")
-        public ClassA()
-        {
+        public ClassA() {
         }
 
         @Ann1("A.m1")
@@ -75,8 +76,7 @@ public class ReflectionTest
         @Ann3("A.m1")
         @Ann4("A.m1")
         @Ann5("A.m1")
-        public void m1()
-        {
+        public void m1() {
         }
 
         @Ann1("A.m2")
@@ -84,8 +84,7 @@ public class ReflectionTest
         @Ann3("A.m2")
         @Ann4("A.m2")
         @Ann5("A.m2")
-        public void m2()
-        {
+        public void m2() {
         }
     }
 
@@ -94,8 +93,7 @@ public class ReflectionTest
     @Ann3("B")
     @Ann4("B")
     @Ann5("B")
-    public static class ClassB extends ClassA
-    {
+    public static class ClassB extends ClassA {
         @Ann1("B.f1")
         @Ann2("B.f1")
         @Ann3("B.f1")
@@ -108,8 +106,7 @@ public class ReflectionTest
         @Ann3("B.<init>")
         @Ann4("B.<init>")
         @Ann5("B.<init>")
-        public ClassB()
-        {
+        public ClassB() {
         }
 
         @Ann1("B.m1")
@@ -117,8 +114,7 @@ public class ReflectionTest
         @Ann3("B.m1")
         @Ann4("B.m1")
         @Ann5("B.m1")
-        public void m1()
-        {
+        public void m1() {
         }
 
         @Ann1("B.m2")
@@ -126,8 +122,7 @@ public class ReflectionTest
         @Ann3("B.m2")
         @Ann4("B.m2")
         @Ann5("B.m2")
-        public void m2()
-        {
+        public void m2() {
         }
     }
 
@@ -136,8 +131,7 @@ public class ReflectionTest
     @Ann3("C")
     @Ann4("C")
     @Ann5("C")
-    public static class ClassC extends ClassB
-    {
+    public static class ClassC extends ClassB {
         @Ann1("C.f1")
         @Ann2("C.f1")
         @Ann3("C.f1")
@@ -150,8 +144,7 @@ public class ReflectionTest
         @Ann3("C.<init>")
         @Ann4("C.<init>")
         @Ann5("C.<init>")
-        public ClassC()
-        {
+        public ClassC() {
         }
 
         @Ann1("C.m1")
@@ -159,8 +152,7 @@ public class ReflectionTest
         @Ann3("C.m1")
         @Ann4("C.m1")
         @Ann5("C.m1")
-        public void m1()
-        {
+        public void m1() {
         }
 
         @Ann1("C.m2")
@@ -168,131 +160,117 @@ public class ReflectionTest
         @Ann3("C.m2")
         @Ann4("C.m2")
         @Ann5("C.m2")
-        public void m2()
-        {
-        }
-    }
-
-    static void dump(Annotation[] annotations, String prefix, Appendable sb) throws Exception
-    {
-        for (Annotation ann : annotations)
-        {
-            String value = (String) ann.annotationType().getMethod("value", new Class[0]).invoke(ann, (Object[]) null);
-            sb.append(prefix).append("@").append(ann.annotationType().getName()).append("(\"").append(value).append("\")\n");
-        }
-    }
-
-    static void dump(Class<?> clazz, Field[] fields, Constructor[] constructors, Method[] methods, Appendable sb)
-    {
-        try
-        {
-            dump(clazz.getAnnotations(), "", sb);
-            sb.append("class ").append(clazz.getName()).append(" {\n\n");
-
-            if (fields != null)
-            {
-                for (Field f : fields)
-                {
-                    dump(f.getAnnotations(), "  ", sb);
-                    sb.append("  ").append(f.toGenericString()).append(";\n\n");
-                }
-            }
-
-            if (methods != null)
-            {
-                for (Constructor c : constructors)
-                {
-                    dump(c.getAnnotations(), "  ", sb);
-                    sb.append("  ").append(c.toGenericString()).append(";\n\n");
-                }
-            }
-
-            if (methods != null)
-            {
-                for (Method m : methods)
-                {
-                    dump(m.getAnnotations(), "  ", sb);
-                    sb.append("  ").append(m.toGenericString()).append(";\n\n");
-                }
-            }
-
-            sb.append("}\n\n");
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e.getMessage(), e);
+        public void m2() {
         }
     }
 
     static final Object NOT_ANNOTATION = new Object();
-    
-    static void test(Annotation ann)
-    {
+
+    static void test(Annotation ann) {
         if (ann == NOT_ANNOTATION) {
             throw new AssertionError();
         }
     }
-    
-    static void test(Class<?> clazz)
-    {
+
+    static void testExistentAnn(Class<?> clazz, Field[] fields, Constructor[] constructors, Method[] methods) {
         test(clazz.getAnnotation(InheritedAnn.class));
         test(clazz.getAnnotation(Ann1.class));
-    }
+        test(clazz.getAnnotation(Ann2.class));
+        test(clazz.getAnnotation(Ann3.class));
+        test(clazz.getAnnotation(Ann4.class));
+        test(clazz.getAnnotation(Ann5.class));
 
-    static void test(Class<?> clazz, Field[] fields, Constructor[] constructors, Method[] methods)
-    {
-        test(clazz);
-
-        for (Field f : fields)
-        {
+        for (Field f : fields) {
             test(f.getAnnotation(Ann1.class));
+            test(f.getAnnotation(Ann2.class));
+            test(f.getAnnotation(Ann3.class));
+            test(f.getAnnotation(Ann4.class));
+            test(f.getAnnotation(Ann5.class));
         }
 
-
-        for (Constructor c : constructors)
-        {
+        for (Constructor c : constructors) {
             test(c.getAnnotation(Ann1.class));
+            test(c.getAnnotation(Ann2.class));
+            test(c.getAnnotation(Ann3.class));
+            test(c.getAnnotation(Ann4.class));
+            test(c.getAnnotation(Ann5.class));
         }
 
-        for (Method m : methods)
-        {
+        for (Method m : methods) {
             test(m.getAnnotation(Ann1.class));
+            test(m.getAnnotation(Ann2.class));
+            test(m.getAnnotation(Ann3.class));
+            test(m.getAnnotation(Ann4.class));
+            test(m.getAnnotation(Ann5.class));
         }
     }
 
-    static class Test1 extends Thread
-    {
+    static void testNonexistentAnn(Class<?> clazz, Field[] fields, Constructor[] constructors, Method[] methods) {
+        test(clazz.getAnnotation(NonexistentAnn.class));
+
+        for (Field f : fields) {
+            test(f.getAnnotation(NonexistentAnn.class));
+        }
+
+
+        for (Constructor c : constructors) {
+            test(c.getAnnotation(NonexistentAnn.class));
+        }
+
+        for (Method m : methods) {
+            test(m.getAnnotation(NonexistentAnn.class));
+        }
+    }
+
+    static abstract class Test extends Thread {
         final int loops;
 
-        Test1(int loops)
-        {
+        protected Test(int loops) {
             this.loops = loops;
         }
 
+        protected abstract void runTest();
+
+        long t;
+        Throwable throwable;
+
         @Override
-        public void run()
-        {
-            for (int i = 0; i < loops; i++)
-            {
-                test(ClassA.class, ClassA.class.getFields(), ClassA.class.getConstructors(), ClassA.class.getMethods());
-                test(ClassB.class, ClassB.class.getFields(), ClassB.class.getConstructors(), ClassB.class.getMethods());
-                test(ClassC.class, ClassC.class.getFields(), ClassC.class.getConstructors(), ClassC.class.getMethods());
+        public void run() {
+            long t0 = System.nanoTime();
+            try {
+                runTest();
+            }
+            catch (Throwable thr) {
+                throwable = thr;
+            }
+            finally {
+                t = System.nanoTime() - t0;
             }
         }
     }
 
-    static class Test2 extends Thread
-    {
-        final int loops;
-
-        Test2(int loops)
-        {
-            this.loops = loops;
+    static class TestAnnotationRootCache extends Test {
+        public TestAnnotationRootCache(int loops) {
+            super(loops);
         }
 
         @Override
-        public void run()
-        {
+        protected void runTest() {
+            for (int i = 0; i < loops; i++) {
+                testExistentAnn(ClassA.class, ClassA.class.getFields(), ClassA.class.getConstructors(), ClassA.class.getMethods());
+                testExistentAnn(ClassB.class, ClassB.class.getFields(), ClassB.class.getConstructors(), ClassB.class.getMethods());
+                testExistentAnn(ClassC.class, ClassC.class.getFields(), ClassC.class.getConstructors(), ClassC.class.getMethods());
+            }
+        }
+    }
+
+    static class TestAnnotationExistent extends Test {
+        public TestAnnotationExistent(int loops) {
+            super(loops);
+        }
+
+        @Override
+        protected void runTest() {
             Field[] classAfields = ClassA.class.getFields();
             Constructor[] classAconstructors = ClassA.class.getConstructors();
             Method[] classAmethods = ClassA.class.getMethods();
@@ -305,168 +283,147 @@ public class ReflectionTest
             Constructor[] classCconstructors = ClassC.class.getConstructors();
             Method[] classCmethods = ClassC.class.getMethods();
 
-            for (int i = 0; i < loops; i++)
-            {
-                test(ClassA.class, classAfields, classAconstructors, classAmethods);
-                test(ClassB.class, classBfields, classBconstructors, classBmethods);
-                test(ClassC.class, classCfields, classCconstructors, classCmethods);
+            for (int i = 0; i < loops; i++) {
+                testExistentAnn(ClassA.class, classAfields, classAconstructors, classAmethods);
+                testExistentAnn(ClassB.class, classBfields, classBconstructors, classBmethods);
+                testExistentAnn(ClassC.class, classCfields, classCconstructors, classCmethods);
             }
         }
     }
 
-    static class Test3 extends Thread
-    {
-        final int loops;
-
-        Test3(int loops)
-        {
-            this.loops = loops;
+    static class TestAnnotationNonexistent extends Test {
+        public TestAnnotationNonexistent(int loops) {
+            super(loops);
         }
 
         @Override
-        public void run()
-        {
-            for (int i = 0; i < loops; i++)
-            {
-                test(ClassA.class);
-                test(ClassB.class);
-                test(ClassC.class);
+        protected void runTest() {
+            Field[] classAfields = ClassA.class.getFields();
+            Constructor[] classAconstructors = ClassA.class.getConstructors();
+            Method[] classAmethods = ClassA.class.getMethods();
+
+            Field[] classBfields = ClassB.class.getFields();
+            Constructor[] classBconstructors = ClassB.class.getConstructors();
+            Method[] classBmethods = ClassB.class.getMethods();
+
+            Field[] classCfields = ClassC.class.getFields();
+            Constructor[] classCconstructors = ClassC.class.getConstructors();
+            Method[] classCmethods = ClassC.class.getMethods();
+
+            for (int i = 0; i < loops; i++) {
+                testNonexistentAnn(ClassA.class, classAfields, classAconstructors, classAmethods);
+                testNonexistentAnn(ClassB.class, classBfields, classBconstructors, classBmethods);
+                testNonexistentAnn(ClassC.class, classCfields, classCconstructors, classCmethods);
             }
         }
     }
 
-    static void testCorrectness()
-    {
-        StringBuilder sb = new StringBuilder();
-        dump(ClassA.class, ClassA.class.getFields(), ClassA.class.getConstructors(), ClassA.class.getMethods(), sb);
-        dump(ClassB.class, ClassB.class.getFields(), ClassB.class.getConstructors(), ClassB.class.getMethods(), sb);
-        dump(ClassC.class, ClassC.class.getFields(), ClassC.class.getConstructors(), ClassC.class.getMethods(), sb);
+    static double runTest(Class<? extends Test> testClass, int threads, int loops, double prevT) {
 
-        System.out.println(sb);
-    }
+        try {
+            Constructor<? extends Test> constructor = testClass.getConstructor(int.class);
 
-    static long test1(int threads, int loops, long prevT)
-    {
+            Test[] tests = new Test[threads];
+            for (int i = 0; i < tests.length; i++) {
+                tests[i] = constructor.newInstance(loops);
+            }
 
-        Thread[] workers = new Thread[threads];
-        for (int i = 0; i < workers.length; i++)
-        {
-            workers[i] = new Test1(loops);
-        }
-
-        return runWorkers(workers, loops, prevT);
-    }
-
-    static long test2(int threads, int loops, long prevT)
-    {
-
-        Thread[] workers = new Thread[threads];
-        for (int i = 0; i < workers.length; i++)
-        {
-            workers[i] = new Test2(loops);
-        }
-
-        return runWorkers(workers, loops, prevT);
-    }
-
-    static long test3(int threads, int loops, long prevT)
-    {
-
-        Thread[] workers = new Thread[threads];
-        for (int i = 0; i < workers.length; i++)
-        {
-            workers[i] = new Test3(loops);
-        }
-
-        return runWorkers(workers, loops, prevT);
-    }
-
-    static long runWorkers(Thread[] workers, int loops, long prevT)
-    {
-
-        try
-        {
             System.gc();
             Thread.sleep(500L);
             System.gc();
             Thread.sleep(500L);
             System.gc();
             Thread.sleep(500L);
-        }
-        catch (InterruptedException e)
-        {
-        }
 
-        long t0 = System.nanoTime();
-
-        for (int i = 0; i < workers.length; i++)
-        {
-            workers[i].start();
-        }
-
-        for (int i = 0; i < workers.length; i++)
-        {
-            try
-            {
-                workers[i].join();
+            for (int i = 0; i < tests.length; i++) {
+                tests[i].start();
             }
-            catch (InterruptedException e)
-            {
+
+            long tSum = 0L;
+            for (int i = 0; i < tests.length; i++) {
+                try {
+                    tests[i].join();
+                    tSum += tests[i].t;
+                }
+                catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
             }
+
+            double tAvg = (double) tSum / tests.length;
+            double vSum = 0L;
+            for (int i = 0; i < tests.length; i++) {
+                vSum += ((double) tests[i].t - tAvg) * ((double) tests[i].t - tAvg);
+            }
+            double v = vSum / tests.length;
+            double σ = Math.sqrt(v);
+
+            if (prevT == 0d) prevT = tAvg;
+
+            System.out.println(
+                String.format(
+                    "%30s: %3d threads * %9d loops each: tAvg = %,15.3f ms (x %6.2f), σ = %,10.3f ms",
+                    tests[0].getClass().getSimpleName(),
+                    tests.length,
+                    loops,
+                    tAvg / 1000000d,
+                    tAvg / prevT,
+                    σ / 1000000d
+                )
+            );
+
+            return tAvg;
         }
-
-        long t = System.nanoTime() - t0;
-
-        System.out.println(
-                workers[0].getClass().getSimpleName() + ": "
-                + String.format("%3d", workers.length) + " concurrent threads * "
-                + String.format("%9d", loops) + " loops each: "
-                + String.format("%,15.3f", (double) t / 1000000d) + " ms"
-                + (prevT == 0L ? "" : String.format(" (x %6.2f)", (double) t / (double) prevT)));
-
-        return t;
+        catch (NoSuchMethodException | InvocationTargetException |
+            InstantiationException | IllegalAccessException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    public static void main(String[] args) throws IOException
-    {
+
+    public static void main(String[] args) throws IOException {
+        double t;
+        System.out.println("warm-up:\n");
+        t = runTest(TestAnnotationRootCache.class, 1, 10000, 0d);
+        runTest(TestAnnotationRootCache.class, 1, 10000, t);
+        runTest(TestAnnotationRootCache.class, 1, 10000, t);
+        runTest(TestAnnotationRootCache.class, 1, 10000, t);
+        runTest(TestAnnotationRootCache.class, 1, 10000, t);
+        System.out.println();
+        t = runTest(TestAnnotationExistent.class, 1, 100000, 0d);
+        runTest(TestAnnotationExistent.class, 1, 100000, t);
+        runTest(TestAnnotationExistent.class, 1, 100000, t);
+        runTest(TestAnnotationExistent.class, 1, 100000, t);
+        runTest(TestAnnotationExistent.class, 1, 100000, t);
+        System.out.println();
+        t = runTest(TestAnnotationNonexistent.class, 1, 100000, 0d);
+        runTest(TestAnnotationNonexistent.class, 1, 100000, t);
+        runTest(TestAnnotationNonexistent.class, 1, 100000, t);
+        runTest(TestAnnotationNonexistent.class, 1, 100000, t);
+        runTest(TestAnnotationNonexistent.class, 1, 100000, t);
         System.out.println();
 
-        long t;
-        System.out.println("warm-up:");
-        t = test1(1, 20000, 0L);
-        test1(1, 20000, t);
-        test1(1, 20000, t);
+        System.out.println("measure:\n");
+        t = runTest(TestAnnotationRootCache.class, 1, 10000, 0d);
+        runTest(TestAnnotationRootCache.class, 2, 10000, t);
+        runTest(TestAnnotationRootCache.class, 4, 10000, t);
+        runTest(TestAnnotationRootCache.class, 8, 10000, t);
+        runTest(TestAnnotationRootCache.class, 32, 10000, t);
+        runTest(TestAnnotationRootCache.class, 128, 10000, t);
         System.out.println();
-        t = test2(1, 2000000, 0);
-        test2(1, 2000000, t);
-        test2(1, 2000000, t);
+        t = runTest(TestAnnotationExistent.class, 1, 100000, 0d);
+        runTest(TestAnnotationExistent.class, 2, 100000, t);
+        runTest(TestAnnotationExistent.class, 4, 100000, t);
+        runTest(TestAnnotationExistent.class, 8, 100000, t);
+        runTest(TestAnnotationExistent.class, 32, 100000, t);
+        runTest(TestAnnotationExistent.class, 128, 100000, t);
         System.out.println();
-        t = test3(1, 10000000, 0);
-        test3(1, 10000000, t);
-        test3(1, 10000000, t);
-        System.out.println();
-
-        System.out.println("measure:");
-        t = test1(1, 20000, 0);
-        test1(2, 20000, t);
-        test1(4, 20000, t);
-        test1(8, 20000, t);
-        test1(32, 20000, t);
-        test1(128, 20000, t);
-        System.out.println();
-        t = test2(1, 2000000, 0);
-        test2(2, 2000000, t);
-        test2(4, 2000000, t);
-        test2(8, 2000000, t);
-        test2(32, 2000000, t);
-        test2(128, 2000000, t);
-        System.out.println();
-        t = test3(1, 10000000, 0);
-        test3(2, 10000000, t);
-        test3(4, 10000000, t);
-        test3(8, 10000000, t);
-        test3(32, 10000000, t);
-        test3(128, 10000000, t);
+        t = runTest(TestAnnotationNonexistent.class, 1, 100000, 0d);
+        runTest(TestAnnotationNonexistent.class, 2, 100000, t);
+        runTest(TestAnnotationNonexistent.class, 4, 100000, t);
+        runTest(TestAnnotationNonexistent.class, 8, 100000, t);
+        runTest(TestAnnotationNonexistent.class, 32, 100000, t);
+        runTest(TestAnnotationNonexistent.class, 128, 100000, t);
         System.out.println();
     }
 }
