@@ -17,10 +17,17 @@ fi
 
 OPTS="-Xmx4G -cp $CP"
 
+if [ "$1" == "s" ]; then
+  shift;
+  echo "Skipping non-patched run"
+else
+
 echo ""
 echo "Executing: $JAVA_BIN $OPTS $*"
 echo ""
 $JAVA_BIN $OPTS $*
+
+fi
 
 OPTS="-Xbootclasspath/p:$CP $OPTS"
 
