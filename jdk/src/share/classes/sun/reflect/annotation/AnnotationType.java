@@ -62,12 +62,12 @@ public class AnnotationType {
     /**
      * The retention policy for this annotation type.
      */
-    private RetentionPolicy retention = RetentionPolicy.RUNTIME;;
+    private final RetentionPolicy retention;
 
     /**
      * Whether this annotation type is inherited.
      */
-    private boolean inherited = false;
+    private final boolean inherited;
 
     /**
      * Returns an AnnotationType instance for the specified annotation type.
@@ -75,13 +75,16 @@ public class AnnotationType {
      * @throw IllegalArgumentException if the specified class object for
      *     does not represent a valid annotation type
      */
-    public static synchronized AnnotationType getInstance(
+    public static AnnotationType getInstance(
         Class<? extends Annotation> annotationClass)
     {
         AnnotationType result = sun.misc.SharedSecrets.getJavaLangAccess().
             getAnnotationType(annotationClass);
-        if (result == null)
-            result = new AnnotationType((Class<? extends Annotation>) annotationClass);
+        if (result == null) {
+            result = new AnnotationType(annotationClass);
+            sun.misc.SharedSecrets.getJavaLangAccess().
+                setAnnotationType(annotationClass, result);
+        }
 
         return result;
     }
@@ -121,9 +124,6 @@ public class AnnotationType {
             members.put(name, method);
         }
 
-        sun.misc.SharedSecrets.getJavaLangAccess().
-            setAnnotationType(annotationClass, this);
-
         // Initialize retention, & inherited fields.  Special treatment
         // of the corresponding annotation types breaks infinite recursion.
         if (annotationClass != Retention.class &&
@@ -131,6 +131,10 @@ public class AnnotationType {
             Retention ret = annotationClass.getAnnotation(Retention.class);
             retention = (ret == null ? RetentionPolicy.CLASS : ret.value());
             inherited = annotationClass.isAnnotationPresent(Inherited.class);
+        }
+        else {
+            retention = RetentionPolicy.RUNTIME;
+            inherited = false;
         }
     }
 
