@@ -120,8 +120,6 @@ public class AnnotationType {
             Object defaultValue = method.getDefaultValue();
             if (defaultValue != null)
                 memberDefaults.put(name, defaultValue);
-
-            members.put(name, method);
         }
 
         // Initialize retention, & inherited fields.  Special treatment
