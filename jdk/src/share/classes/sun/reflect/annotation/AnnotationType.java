@@ -79,6 +79,20 @@ public class AnnotationType {
         }
     };
 
+    public static final ThreadLocal<LinkedList<String>> STACK = new ThreadLocal<LinkedList<String>>() {
+        @Override
+        protected LinkedList<String> initialValue() {
+            return new LinkedList<>();
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            for (String s : get()) sb.append(s).append("\n");
+            return sb.toString();
+        }
+    };
+
     /**
      * Returns an AnnotationType instance for the specified annotation type.
      *
@@ -90,6 +104,8 @@ public class AnnotationType {
     {
         if (!annotationClass.isAnnotation())
             throw new IllegalArgumentException("Not an annotation type");
+
+        STACK.get().addFirst("AnnotationType.getInstance(" + annotationClass.getName() + ")");
 
         AnnotationType result = sun.misc.SharedSecrets.getJavaLangAccess().
             getAnnotationType(annotationClass);
@@ -103,8 +119,12 @@ public class AnnotationType {
             }
         }
 
+        STACK.get().removeFirst();
+
         return result;
     }
+
+    private final Class<? extends Annotation> annotationClass;
 
     /**
      * Sole constructor.
@@ -114,6 +134,10 @@ public class AnnotationType {
      *     does not represent a valid annotation type
      */
     private AnnotationType(final Class<? extends Annotation> annotationClass) {
+
+        STACK.get().addFirst("new AnnotationType(" + annotationClass.getName() + ")");
+
+        this.annotationClass = annotationClass;
 
         Method[] methods =
             AccessController.doPrivileged(new PrivilegedAction<Method[]>() {
@@ -153,6 +177,8 @@ public class AnnotationType {
             retention = RetentionPolicy.RUNTIME;
             inherited = false;
         }
+
+        STACK.get().removeFirst();
     }
 
     /**
@@ -215,7 +241,11 @@ public class AnnotationType {
         RetentionPolicy retention = this.retention;
         if (retention == null) {
             // default when called recursively into a half-initialized instance
+            System.out.println("\nWARN: Obtaining retention for " + annotationClass.getName() + "  while not initialized yet - returning default RetentionPolicy.RUNTIME\n" + STACK);
             retention = RetentionPolicy.RUNTIME;
+        }
+        else {
+            System.out.println("\nINFO: Obtaining retention for " + annotationClass.getName() + " - returning RetentionPolicy." + retention.name() + "\n" + STACK);
         }
         return retention;
     }

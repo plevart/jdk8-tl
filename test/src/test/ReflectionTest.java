@@ -211,7 +211,7 @@ public class ReflectionTest {
             test(f.getAnnotation(Ann5.class));
         }
 
-        for (Constructor c : constructors) {
+        for (Constructor<?> c : constructors) {
             test(c.getAnnotation(Ann1.class));
             test(c.getAnnotation(Ann2.class));
             test(c.getAnnotation(Ann3.class));
@@ -236,7 +236,7 @@ public class ReflectionTest {
         }
 
 
-        for (Constructor c : constructors) {
+        for (Constructor<?> c : constructors) {
             test(c.getAnnotation(NonexistentAnn.class));
         }
 
