@@ -1,90 +1,114 @@
-Executing: /home/peter/Apps64/jdk1.8.0-jdk8-tl/bin/java -Xmx4G -cp ../out/production/jdk:../out/production/test test.ReflectionTest
+** Original JDK8 code with repeating annotations
 
-warm-up:
-
-       TestAnnotationRootCache:   1 threads *     10000 loops each: tAvg =       1,985.018 ms (x   1.00), σ =      0.000 ms
-       TestAnnotationRootCache:   1 threads *     10000 loops each: tAvg =       1,869.512 ms (x   0.94), σ =      0.000 ms
-       TestAnnotationRootCache:   1 threads *     10000 loops each: tAvg =       1,868.033 ms (x   0.94), σ =      0.000 ms
-       TestAnnotationRootCache:   1 threads *     10000 loops each: tAvg =       1,827.180 ms (x   0.92), σ =      0.000 ms
-       TestAnnotationRootCache:   1 threads *     10000 loops each: tAvg =       1,845.451 ms (x   0.93), σ =      0.000 ms
-
-        TestAnnotationExistent:   1 threads *    100000 loops each: tAvg =         736.729 ms (x   1.00), σ =      0.000 ms
-        TestAnnotationExistent:   1 threads *    100000 loops each: tAvg =         706.767 ms (x   0.96), σ =      0.000 ms
-        TestAnnotationExistent:   1 threads *    100000 loops each: tAvg =         705.939 ms (x   0.96), σ =      0.000 ms
-        TestAnnotationExistent:   1 threads *    100000 loops each: tAvg =         706.643 ms (x   0.96), σ =      0.000 ms
-        TestAnnotationExistent:   1 threads *    100000 loops each: tAvg =         708.632 ms (x   0.96), σ =      0.000 ms
-                                                                                                                                         
-     TestAnnotationNonexistent:   1 threads *    100000 loops each: tAvg =         193.691 ms (x   1.00), σ =      0.000 ms              
-     TestAnnotationNonexistent:   1 threads *    100000 loops each: tAvg =         196.866 ms (x   1.02), σ =      0.000 ms              
-     TestAnnotationNonexistent:   1 threads *    100000 loops each: tAvg =         203.630 ms (x   1.05), σ =      0.000 ms              
-     TestAnnotationNonexistent:   1 threads *    100000 loops each: tAvg =         203.296 ms (x   1.05), σ =      0.000 ms              
-     TestAnnotationNonexistent:   1 threads *    100000 loops each: tAvg =         198.224 ms (x   1.02), σ =      0.000 ms              
-                                                                                                                                         
-measure:
-
-       TestAnnotationRootCache:   1 threads *     10000 loops each: tAvg =       1,869.180 ms (x   1.00), σ =      0.000 ms
-       TestAnnotationRootCache:   2 threads *     10000 loops each: tAvg =       1,995.851 ms (x   1.07), σ =      2.458 ms
-       TestAnnotationRootCache:   4 threads *     10000 loops each: tAvg =       2,128.319 ms (x   1.14), σ =     19.920 ms
-       TestAnnotationRootCache:   8 threads *     10000 loops each: tAvg =       3,643.379 ms (x   1.95), σ =     10.812 ms
-       TestAnnotationRootCache:  32 threads *     10000 loops each: tAvg =      14,584.300 ms (x   7.80), σ =    215.463 ms
-       TestAnnotationRootCache: 128 threads *     10000 loops each: tAvg =      57,788.941 ms (x  30.92), σ =  1,277.721 ms
-
-        TestAnnotationExistent:   1 threads *    100000 loops each: tAvg =         707.619 ms (x   1.00), σ =      0.000 ms
-        TestAnnotationExistent:   2 threads *    100000 loops each: tAvg =         767.250 ms (x   1.08), σ =      0.976 ms
-        TestAnnotationExistent:   4 threads *    100000 loops each: tAvg =       1,126.666 ms (x   1.59), σ =      1.414 ms
-        TestAnnotationExistent:   8 threads *    100000 loops each: tAvg =       3,397.478 ms (x   4.80), σ =     21.646 ms
-        TestAnnotationExistent:  32 threads *    100000 loops each: tAvg =       9,985.641 ms (x  14.11), σ =    145.982 ms
-        TestAnnotationExistent: 128 threads *    100000 loops each: tAvg =      40,564.788 ms (x  57.33), σ =    590.257 ms
-
-     TestAnnotationNonexistent:   1 threads *    100000 loops each: tAvg =         209.213 ms (x   1.00), σ =      0.000 ms
-     TestAnnotationNonexistent:   2 threads *    100000 loops each: tAvg =         714.810 ms (x   3.42), σ =      3.290 ms
-     TestAnnotationNonexistent:   4 threads *    100000 loops each: tAvg =       1,824.751 ms (x   8.72), σ =     33.871 ms
-     TestAnnotationNonexistent:   8 threads *    100000 loops each: tAvg =       8,128.202 ms (x  38.85), σ =     94.172 ms
-     TestAnnotationNonexistent:  32 threads *    100000 loops each: tAvg =      32,090.252 ms (x 153.39), σ =    306.653 ms
-     TestAnnotationNonexistent: 128 threads *    100000 loops each: tAvg =     122,125.777 ms (x 583.74), σ =  1,214.642 ms
-
-
-Executing: /home/peter/Apps64/jdk1.8.0-jdk8-tl/bin/java -Xbootclasspath/p:../out/production/jdk:../out/production/test -Xmx4G -cp ../out/production/jdk:../out/production/test test.ReflectionTest
-
-warm-up:
-
-       TestAnnotationRootCache:   1 threads *     10000 loops each: tAvg =         126.326 ms (x   1.00), σ =      0.000 ms
-       TestAnnotationRootCache:   1 threads *     10000 loops each: tAvg =          73.703 ms (x   0.58), σ =      0.000 ms
-       TestAnnotationRootCache:   1 threads *     10000 loops each: tAvg =          76.331 ms (x   0.60), σ =      0.000 ms
-       TestAnnotationRootCache:   1 threads *     10000 loops each: tAvg =          76.107 ms (x   0.60), σ =      0.000 ms
-       TestAnnotationRootCache:   1 threads *     10000 loops each: tAvg =          71.226 ms (x   0.56), σ =      0.000 ms
-
-        TestAnnotationExistent:   1 threads *    100000 loops each: tAvg =         334.122 ms (x   1.00), σ =      0.000 ms
-        TestAnnotationExistent:   1 threads *    100000 loops each: tAvg =         305.120 ms (x   0.91), σ =      0.000 ms
-        TestAnnotationExistent:   1 threads *    100000 loops each: tAvg =         314.708 ms (x   0.94), σ =      0.000 ms
-        TestAnnotationExistent:   1 threads *    100000 loops each: tAvg =         314.987 ms (x   0.94), σ =      0.000 ms
-        TestAnnotationExistent:   1 threads *    100000 loops each: tAvg =         318.020 ms (x   0.95), σ =      0.000 ms
-
-     TestAnnotationNonexistent:   1 threads *    100000 loops each: tAvg =         110.128 ms (x   1.00), σ =      0.000 ms
-     TestAnnotationNonexistent:   1 threads *    100000 loops each: tAvg =          76.329 ms (x   0.69), σ =      0.000 ms
-     TestAnnotationNonexistent:   1 threads *    100000 loops each: tAvg =          77.288 ms (x   0.70), σ =      0.000 ms
-     TestAnnotationNonexistent:   1 threads *    100000 loops each: tAvg =          72.575 ms (x   0.66), σ =      0.000 ms
-     TestAnnotationNonexistent:   1 threads *    100000 loops each: tAvg =          74.857 ms (x   0.68), σ =      0.000 ms
+Executing: /home/peter/Apps64/jdk1.8.0-jdk8-tl/bin/java -Xmx4G -cp ../out/production/test test.ReflectionTest
 
 measure:
 
-       TestAnnotationRootCache:   1 threads *     10000 loops each: tAvg =          76.176 ms (x   1.00), σ =      0.000 ms
-       TestAnnotationRootCache:   2 threads *     10000 loops each: tAvg =          64.646 ms (x   0.85), σ =      1.532 ms
-       TestAnnotationRootCache:   4 threads *     10000 loops each: tAvg =          73.031 ms (x   0.96), σ =      5.046 ms
-       TestAnnotationRootCache:   8 threads *     10000 loops each: tAvg =         108.719 ms (x   1.43), σ =     13.201 ms
-       TestAnnotationRootCache:  32 threads *     10000 loops each: tAvg =         192.745 ms (x   2.53), σ =     37.029 ms
-       TestAnnotationRootCache: 128 threads *     10000 loops each: tAvg =         538.961 ms (x   7.08), σ =    171.265 ms
+       TestAnnotationRootCache:   1 threads *     10000 loops each: tAvg =       1,856.758 ms (x   1.00), σ =      0.000 ms
+       TestAnnotationRootCache:   2 threads *     10000 loops each: tAvg =       2,028.232 ms (x   1.09), σ =      1.764 ms
+       TestAnnotationRootCache:   4 threads *     10000 loops each: tAvg =       2,129.530 ms (x   1.15), σ =     17.459 ms
+       TestAnnotationRootCache:   8 threads *     10000 loops each: tAvg =       3,558.791 ms (x   1.92), σ =     10.418 ms
+       TestAnnotationRootCache:  16 threads *     10000 loops each: tAvg =       7,103.148 ms (x   3.83), σ =     78.460 ms
+       TestAnnotationRootCache:  32 threads *     10000 loops each: tAvg =      14,113.786 ms (x   7.60), σ =    243.684 ms
 
-        TestAnnotationExistent:   1 threads *    100000 loops each: tAvg =         302.225 ms (x   1.00), σ =      0.000 ms
-        TestAnnotationExistent:   2 threads *    100000 loops each: tAvg =         307.582 ms (x   1.02), σ =      3.249 ms
-        TestAnnotationExistent:   4 threads *    100000 loops each: tAvg =         306.497 ms (x   1.01), σ =      3.022 ms
-        TestAnnotationExistent:   8 threads *    100000 loops each: tAvg =         534.222 ms (x   1.77), σ =      3.685 ms
-        TestAnnotationExistent:  32 threads *    100000 loops each: tAvg =       1,902.181 ms (x   6.29), σ =     94.000 ms
-        TestAnnotationExistent: 128 threads *    100000 loops each: tAvg =       6,155.117 ms (x  20.37), σ =    637.113 ms
+        TestAnnotationExistent:   1 threads *   1000000 loops each: tAvg =       1,705.840 ms (x   1.00), σ =      0.000 ms
+        TestAnnotationExistent:   2 threads *   1000000 loops each: tAvg =       1,385.250 ms (x   0.81), σ =      0.283 ms
+        TestAnnotationExistent:   4 threads *   1000000 loops each: tAvg =       1,394.163 ms (x   0.82), σ =      0.545 ms
+        TestAnnotationExistent:   8 threads *   1000000 loops each: tAvg =       8,884.799 ms (x   5.21), σ =     24.419 ms
+        TestAnnotationExistent:  16 threads *   1000000 loops each: tAvg =      18,226.023 ms (x  10.68), σ =    216.830 ms
+        TestAnnotationExistent:  32 threads *   1000000 loops each: tAvg =      36,761.146 ms (x  21.55), σ =    383.195 ms
 
-     TestAnnotationNonexistent:   1 threads *    100000 loops each: tAvg =          73.480 ms (x   1.00), σ =      0.000 ms
-     TestAnnotationNonexistent:   2 threads *    100000 loops each: tAvg =          77.112 ms (x   1.05), σ =      0.333 ms
-     TestAnnotationNonexistent:   4 threads *    100000 loops each: tAvg =          76.900 ms (x   1.05), σ =      0.418 ms
-     TestAnnotationNonexistent:   8 threads *    100000 loops each: tAvg =         122.318 ms (x   1.66), σ =      0.249 ms
-     TestAnnotationNonexistent:  32 threads *    100000 loops each: tAvg =         285.676 ms (x   3.89), σ =     65.074 ms
-     TestAnnotationNonexistent: 128 threads *    100000 loops each: tAvg =         419.142 ms (x   5.70), σ =     86.602 ms
+     TestAnnotationNonexistent:   1 threads *   1000000 loops each: tAvg =         856.926 ms (x   1.00), σ =      0.000 ms
+     TestAnnotationNonexistent:   2 threads *   1000000 loops each: tAvg =       2,432.213 ms (x   2.84), σ =      2.658 ms
+     TestAnnotationNonexistent:   4 threads *   1000000 loops each: tAvg =       6,379.997 ms (x   7.45), σ =    145.972 ms
+     TestAnnotationNonexistent:   8 threads *   1000000 loops each: tAvg =      34,483.155 ms (x  40.24), σ =     92.609 ms
+     TestAnnotationNonexistent:  16 threads *   1000000 loops each: tAvg =      65,359.403 ms (x  76.27), σ =    344.631 ms
+     TestAnnotationNonexistent:  32 threads *   1000000 loops each: tAvg =     130,250.935 ms (x 152.00), σ =  1,027.758 ms
+
+
+** Original JDK8 code with repeating annotations
+** + patched: java.lang.Class, java.lang.reflect.[Field,Method,Constructor,Executable]
+
+Executing: /home/peter/Apps64/jdk1.8.0-jdk8-tl/bin/java -Xmx4G -cp ../out/production/test -Xbootclasspath/p:../out/production/jdk test.ReflectionTest
+
+measure:
+
+       TestAnnotationRootCache:   1 threads *     10000 loops each: tAvg =          72.595 ms (x   1.00), σ =      0.000 ms
+       TestAnnotationRootCache:   2 threads *     10000 loops each: tAvg =          66.892 ms (x   0.92), σ =      0.494 ms
+       TestAnnotationRootCache:   4 threads *     10000 loops each: tAvg =          69.030 ms (x   0.95), σ =      5.276 ms
+       TestAnnotationRootCache:   8 threads *     10000 loops each: tAvg =         101.901 ms (x   1.40), σ =     14.859 ms
+       TestAnnotationRootCache:  16 threads *     10000 loops each: tAvg =         131.154 ms (x   1.81), σ =     13.562 ms
+       TestAnnotationRootCache:  32 threads *     10000 loops each: tAvg =         159.085 ms (x   2.19), σ =     38.321 ms
+
+        TestAnnotationExistent:   1 threads *   1000000 loops each: tAvg =       1,034.848 ms (x   1.00), σ =      0.000 ms
+        TestAnnotationExistent:   2 threads *   1000000 loops each: tAvg =       1,028.880 ms (x   0.99), σ =      0.600 ms
+        TestAnnotationExistent:   4 threads *   1000000 loops each: tAvg =       1,027.732 ms (x   0.99), σ =      2.615 ms
+        TestAnnotationExistent:   8 threads *   1000000 loops each: tAvg =       1,883.452 ms (x   1.82), σ =      2.752 ms
+        TestAnnotationExistent:  16 threads *   1000000 loops each: tAvg =       3,721.639 ms (x   3.60), σ =     52.950 ms
+        TestAnnotationExistent:  32 threads *   1000000 loops each: tAvg =       7,393.989 ms (x   7.15), σ =     46.214 ms
+
+     TestAnnotationNonexistent:   1 threads *   1000000 loops each: tAvg =         314.207 ms (x   1.00), σ =      0.000 ms
+     TestAnnotationNonexistent:   2 threads *   1000000 loops each: tAvg =         308.984 ms (x   0.98), σ =      1.628 ms
+     TestAnnotationNonexistent:   4 threads *   1000000 loops each: tAvg =         313.179 ms (x   1.00), σ =      1.459 ms
+     TestAnnotationNonexistent:   8 threads *   1000000 loops each: tAvg =         559.224 ms (x   1.78), σ =      1.818 ms
+     TestAnnotationNonexistent:  16 threads *   1000000 loops each: tAvg =       1,067.471 ms (x   3.40), σ =     19.789 ms
+     TestAnnotationNonexistent:  32 threads *   1000000 loops each: tAvg =       1,987.963 ms (x   6.33), σ =     67.265 ms
+
+
+** Original JDK8 code with repeating annotations
+** + patched: sun.reflect.annotation.[AnnotationType,AnnotationSupport]
+
+Executing: /home/peter/Apps64/jdk1.8.0-jdk8-tl/bin/java -Xmx4G -cp ../out/production/test -Xbootclasspath/p:../out/production/jdk test.ReflectionTest
+
+measure:
+
+       TestAnnotationRootCache:   1 threads *     10000 loops each: tAvg =       1,849.797 ms (x   1.00), σ =      0.000 ms
+       TestAnnotationRootCache:   2 threads *     10000 loops each: tAvg =       1,867.047 ms (x   1.01), σ =      0.957 ms
+       TestAnnotationRootCache:   4 threads *     10000 loops each: tAvg =       1,920.399 ms (x   1.04), σ =     10.488 ms
+       TestAnnotationRootCache:   8 threads *     10000 loops each: tAvg =       3,313.567 ms (x   1.79), σ =      3.518 ms
+       TestAnnotationRootCache:  16 threads *     10000 loops each: tAvg =       6,677.011 ms (x   3.61), σ =     80.192 ms
+       TestAnnotationRootCache:  32 threads *     10000 loops each: tAvg =      13,306.217 ms (x   7.19), σ =    263.539 ms
+
+        TestAnnotationExistent:   1 threads *   1000000 loops each: tAvg =       1,656.157 ms (x   1.00), σ =      0.000 ms
+        TestAnnotationExistent:   2 threads *   1000000 loops each: tAvg =       1,358.000 ms (x   0.82), σ =      0.140 ms
+        TestAnnotationExistent:   4 threads *   1000000 loops each: tAvg =       1,376.794 ms (x   0.83), σ =      0.887 ms
+        TestAnnotationExistent:   8 threads *   1000000 loops each: tAvg =       5,597.775 ms (x   3.38), σ =     19.667 ms
+        TestAnnotationExistent:  16 threads *   1000000 loops each: tAvg =      16,807.307 ms (x  10.15), σ =    125.833 ms
+        TestAnnotationExistent:  32 threads *   1000000 loops each: tAvg =      35,307.760 ms (x  21.32), σ =    298.189 ms
+
+     TestAnnotationNonexistent:   1 threads *   1000000 loops each: tAvg =         279.129 ms (x   1.00), σ =      0.000 ms
+     TestAnnotationNonexistent:   2 threads *   1000000 loops each: tAvg =         278.912 ms (x   1.00), σ =      0.086 ms
+     TestAnnotationNonexistent:   4 threads *   1000000 loops each: tAvg =         300.253 ms (x   1.08), σ =      0.704 ms
+     TestAnnotationNonexistent:   8 threads *   1000000 loops each: tAvg =       1,020.710 ms (x   3.66), σ =     11.049 ms
+     TestAnnotationNonexistent:  16 threads *   1000000 loops each: tAvg =       1,590.684 ms (x   5.70), σ =     35.885 ms
+     TestAnnotationNonexistent:  32 threads *   1000000 loops each: tAvg =       3,091.061 ms (x  11.07), σ =     62.067 ms
+
+
+** Original JDK8 code with repeating annotations
+** + patched: java.lang.Class, java.lang.reflect.[Field,Method,Constructor,Executable]
+** + patched: sun.reflect.annotation.[AnnotationType,AnnotationSupport]
+
+Executing: /home/peter/Apps64/jdk1.8.0-jdk8-tl/bin/java -Xmx4G -cp ../out/production/test -Xbootclasspath/p:../out/production/jdk test.ReflectionTest
+
+measure:
+
+       TestAnnotationRootCache:   1 threads *     10000 loops each: tAvg =          66.431 ms (x   1.00), σ =      0.000 ms
+       TestAnnotationRootCache:   2 threads *     10000 loops each: tAvg =          55.649 ms (x   0.84), σ =      0.550 ms
+       TestAnnotationRootCache:   4 threads *     10000 loops each: tAvg =          61.874 ms (x   0.93), σ =      4.561 ms
+       TestAnnotationRootCache:   8 threads *     10000 loops each: tAvg =          85.971 ms (x   1.29), σ =     10.946 ms
+       TestAnnotationRootCache:  16 threads *     10000 loops each: tAvg =          91.199 ms (x   1.37), σ =     11.182 ms
+       TestAnnotationRootCache:  32 threads *     10000 loops each: tAvg =          99.674 ms (x   1.50), σ =     30.447 ms
+
+        TestAnnotationExistent:   1 threads *   1000000 loops each: tAvg =         994.312 ms (x   1.00), σ =      0.000 ms
+        TestAnnotationExistent:   2 threads *   1000000 loops each: tAvg =         985.304 ms (x   0.99), σ =      1.629 ms
+        TestAnnotationExistent:   4 threads *   1000000 loops each: tAvg =         992.780 ms (x   1.00), σ =      1.830 ms
+        TestAnnotationExistent:   8 threads *   1000000 loops each: tAvg =       1,753.002 ms (x   1.76), σ =      2.908 ms
+        TestAnnotationExistent:  16 threads *   1000000 loops each: tAvg =       3,457.500 ms (x   3.48), σ =     22.736 ms
+        TestAnnotationExistent:  32 threads *   1000000 loops each: tAvg =       6,757.454 ms (x   6.80), σ =     63.721 ms
+
+     TestAnnotationNonexistent:   1 threads *   1000000 loops each: tAvg =         159.499 ms (x   1.00), σ =      0.000 ms
+     TestAnnotationNonexistent:   2 threads *   1000000 loops each: tAvg =         157.957 ms (x   0.99), σ =      0.121 ms
+     TestAnnotationNonexistent:   4 threads *   1000000 loops each: tAvg =         156.581 ms (x   0.98), σ =      0.264 ms
+     TestAnnotationNonexistent:   8 threads *   1000000 loops each: tAvg =         293.980 ms (x   1.84), σ =      1.078 ms
+     TestAnnotationNonexistent:  16 threads *   1000000 loops each: tAvg =         542.398 ms (x   3.40), σ =     23.541 ms
+     TestAnnotationNonexistent:  32 threads *   1000000 loops each: tAvg =         940.446 ms (x   5.90), σ =     61.199 ms

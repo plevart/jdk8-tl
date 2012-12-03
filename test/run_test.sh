@@ -12,7 +12,11 @@ else
 fi
 
 if [ "$CP" == "" ]; then
-    CP=../out/production/jdk:../out/production/test
+    CP=../out/production/test
+fi
+
+if [ "$BCP" == "" ]; then
+    BCP=../out/production/jdk
 fi
 
 OPTS="-Xmx4G -cp $CP"
@@ -29,7 +33,7 @@ $JAVA_BIN $OPTS $*
 
 fi
 
-OPTS="-Xbootclasspath/p:$CP $OPTS"
+OPTS="$OPTS -Xbootclasspath/p:$BCP"
 
 echo ""
 echo "Executing: $JAVA_BIN $OPTS $*"

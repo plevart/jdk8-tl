@@ -189,59 +189,80 @@ public class ReflectionTest {
 
     static final Object NOT_ANNOTATION = new Object();
 
-    static void test(Annotation ann) {
+    static final Set<String> SKIPPED_METHODS = new HashSet<>(Arrays.asList("wait", "notify", "notifyAll", "toString", "equals", "hashCode", "getClass"));
+
+    static Method[] filterMethods(Method[] methods) {
+        int n = 0;
+        for (Method m : methods)
+            if (!SKIPPED_METHODS.contains(m.getName()))
+                n++;
+        Method[] filteredMethods = new Method[n];
+        n = 0;
+        for (Method m : methods)
+            if (!SKIPPED_METHODS.contains(m.getName()))
+                filteredMethods[n++] = m;
+        return filteredMethods;
+    }
+
+    static void assertAnnotationOrNull(Annotation ann) {
         if (ann == NOT_ANNOTATION) {
-            throw new AssertionError();
+            throw new AssertionError("unexpected annotation instance");
+        }
+    }
+
+    static void assertNull(Annotation ann) {
+        if (ann != null) {
+            throw new AssertionError("expected null");
         }
     }
 
     static void testExistentAnn(Class<?> clazz, Field[] fields, Constructor[] constructors, Method[] methods) {
-        test(clazz.getAnnotation(InheritedAnn.class));
-        test(clazz.getAnnotation(Ann1.class));
-        test(clazz.getAnnotation(Ann2.class));
-        test(clazz.getAnnotation(Ann3.class));
-        test(clazz.getAnnotation(Ann4.class));
-        test(clazz.getAnnotation(Ann5.class));
+        assertAnnotationOrNull(clazz.getAnnotation(InheritedAnn.class));
+        assertAnnotationOrNull(clazz.getAnnotation(Ann1.class));
+        assertAnnotationOrNull(clazz.getAnnotation(Ann2.class));
+        assertAnnotationOrNull(clazz.getAnnotation(Ann3.class));
+        assertAnnotationOrNull(clazz.getAnnotation(Ann4.class));
+        assertAnnotationOrNull(clazz.getAnnotation(Ann5.class));
 
         for (Field f : fields) {
-            test(f.getAnnotation(Ann1.class));
-            test(f.getAnnotation(Ann2.class));
-            test(f.getAnnotation(Ann3.class));
-            test(f.getAnnotation(Ann4.class));
-            test(f.getAnnotation(Ann5.class));
+            assertAnnotationOrNull(f.getAnnotation(Ann1.class));
+            assertAnnotationOrNull(f.getAnnotation(Ann2.class));
+            assertAnnotationOrNull(f.getAnnotation(Ann3.class));
+            assertAnnotationOrNull(f.getAnnotation(Ann4.class));
+            assertAnnotationOrNull(f.getAnnotation(Ann5.class));
         }
 
         for (Constructor<?> c : constructors) {
-            test(c.getAnnotation(Ann1.class));
-            test(c.getAnnotation(Ann2.class));
-            test(c.getAnnotation(Ann3.class));
-            test(c.getAnnotation(Ann4.class));
-            test(c.getAnnotation(Ann5.class));
+            assertAnnotationOrNull(c.getAnnotation(Ann1.class));
+            assertAnnotationOrNull(c.getAnnotation(Ann2.class));
+            assertAnnotationOrNull(c.getAnnotation(Ann3.class));
+            assertAnnotationOrNull(c.getAnnotation(Ann4.class));
+            assertAnnotationOrNull(c.getAnnotation(Ann5.class));
         }
 
         for (Method m : methods) {
-            test(m.getAnnotation(Ann1.class));
-            test(m.getAnnotation(Ann2.class));
-            test(m.getAnnotation(Ann3.class));
-            test(m.getAnnotation(Ann4.class));
-            test(m.getAnnotation(Ann5.class));
+            assertAnnotationOrNull(m.getAnnotation(Ann1.class));
+            assertAnnotationOrNull(m.getAnnotation(Ann2.class));
+            assertAnnotationOrNull(m.getAnnotation(Ann3.class));
+            assertAnnotationOrNull(m.getAnnotation(Ann4.class));
+            assertAnnotationOrNull(m.getAnnotation(Ann5.class));
         }
     }
 
     static void testNonexistentAnn(Class<?> clazz, Field[] fields, Constructor[] constructors, Method[] methods) {
-        test(clazz.getAnnotation(NonexistentAnn.class));
+        assertNull(clazz.getAnnotation(NonexistentAnn.class));
 
         for (Field f : fields) {
-            test(f.getAnnotation(NonexistentAnn.class));
+            assertNull(f.getAnnotation(NonexistentAnn.class));
         }
 
 
         for (Constructor<?> c : constructors) {
-            test(c.getAnnotation(NonexistentAnn.class));
+            assertNull(c.getAnnotation(NonexistentAnn.class));
         }
 
         for (Method m : methods) {
-            test(m.getAnnotation(NonexistentAnn.class));
+            assertNull(m.getAnnotation(NonexistentAnn.class));
         }
     }
 
@@ -254,12 +275,17 @@ public class ReflectionTest {
 
         protected abstract void runTest();
 
-        long t;
+        long t0, t;
         Throwable throwable;
 
         @Override
+        public synchronized void start() {
+            t0 = System.nanoTime();
+            super.start();
+        }
+
+        @Override
         public void run() {
-            long t0 = System.nanoTime();
             try {
                 runTest();
             }
@@ -296,15 +322,15 @@ public class ReflectionTest {
         protected void runTest() {
             Field[] classAfields = ClassA.class.getFields();
             Constructor[] classAconstructors = ClassA.class.getConstructors();
-            Method[] classAmethods = ClassA.class.getMethods();
+            Method[] classAmethods = filterMethods(ClassA.class.getMethods());
 
             Field[] classBfields = ClassB.class.getFields();
             Constructor[] classBconstructors = ClassB.class.getConstructors();
-            Method[] classBmethods = ClassB.class.getMethods();
+            Method[] classBmethods = filterMethods(ClassB.class.getMethods());
 
             Field[] classCfields = ClassC.class.getFields();
             Constructor[] classCconstructors = ClassC.class.getConstructors();
-            Method[] classCmethods = ClassC.class.getMethods();
+            Method[] classCmethods = filterMethods(ClassC.class.getMethods());
 
             for (int i = 0; i < loops; i++) {
                 testExistentAnn(ClassA.class, classAfields, classAconstructors, classAmethods);
@@ -323,15 +349,15 @@ public class ReflectionTest {
         protected void runTest() {
             Field[] classAfields = ClassA.class.getFields();
             Constructor[] classAconstructors = ClassA.class.getConstructors();
-            Method[] classAmethods = ClassA.class.getMethods();
+            Method[] classAmethods = filterMethods(ClassA.class.getMethods());
 
             Field[] classBfields = ClassB.class.getFields();
             Constructor[] classBconstructors = ClassB.class.getConstructors();
-            Method[] classBmethods = ClassB.class.getMethods();
+            Method[] classBmethods = filterMethods(ClassB.class.getMethods());
 
             Field[] classCfields = ClassC.class.getFields();
             Constructor[] classCconstructors = ClassC.class.getConstructors();
-            Method[] classCmethods = ClassC.class.getMethods();
+            Method[] classCmethods = filterMethods(ClassC.class.getMethods());
 
             for (int i = 0; i < loops; i++) {
                 testNonexistentAnn(ClassA.class, classAfields, classAconstructors, classAmethods);
@@ -358,15 +384,17 @@ public class ReflectionTest {
             System.gc();
             Thread.sleep(500L);
 
-            for (int i = 0; i < tests.length; i++) {
-                tests[i].start();
+            for (Test test : tests) {
+                test.start();
             }
 
             long tSum = 0L;
-            for (int i = 0; i < tests.length; i++) {
+            for (Test test : tests) {
                 try {
-                    tests[i].join();
-                    tSum += tests[i].t;
+                    test.join();
+                    tSum += test.t;
+                    if (test.throwable != null)
+                        throw new RuntimeException(test.throwable);
                 }
                 catch (InterruptedException e) {
                     throw new RuntimeException(e);
@@ -413,17 +441,17 @@ public class ReflectionTest {
         runTest(TestAnnotationRootCache.class, 1, 10000, t);
         runTest(TestAnnotationRootCache.class, 1, 10000, t);
         System.out.println();
-        t = runTest(TestAnnotationExistent.class, 1, 100000, 0d);
-        runTest(TestAnnotationExistent.class, 1, 100000, t);
-        runTest(TestAnnotationExistent.class, 1, 100000, t);
-        runTest(TestAnnotationExistent.class, 1, 100000, t);
-        runTest(TestAnnotationExistent.class, 1, 100000, t);
+        t = runTest(TestAnnotationExistent.class, 1, 1000000, 0d);
+        runTest(TestAnnotationExistent.class, 1, 1000000, t);
+        runTest(TestAnnotationExistent.class, 1, 1000000, t);
+        runTest(TestAnnotationExistent.class, 1, 1000000, t);
+        runTest(TestAnnotationExistent.class, 1, 1000000, t);
         System.out.println();
-        t = runTest(TestAnnotationNonexistent.class, 1, 100000, 0d);
-        runTest(TestAnnotationNonexistent.class, 1, 100000, t);
-        runTest(TestAnnotationNonexistent.class, 1, 100000, t);
-        runTest(TestAnnotationNonexistent.class, 1, 100000, t);
-        runTest(TestAnnotationNonexistent.class, 1, 100000, t);
+        t = runTest(TestAnnotationNonexistent.class, 1, 1000000, 0d);
+        runTest(TestAnnotationNonexistent.class, 1, 1000000, t);
+        runTest(TestAnnotationNonexistent.class, 1, 1000000, t);
+        runTest(TestAnnotationNonexistent.class, 1, 1000000, t);
+        runTest(TestAnnotationNonexistent.class, 1, 1000000, t);
         System.out.println();
 
         System.out.println("measure:\n");
@@ -431,28 +459,26 @@ public class ReflectionTest {
         runTest(TestAnnotationRootCache.class, 2, 10000, t);
         runTest(TestAnnotationRootCache.class, 4, 10000, t);
         runTest(TestAnnotationRootCache.class, 8, 10000, t);
+        runTest(TestAnnotationRootCache.class, 16, 10000, t);
         runTest(TestAnnotationRootCache.class, 32, 10000, t);
-        runTest(TestAnnotationRootCache.class, 128, 10000, t);
         System.out.println();
-        t = runTest(TestAnnotationExistent.class, 1, 100000, 0d);
-        runTest(TestAnnotationExistent.class, 2, 100000, t);
-        runTest(TestAnnotationExistent.class, 4, 100000, t);
-        runTest(TestAnnotationExistent.class, 8, 100000, t);
-        runTest(TestAnnotationExistent.class, 32, 100000, t);
-        runTest(TestAnnotationExistent.class, 128, 100000, t);
+        t = runTest(TestAnnotationExistent.class, 1, 1000000, 0d);
+        runTest(TestAnnotationExistent.class, 2, 1000000, t);
+        runTest(TestAnnotationExistent.class, 4, 1000000, t);
+        runTest(TestAnnotationExistent.class, 8, 1000000, t);
+        runTest(TestAnnotationExistent.class, 16, 1000000, t);
+        runTest(TestAnnotationExistent.class, 32, 1000000, t);
         System.out.println();
-        t = runTest(TestAnnotationNonexistent.class, 1, 100000, 0d);
-        runTest(TestAnnotationNonexistent.class, 2, 100000, t);
-        runTest(TestAnnotationNonexistent.class, 4, 100000, t);
-        runTest(TestAnnotationNonexistent.class, 8, 100000, t);
-        runTest(TestAnnotationNonexistent.class, 32, 100000, t);
-        runTest(TestAnnotationNonexistent.class, 128, 100000, t);
+        t = runTest(TestAnnotationNonexistent.class, 1, 1000000, 0d);
+        runTest(TestAnnotationNonexistent.class, 2, 1000000, t);
+        runTest(TestAnnotationNonexistent.class, 4, 1000000, t);
+        runTest(TestAnnotationNonexistent.class, 8, 1000000, t);
+        runTest(TestAnnotationNonexistent.class, 16, 1000000, t);
+        runTest(TestAnnotationNonexistent.class, 32, 1000000, t);
         System.out.println();
     }
 
     public static class Dump {
-
-        static final Set<String> skippedMethods = new HashSet<>(Arrays.asList("wait", "notify", "notifyAll", "toString", "equals", "hashCode", "getClass"));
 
         static StringBuilder dump(Annotation ann, StringBuilder sb) throws Exception {
             Class<? extends Annotation> annotationType = ann.annotationType();
@@ -493,11 +519,9 @@ public class ReflectionTest {
                 dump(c.getAnnotations(), "    ", sb.append("\n"));
                 sb.append("    ").append(c.toGenericString()).append(";\n");
             }
-            for (Method m : clazz.getMethods()) {
-                if (!skippedMethods.contains(m.getName())) {
-                    dump(m.getAnnotations(), "    ", sb.append("\n"));
-                    sb.append("    ").append(m.toGenericString()).append(";\n");
-                }
+            for (Method m : filterMethods(clazz.getMethods())) {
+                dump(m.getAnnotations(), "    ", sb.append("\n"));
+                sb.append("    ").append(m.toGenericString()).append(";\n");
             }
             return sb.append("}\n");
         }

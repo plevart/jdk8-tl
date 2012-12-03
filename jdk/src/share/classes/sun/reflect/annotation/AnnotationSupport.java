@@ -37,7 +37,6 @@ import sun.reflect.Reflection;
 import sun.misc.JavaLangAccess;
 
 public final class AnnotationSupport {
-    private static JavaLangAccess javaLangAccess = sun.misc.SharedSecrets.getJavaLangAccess();
 
     /**
      * Finds and returns _one_ annotation of the type indicated by
@@ -60,9 +59,9 @@ public final class AnnotationSupport {
             return candidate;
         }
 
-        final Class<? extends Annotation> containerClass = getContainer(annotationClass);
+        final Class<? extends Annotation> containerClass = AnnotationType.getInstance(annotationClass).getContainer();
         if (containerClass != null) {
-            return unpackOne(annotationMap.get(containerClass), annotationClass);
+            return unpackOne(annotationMap.get(containerClass), containerClass, annotationClass);
         }
 
         return null; // found none
@@ -91,9 +90,9 @@ public final class AnnotationSupport {
             res.add(candidate);
         }
 
-        final Class<? extends Annotation> containerClass = getContainer(annotationClass);
+        final Class<? extends Annotation> containerClass = AnnotationType.getInstance(annotationClass).getContainer();
         if (containerClass != null) {
-            res.addAll(unpackAll(annotationMap.get(containerClass), annotationClass));
+            res.addAll(unpackAll(annotationMap.get(containerClass), containerClass, annotationClass));
         }
 
         @SuppressWarnings("unchecked") // should be safe annotationClass is a token for A
@@ -117,11 +116,10 @@ public final class AnnotationSupport {
         for (Map.Entry<Class<? extends Annotation>, Annotation> e : annotationMap.entrySet()) {
             Class<? extends Annotation> annotationClass = e.getKey();
             Annotation annotationInstance = e.getValue();
-            Class<? extends Annotation> containee = getContainee(e.getKey());
-            boolean isContainer = javaLangAccess.getDirectDeclaredAnnotation(annotationClass, ContainerFor.class) != null;
+            Class<? extends Annotation> containee = AnnotationType.getInstance(annotationClass).getContainee();
 
-            if (isContainer) {
-                res.addAll(unpackAll(annotationInstance, containee));
+            if (containee != null) {
+                res.addAll(unpackAll(annotationInstance, annotationClass, containee));
             } else {
                 res.add(annotationInstance);
             }
@@ -132,34 +130,17 @@ public final class AnnotationSupport {
                : res.toArray(AnnotationParser.getEmptyAnnotationArray());
     }
 
-    /** Helper to get the container, or null if none, of an annotation. */
-    private static <A extends Annotation> Class<? extends Annotation> getContainer(Class<A> annotationClass) {
-        ContainedBy containerAnnotation =
-            javaLangAccess.getDirectDeclaredAnnotation(annotationClass, ContainedBy.class);
-        return (containerAnnotation == null) ? null : containerAnnotation.value();
-    }
-
-    /** Helper to get the containee, or null if this isn't a container, of a possible container annotation. */
-    private static <A extends Annotation> Class<? extends Annotation> getContainee(Class<A> annotationClass) {
-        ContainerFor containerAnnotation =
-            javaLangAccess.getDirectDeclaredAnnotation(annotationClass, ContainerFor.class);
-        return (containerAnnotation == null) ? null : containerAnnotation.value();
-    }
-
     /** Reflectively look up and get the returned array from the the
      * invocation of the value() element on an instance of an
      * Annotation.
      */
-    private static  <A extends Annotation> A[] getValueArray(Annotation containerInstance) {
+    private static  <A extends Annotation> A[] getValueArray(Annotation containerInstance, Class<? extends Annotation> containerClass) {
         try {
             // the spec tells us the container must have an array-valued
             // value element. Get the AnnotationType, get the "value" element
             // and invoke it to get the contents.
 
-            Class<?> containerClass = containerInstance.annotationType();
-            AnnotationType annoType = javaLangAccess.getAnnotationType(containerClass);
-            if (annoType == null)
-                throw new InvalidContainerAnnotationError(containerInstance + " is an invalid container for repeating annotations");
+            AnnotationType annoType = AnnotationType.getInstance(containerClass);
 
             Method m = annoType.members().get("value");
             if (m == null)
@@ -187,13 +168,13 @@ public final class AnnotationSupport {
      * of type {@code annotationClass} from {@code
      * containerInstance}.
      */
-    private static <A extends Annotation> A unpackOne(Annotation containerInstance, Class<A> annotationClass) {
+    private static <A extends Annotation> A unpackOne(Annotation containerInstance, Class<? extends Annotation> containerClass, Class<A> annotationClass) {
         if (containerInstance == null) {
             return null;
         }
 
         try {
-            return annotationClass.cast(getValueArray(containerInstance)[0]);
+            return annotationClass.cast(getValueArray(containerInstance, containerClass)[0]);
         } catch (ArrayIndexOutOfBoundsException | // empty array
                  ClassCastException | // well, a cast failed ...
                  NullPointerException e) { // can this NP? for good meassure
@@ -209,13 +190,13 @@ public final class AnnotationSupport {
      * instances of type {@code annotationClass} from {@code
      * containerInstance}.
      */
-    private static <A extends Annotation> List<A> unpackAll(Annotation containerInstance, Class<A> annotationClass) {
+    private static <A extends Annotation> List<A> unpackAll(Annotation containerInstance, Class<? extends Annotation> containerClass, Class<A> annotationClass) {
         if (containerInstance == null) {
             return Collections.emptyList(); // container not present
         }
 
         try {
-            A[] a = getValueArray(containerInstance);
+            A[] a = getValueArray(containerInstance, containerClass);
             ArrayList<A> l = new ArrayList<>(a.length);
             for (int i  = 0; i < a.length; i++)
                 l.add(annotationClass.cast(a[i]));
