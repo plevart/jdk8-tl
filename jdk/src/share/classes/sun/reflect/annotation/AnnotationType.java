@@ -87,7 +87,7 @@ public class AnnotationType {
     private final boolean inherited;
 
     /**
-     * Container and containee for repeating annotations resolution
+     * Associated container and containee annotation classes for repeating annotations resolution
      */
     private final Class<? extends Annotation> container;
     private final Class<? extends Annotation> containee;
