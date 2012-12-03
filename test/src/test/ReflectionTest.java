@@ -2,7 +2,7 @@ package test;
 
 import sun.reflect.annotation.AnnotationType;
 
-import java.io.IOException;
+import java.io.*;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
@@ -367,7 +367,7 @@ public class ReflectionTest {
         }
     }
 
-    static double runTest(Class<? extends Test> testClass, int threads, int loops, double prevT) {
+    static double runTest(Class<? extends Test> testClass, int threads, int loops, double prevTp, boolean reference) {
 
         try {
             Constructor<? extends Test> constructor = testClass.getConstructor(int.class);
@@ -408,73 +408,91 @@ public class ReflectionTest {
             }
             double v = vSum / tests.length;
             double σ = Math.sqrt(v);
+            double tp = (double) loops * tests.length / tAvg;
 
-            if (prevT == 0d) prevT = tAvg;
+            if (prevTp == 0d) prevTp = tp;
+
+            double referenceTp;
+            if (reference) {
+                referenceTp = tp;
+                try (OutputStream out = new FileOutputStream(testClass.getSimpleName() + "." + threads + ".reftp")) {
+                    out.write(Long.toUnsignedString(Double.doubleToLongBits(referenceTp)).getBytes());
+                }
+            } else {
+                try (InputStream in = new FileInputStream(testClass.getSimpleName() + "." + threads + ".reftp")) {
+                    byte[] bytes = new byte[32];
+                    int len = in.read(bytes);
+                    referenceTp = Double.longBitsToDouble(Long.parseUnsignedLong(new String(bytes, 0, len)));
+                }
+            }
 
             System.out.println(
                 String.format(
-                    "%30s: %3d threads * %9d loops each: tAvg = %,15.3f ms (x %6.2f), σ = %,10.3f ms",
+                    "%30s: %3d threads * %9d loops each: tAvg = %,15.3f ms, σ = %,10.3f ms, throughput = %,8.1f loops/ms (x %6.2f, reference x %6.2f)",
                     tests[0].getClass().getSimpleName(),
                     tests.length,
                     loops,
                     tAvg / 1000000d,
-                    tAvg / prevT,
-                    σ / 1000000d
+                    σ / 1000000d,
+                    tp * 1000000d,
+                    tp / prevTp,
+                    tp / referenceTp
                 )
             );
 
-            return tAvg;
+            return tp;
         }
         catch (NoSuchMethodException | InvocationTargetException |
-            InstantiationException | IllegalAccessException | InterruptedException e) {
+            InstantiationException | IllegalAccessException | InterruptedException | IOException e) {
             throw new RuntimeException(e);
         }
     }
 
 
     public static void main(String[] args) throws IOException {
-        double t;
+        boolean reference = args.length > 0 && args[0].equals("reference");
+        double tp;
         System.out.println("warm-up:\n");
-        t = runTest(TestAnnotationRootCache.class, 1, 10000, 0d);
-        runTest(TestAnnotationRootCache.class, 1, 10000, t);
-        runTest(TestAnnotationRootCache.class, 1, 10000, t);
-        runTest(TestAnnotationRootCache.class, 1, 10000, t);
-        runTest(TestAnnotationRootCache.class, 1, 10000, t);
+        tp = runTest(TestAnnotationRootCache.class, 1, 10000, 0d, reference);
+        runTest(TestAnnotationRootCache.class, 1, 10000, tp, reference);
+        runTest(TestAnnotationRootCache.class, 1, 10000, tp, reference);
+        runTest(TestAnnotationRootCache.class, 1, 10000, tp, reference);
+        runTest(TestAnnotationRootCache.class, 1, 10000, tp, reference);
         System.out.println();
-        t = runTest(TestAnnotationExistent.class, 1, 1000000, 0d);
-        runTest(TestAnnotationExistent.class, 1, 1000000, t);
-        runTest(TestAnnotationExistent.class, 1, 1000000, t);
-        runTest(TestAnnotationExistent.class, 1, 1000000, t);
-        runTest(TestAnnotationExistent.class, 1, 1000000, t);
+        tp = runTest(TestAnnotationExistent.class, 1, 1000000, 0d, reference);
+        runTest(TestAnnotationExistent.class, 1, 1000000, tp, reference);
+        runTest(TestAnnotationExistent.class, 1, 1000000, tp, reference);
+        runTest(TestAnnotationExistent.class, 1, 1000000, tp, reference);
+        runTest(TestAnnotationExistent.class, 1, 1000000, tp, reference);
         System.out.println();
-        t = runTest(TestAnnotationNonexistent.class, 1, 1000000, 0d);
-        runTest(TestAnnotationNonexistent.class, 1, 1000000, t);
-        runTest(TestAnnotationNonexistent.class, 1, 1000000, t);
-        runTest(TestAnnotationNonexistent.class, 1, 1000000, t);
-        runTest(TestAnnotationNonexistent.class, 1, 1000000, t);
+        tp = runTest(TestAnnotationNonexistent.class, 1, 1000000, 0d, reference);
+        runTest(TestAnnotationNonexistent.class, 1, 1000000, tp, reference);
+        runTest(TestAnnotationNonexistent.class, 1, 1000000, tp, reference);
+        runTest(TestAnnotationNonexistent.class, 1, 1000000, tp, reference);
+        runTest(TestAnnotationNonexistent.class, 1, 1000000, tp, reference);
         System.out.println();
 
         System.out.println("measure:\n");
-        t = runTest(TestAnnotationRootCache.class, 1, 10000, 0d);
-        runTest(TestAnnotationRootCache.class, 2, 10000, t);
-        runTest(TestAnnotationRootCache.class, 4, 10000, t);
-        runTest(TestAnnotationRootCache.class, 8, 10000, t);
-        runTest(TestAnnotationRootCache.class, 16, 10000, t);
-        runTest(TestAnnotationRootCache.class, 32, 10000, t);
+        tp = runTest(TestAnnotationRootCache.class, 1, 10000, 0d, reference);
+        runTest(TestAnnotationRootCache.class, 2, 10000, tp, reference);
+        runTest(TestAnnotationRootCache.class, 4, 10000, tp, reference);
+        runTest(TestAnnotationRootCache.class, 8, 10000, tp, reference);
+        runTest(TestAnnotationRootCache.class, 16, 10000, tp, reference);
+        runTest(TestAnnotationRootCache.class, 32, 10000, tp, reference);
         System.out.println();
-        t = runTest(TestAnnotationExistent.class, 1, 1000000, 0d);
-        runTest(TestAnnotationExistent.class, 2, 1000000, t);
-        runTest(TestAnnotationExistent.class, 4, 1000000, t);
-        runTest(TestAnnotationExistent.class, 8, 1000000, t);
-        runTest(TestAnnotationExistent.class, 16, 1000000, t);
-        runTest(TestAnnotationExistent.class, 32, 1000000, t);
+        tp = runTest(TestAnnotationExistent.class, 1, 1000000, 0d, reference);
+        runTest(TestAnnotationExistent.class, 2, 1000000, tp, reference);
+        runTest(TestAnnotationExistent.class, 4, 1000000, tp, reference);
+        runTest(TestAnnotationExistent.class, 8, 1000000, tp, reference);
+        runTest(TestAnnotationExistent.class, 16, 1000000, tp, reference);
+        runTest(TestAnnotationExistent.class, 32, 1000000, tp, reference);
         System.out.println();
-        t = runTest(TestAnnotationNonexistent.class, 1, 1000000, 0d);
-        runTest(TestAnnotationNonexistent.class, 2, 1000000, t);
-        runTest(TestAnnotationNonexistent.class, 4, 1000000, t);
-        runTest(TestAnnotationNonexistent.class, 8, 1000000, t);
-        runTest(TestAnnotationNonexistent.class, 16, 1000000, t);
-        runTest(TestAnnotationNonexistent.class, 32, 1000000, t);
+        tp = runTest(TestAnnotationNonexistent.class, 1, 1000000, 0d, reference);
+        runTest(TestAnnotationNonexistent.class, 2, 1000000, tp, reference);
+        runTest(TestAnnotationNonexistent.class, 4, 1000000, tp, reference);
+        runTest(TestAnnotationNonexistent.class, 8, 1000000, tp, reference);
+        runTest(TestAnnotationNonexistent.class, 16, 1000000, tp, reference);
+        runTest(TestAnnotationNonexistent.class, 32, 1000000, tp, reference);
         System.out.println();
     }
 

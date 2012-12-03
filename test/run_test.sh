@@ -27,9 +27,9 @@ if [ "$1" == "s" ]; then
 else
 
 echo ""
-echo "Executing: $JAVA_BIN $OPTS $*"
+echo "Executing: $JAVA_BIN $OPTS $* reference"
 echo ""
-$JAVA_BIN $OPTS $*
+$JAVA_BIN $OPTS $* reference
 
 fi
 
