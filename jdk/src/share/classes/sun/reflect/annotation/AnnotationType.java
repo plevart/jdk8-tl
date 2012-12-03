@@ -25,6 +25,8 @@
 
 package sun.reflect.annotation;
 
+import sun.misc.JavaLangAccess;
+
 import java.lang.annotation.*;
 import java.lang.reflect.*;
 import java.util.*;
@@ -39,6 +41,21 @@ import java.security.PrivilegedAction;
  * @since   1.5
  */
 public class AnnotationType {
+    /**
+     * for accessing package-private Class.getDirectDeclaredAnnotation & Class.[get|set]AnnotationType
+     */
+    private static final JavaLangAccess JAVA_LANG_ACCESS = sun.misc.SharedSecrets.getJavaLangAccess();
+
+    /**
+     * The in-construction instance that can be obtained half-constructed from recursive calls
+     */
+    private static final ClassValue<ThreadLocal<AnnotationType>> IN_CONSTRUCTION = new ClassValue<ThreadLocal<AnnotationType>>() {
+        @Override
+        protected ThreadLocal<AnnotationType> computeValue(Class<?> type) {
+            return new ThreadLocal<>();
+        }
+    };
+
     /**
      * Member name -> type mapping. Note that primitive types
      * are represented by the class objects for the corresponding wrapper
@@ -70,14 +87,10 @@ public class AnnotationType {
     private final boolean inherited;
 
     /**
-     * The in-construction instance that can be obtained half-constructed from recursive calls
+     * Container and containee for repeating annotations resolution
      */
-    private static final ClassValue<ThreadLocal<AnnotationType>> IN_CONSTRUCTION = new ClassValue<ThreadLocal<AnnotationType>>() {
-        @Override
-        protected ThreadLocal<AnnotationType> computeValue(Class<?> type) {
-            return new ThreadLocal<>();
-        }
-    };
+    private final Class<? extends Annotation> container;
+    private final Class<? extends Annotation> containee;
 
     public static final ThreadLocal<LinkedList<String>> STACK = new ThreadLocal<LinkedList<String>>() {
         @Override
@@ -102,24 +115,21 @@ public class AnnotationType {
     public static AnnotationType getInstance(
         Class<? extends Annotation> annotationClass)
     {
-        if (!annotationClass.isAnnotation())
-            throw new IllegalArgumentException("Not an annotation type");
+        //STACK.get().addFirst("AnnotationType.getInstance(" + annotationClass.getName() + ")");
 
-        STACK.get().addFirst("AnnotationType.getInstance(" + annotationClass.getName() + ")");
-
-        AnnotationType result = sun.misc.SharedSecrets.getJavaLangAccess().
-            getAnnotationType(annotationClass);
+        AnnotationType result = JAVA_LANG_ACCESS.getAnnotationType(annotationClass);
         if (result == null) {
+            if (!annotationClass.isAnnotation())
+                throw new IllegalArgumentException("Not an annotation type");
             result = IN_CONSTRUCTION.get(annotationClass).get();
             if (result == null) {
                 result = new AnnotationType(annotationClass);
-                sun.misc.SharedSecrets.getJavaLangAccess().
-                    setAnnotationType(annotationClass, result);
+                JAVA_LANG_ACCESS.setAnnotationType(annotationClass, result);
                 IN_CONSTRUCTION.get(annotationClass).remove();
             }
         }
 
-        STACK.get().removeFirst();
+        //STACK.get().removeFirst();
 
         return result;
     }
@@ -135,7 +145,7 @@ public class AnnotationType {
      */
     private AnnotationType(final Class<? extends Annotation> annotationClass) {
 
-        STACK.get().addFirst("new AnnotationType(" + annotationClass.getName() + ")");
+        //STACK.get().addFirst("new AnnotationType(" + annotationClass.getName() + ")");
 
         this.annotationClass = annotationClass;
 
@@ -161,24 +171,32 @@ public class AnnotationType {
                 memberDefaults.put(name, defaultValue);
         }
 
-        // Initialize retention, & inherited fields.  Special treatment
+        // Initialize retention, inherited, container & containee fields.  Special treatment
         // of the corresponding annotation types breaks infinite recursion.
         if (annotationClass != Retention.class &&
-            annotationClass != Inherited.class) {
+            annotationClass != Inherited.class &&
+            annotationClass != ContainedBy.class &&
+            annotationClass != ContainerFor.class) {
             // make available to constructing thread a half-initialized instance
             IN_CONSTRUCTION.get(annotationClass).set(this);
             // following calls can be recursive
-            Retention ret = annotationClass.getDeclaredAnnotation(Retention.class);
-            retention = (ret == null ? RetentionPolicy.CLASS : ret.value());
-            inherited = annotationClass.getDeclaredAnnotation(Inherited.class) != null;
+            Retention ret = JAVA_LANG_ACCESS.getDirectDeclaredAnnotation(annotationClass, Retention.class);
+            retention = ret == null ? RetentionPolicy.CLASS : ret.value();
+            inherited = JAVA_LANG_ACCESS.getDirectDeclaredAnnotation(annotationClass, Inherited.class) != null;
+            ContainedBy containedBy = JAVA_LANG_ACCESS.getDirectDeclaredAnnotation(annotationClass, ContainedBy.class);
+            container = containedBy == null ? Annotation.class : containedBy.value();
+            ContainerFor containerFor = JAVA_LANG_ACCESS.getDirectDeclaredAnnotation(annotationClass, ContainerFor.class);
+            containee = containerFor == null ? Annotation.class : containerFor.value();
         }
         else
         {
             retention = RetentionPolicy.RUNTIME;
             inherited = false;
+            container = Annotation.class;
+            containee = Annotation.class;
         }
 
-        STACK.get().removeFirst();
+        //STACK.get().removeFirst();
     }
 
     /**
@@ -241,11 +259,11 @@ public class AnnotationType {
         RetentionPolicy retention = this.retention;
         if (retention == null) {
             // default when called recursively into a half-initialized instance
-            System.out.println("\nWARN: Obtaining retention for " + annotationClass.getName() + "  while not initialized yet - returning default RetentionPolicy.RUNTIME\n" + STACK);
+            //System.out.println("\nWARN: Obtaining retention for " + annotationClass.getName() + "  while not initialized yet - returning default RetentionPolicy.RUNTIME\n" + STACK);
             retention = RetentionPolicy.RUNTIME;
         }
         else {
-            System.out.println("\nINFO: Obtaining retention for " + annotationClass.getName() + " - returning RetentionPolicy." + retention.name() + "\n" + STACK);
+            //System.out.println("\nINFO: Obtaining retention for " + annotationClass.getName() + " - returning RetentionPolicy." + retention.name() + "\n" + STACK);
         }
         return retention;
     }
@@ -259,6 +277,22 @@ public class AnnotationType {
     }
 
     /**
+     * Returns the container annotation class for this annotation type if any or null
+     */
+    public Class<? extends Annotation> getContainer() {
+        if (container == null) throw new IllegalStateException("Trying to obtain container while not initialized yet");
+        return container == Annotation.class ? null : container;
+    }
+
+    /**
+     * Returns the containee annotation class for this annotation type if any or null
+     */
+    public Class<? extends Annotation> getContainee() {
+        if (containee == null) throw new IllegalStateException("Trying to obtain containee while not initialized yet");
+        return containee == Annotation.class ? null : containee;
+    }
+
+    /**
      * For debugging.
      */
     public String toString() {
@@ -266,7 +300,9 @@ public class AnnotationType {
         s.append("   Member types: " + memberTypes + "\n");
         s.append("   Member defaults: " + memberDefaults + "\n");
         s.append("   Retention policy: " + retention() + "\n");
-        s.append("   Inherited: " + isInherited());
+        s.append("   Inherited: " + inherited + "\n");
+        s.append("   Container: " + getContainer() + "\n");
+        s.append("   Containee: " + getContainee() );
         return s.toString();
     }
 }
