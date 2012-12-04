@@ -263,7 +263,7 @@ public class AnnotationType {
      * Returns the container annotation class for this annotation type if any or null
      */
     public Class<? extends Annotation> getContainer() {
-        // should not need to call recursively into a half-initialized instance
+        // should not need to be called recursively into a half-initialized instance
         if (container == null) throw new IllegalStateException("Trying to obtain container while not initialized yet");
         return container == Annotation.class ? null : container;
     }
@@ -272,7 +272,7 @@ public class AnnotationType {
      * Returns the containee annotation class for this annotation type if any or null
      */
     public Class<? extends Annotation> getContainee() {
-        // should not need to call recursively into a half-initialized instance
+        // should not need to be called recursively into a half-initialized instance
         if (containee == null) throw new IllegalStateException("Trying to obtain containee while not initialized yet");
         return containee == Annotation.class ? null : containee;
     }
@@ -286,8 +286,8 @@ public class AnnotationType {
         s.append("   Member defaults: " + memberDefaults + "\n");
         s.append("   Retention policy: " + retention() + "\n");
         s.append("   Inherited: " + inherited + "\n");
-        s.append("   Container: " + getContainer() + "\n");
-        s.append("   Containee: " + getContainee() );
+        s.append("   Container: " + (container == null ? "NOT-INITIALIZED-YET" : getContainer()) + "\n");
+        s.append("   Containee: " + (containee == null ? "NOT-INITIALIZED-YET" : getContainee()) );
         return s.toString();
     }
 }
