@@ -47,14 +47,24 @@ public class AnnotationType {
     private static final JavaLangAccess JAVA_LANG_ACCESS = sun.misc.SharedSecrets.getJavaLangAccess();
 
     /**
-     * The in-construction instance that can be obtained half-constructed from recursive calls
+     * The in-construction instance that can be obtained half-constructed from recursive calls in the same thread
      */
-    private static final ClassValue<ThreadLocal<AnnotationType>> IN_CONSTRUCTION = new ClassValue<ThreadLocal<AnnotationType>>() {
-        @Override
-        protected ThreadLocal<AnnotationType> computeValue(Class<?> type) {
-            return new ThreadLocal<>();
-        }
-    };
+    private static final ThreadLocal<Map<Class<? extends Annotation>, AnnotationType>> IN_CONSTRUCTION =
+        new ThreadLocal<Map<Class<? extends Annotation>, AnnotationType>>() {
+            @Override
+            protected Map<Class<? extends Annotation>, AnnotationType> initialValue() {
+                // initial value is a special self-removing HashMap...
+                return new HashMap<Class<? extends Annotation>, AnnotationType>() {
+                    @Override
+                    public AnnotationType remove(Object key) {
+                        AnnotationType removed = super.remove(key);
+                        // remove the ThreadLocal entry when last key is removed from Map
+                        if (isEmpty()) IN_CONSTRUCTION.remove();
+                        return removed;
+                    }
+                };
+            }
+        };
 
     /**
      * Member name -> type mapping. Note that primitive types
@@ -106,13 +116,12 @@ public class AnnotationType {
             if (!annotationClass.isAnnotation())
                 throw new IllegalArgumentException("Not an annotation type");
             // check to see if this is a recursive call from the constructor
-            result = IN_CONSTRUCTION.get(annotationClass).get();
+            result = IN_CONSTRUCTION.get().get(annotationClass);
             if (result == null) {
+                // no - create new instance
                 result = new AnnotationType(annotationClass);
-                // install into annotationClass
+                // install into Class.annotationClass field
                 JAVA_LANG_ACCESS.setAnnotationType(annotationClass, result);
-                // remove the ThreadLocal value
-                IN_CONSTRUCTION.get(annotationClass).remove();
             }
         }
 
@@ -156,15 +165,21 @@ public class AnnotationType {
             annotationClass != ContainedBy.class &&
             annotationClass != ContainerFor.class) {
             // make available to constructing thread a half-initialized instance
-            IN_CONSTRUCTION.get(annotationClass).set(this);
-            // following calls can be recursive
-            Retention ret = JAVA_LANG_ACCESS.getDirectDeclaredAnnotation(annotationClass, Retention.class);
-            retention = ret == null ? RetentionPolicy.CLASS : ret.value();
-            inherited = JAVA_LANG_ACCESS.getDirectDeclaredAnnotation(annotationClass, Inherited.class) != null;
-            ContainedBy containedBy = JAVA_LANG_ACCESS.getDirectDeclaredAnnotation(annotationClass, ContainedBy.class);
-            container = containedBy == null ? Annotation.class : containedBy.value();
-            ContainerFor containerFor = JAVA_LANG_ACCESS.getDirectDeclaredAnnotation(annotationClass, ContainerFor.class);
-            containee = containerFor == null ? Annotation.class : containerFor.value();
+            IN_CONSTRUCTION.get().put(annotationClass, this);
+            try {
+                // following calls can be recursive
+                Retention ret = JAVA_LANG_ACCESS.getDirectDeclaredAnnotation(annotationClass, Retention.class);
+                retention = ret == null ? RetentionPolicy.CLASS : ret.value();
+                inherited = JAVA_LANG_ACCESS.getDirectDeclaredAnnotation(annotationClass, Inherited.class) != null;
+                ContainedBy containedBy = JAVA_LANG_ACCESS.getDirectDeclaredAnnotation(annotationClass, ContainedBy.class);
+                container = containedBy == null ? Annotation.class : containedBy.value();
+                ContainerFor containerFor = JAVA_LANG_ACCESS.getDirectDeclaredAnnotation(annotationClass, ContainerFor.class);
+                containee = containerFor == null ? Annotation.class : containerFor.value();
+            }
+            finally {
+                // clean-up
+                IN_CONSTRUCTION.get().remove(annotationClass);
+            }
         }
         else
         {
