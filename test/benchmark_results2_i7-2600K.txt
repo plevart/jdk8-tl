@@ -1,0 +1,177 @@
+Executing: /home/peter/Apps64/jdk1.8.0-jdk8-tl/bin/java -server -Xmx4G -cp ../out/production/test test.ReflectionTest reference
+
+warm-up:
+
+       TestAnnotationRootCache:   1 threads *     10000 loops each: tAvg =       2,010.826 ms, σ =      0.000 ms, throughput =      5.0 loops/ms (x   1.00, reference x   1.00)
+       TestAnnotationRootCache:   1 threads *     10000 loops each: tAvg =       1,816.486 ms, σ =      0.000 ms, throughput =      5.5 loops/ms (x   1.11, reference x   1.00)
+       TestAnnotationRootCache:   1 threads *     10000 loops each: tAvg =       1,807.854 ms, σ =      0.000 ms, throughput =      5.5 loops/ms (x   1.11, reference x   1.00)
+       TestAnnotationRootCache:   1 threads *     10000 loops each: tAvg =       1,812.453 ms, σ =      0.000 ms, throughput =      5.5 loops/ms (x   1.11, reference x   1.00)
+       TestAnnotationRootCache:   1 threads *     10000 loops each: tAvg =       1,817.610 ms, σ =      0.000 ms, throughput =      5.5 loops/ms (x   1.11, reference x   1.00)
+
+        TestAnnotationExistent:   1 threads *   1000000 loops each: tAvg =       1,742.838 ms, σ =      0.000 ms, throughput =    573.8 loops/ms (x   1.00, reference x   1.00)
+        TestAnnotationExistent:   1 threads *   1000000 loops each: tAvg =       1,709.117 ms, σ =      0.000 ms, throughput =    585.1 loops/ms (x   1.02, reference x   1.00)
+        TestAnnotationExistent:   1 threads *   1000000 loops each: tAvg =       1,727.960 ms, σ =      0.000 ms, throughput =    578.7 loops/ms (x   1.01, reference x   1.00)
+        TestAnnotationExistent:   1 threads *   1000000 loops each: tAvg =       1,724.814 ms, σ =      0.000 ms, throughput =    579.8 loops/ms (x   1.01, reference x   1.00)
+        TestAnnotationExistent:   1 threads *   1000000 loops each: tAvg =       1,733.950 ms, σ =      0.000 ms, throughput =    576.7 loops/ms (x   1.01, reference x   1.00)
+
+     TestAnnotationNonexistent:   1 threads *   1000000 loops each: tAvg =         892.449 ms, σ =      0.000 ms, throughput =  1,120.5 loops/ms (x   1.00, reference x   1.00)
+     TestAnnotationNonexistent:   1 threads *   1000000 loops each: tAvg =         864.429 ms, σ =      0.000 ms, throughput =  1,156.8 loops/ms (x   1.03, reference x   1.00)
+     TestAnnotationNonexistent:   1 threads *   1000000 loops each: tAvg =         856.161 ms, σ =      0.000 ms, throughput =  1,168.0 loops/ms (x   1.04, reference x   1.00)
+     TestAnnotationNonexistent:   1 threads *   1000000 loops each: tAvg =         861.151 ms, σ =      0.000 ms, throughput =  1,161.2 loops/ms (x   1.04, reference x   1.00)
+     TestAnnotationNonexistent:   1 threads *   1000000 loops each: tAvg =         857.393 ms, σ =      0.000 ms, throughput =  1,166.3 loops/ms (x   1.04, reference x   1.00)
+
+            TestAnnotationBulk:   1 threads *    100000 loops each: tAvg =         954.475 ms, σ =      0.000 ms, throughput =    104.8 loops/ms (x   1.00, reference x   1.00)
+            TestAnnotationBulk:   1 threads *    100000 loops each: tAvg =         904.709 ms, σ =      0.000 ms, throughput =    110.5 loops/ms (x   1.06, reference x   1.00)
+            TestAnnotationBulk:   1 threads *    100000 loops each: tAvg =         903.708 ms, σ =      0.000 ms, throughput =    110.7 loops/ms (x   1.06, reference x   1.00)
+            TestAnnotationBulk:   1 threads *    100000 loops each: tAvg =         907.855 ms, σ =      0.000 ms, throughput =    110.1 loops/ms (x   1.05, reference x   1.00)
+            TestAnnotationBulk:   1 threads *    100000 loops each: tAvg =         899.994 ms, σ =      0.000 ms, throughput =    111.1 loops/ms (x   1.06, reference x   1.00)
+
+measure:
+
+       TestAnnotationRootCache:   1 threads *     10000 loops each: tAvg =       1,828.932 ms, σ =      0.000 ms, throughput =      5.5 loops/ms (x   1.00, reference x   1.00)
+       TestAnnotationRootCache:   2 threads *     10000 loops each: tAvg =       1,946.226 ms, σ =      4.670 ms, throughput =     10.3 loops/ms (x   1.88, reference x   1.00)
+       TestAnnotationRootCache:   4 threads *     10000 loops each: tAvg =       2,095.710 ms, σ =     31.060 ms, throughput =     19.1 loops/ms (x   3.49, reference x   1.00)
+       TestAnnotationRootCache:   8 threads *     10000 loops each: tAvg =       3,560.209 ms, σ =     13.640 ms, throughput =     22.5 loops/ms (x   4.11, reference x   1.00)
+       TestAnnotationRootCache:  16 threads *     10000 loops each: tAvg =       7,157.176 ms, σ =     85.566 ms, throughput =     22.4 loops/ms (x   4.09, reference x   1.00)
+       TestAnnotationRootCache:  32 threads *     10000 loops each: tAvg =      14,199.409 ms, σ =    226.583 ms, throughput =     22.5 loops/ms (x   4.12, reference x   1.00)
+
+        TestAnnotationExistent:   1 threads *   1000000 loops each: tAvg =       1,736.236 ms, σ =      0.000 ms, throughput =    576.0 loops/ms (x   1.00, reference x   1.00)
+        TestAnnotationExistent:   2 threads *   1000000 loops each: tAvg =       1,410.310 ms, σ =      1.021 ms, throughput =  1,418.1 loops/ms (x   2.46, reference x   1.00)
+        TestAnnotationExistent:   4 threads *   1000000 loops each: tAvg =       1,434.682 ms, σ =      1.534 ms, throughput =  2,788.1 loops/ms (x   4.84, reference x   1.00)
+        TestAnnotationExistent:   8 threads *   1000000 loops each: tAvg =       5,530.140 ms, σ =     25.714 ms, throughput =  1,446.6 loops/ms (x   2.51, reference x   1.00)
+        TestAnnotationExistent:  16 threads *   1000000 loops each: tAvg =      16,877.358 ms, σ =    252.247 ms, throughput =    948.0 loops/ms (x   1.65, reference x   1.00)
+        TestAnnotationExistent:  32 threads *   1000000 loops each: tAvg =      30,950.590 ms, σ =    478.297 ms, throughput =  1,033.9 loops/ms (x   1.80, reference x   1.00)
+
+     TestAnnotationNonexistent:   1 threads *   1000000 loops each: tAvg =         864.898 ms, σ =      0.000 ms, throughput =  1,156.2 loops/ms (x   1.00, reference x   1.00)
+     TestAnnotationNonexistent:   2 threads *   1000000 loops each: tAvg =       2,808.836 ms, σ =     11.098 ms, throughput =    712.0 loops/ms (x   0.62, reference x   1.00)
+     TestAnnotationNonexistent:   4 threads *   1000000 loops each: tAvg =       7,012.875 ms, σ =     85.931 ms, throughput =    570.4 loops/ms (x   0.49, reference x   1.00)
+     TestAnnotationNonexistent:   8 threads *   1000000 loops each: tAvg =      33,556.955 ms, σ =     79.373 ms, throughput =    238.4 loops/ms (x   0.21, reference x   1.00)
+     TestAnnotationNonexistent:  16 threads *   1000000 loops each: tAvg =      67,801.560 ms, σ =    572.335 ms, throughput =    236.0 loops/ms (x   0.20, reference x   1.00)
+     TestAnnotationNonexistent:  32 threads *   1000000 loops each: tAvg =     126,593.249 ms, σ =    977.525 ms, throughput =    252.8 loops/ms (x   0.22, reference x   1.00)
+
+            TestAnnotationBulk:   1 threads *    100000 loops each: tAvg =         941.771 ms, σ =      0.000 ms, throughput =    106.2 loops/ms (x   1.00, reference x   1.00)
+            TestAnnotationBulk:   2 threads *    100000 loops each: tAvg =         803.178 ms, σ =      1.178 ms, throughput =    249.0 loops/ms (x   2.35, reference x   1.00)
+            TestAnnotationBulk:   4 threads *    100000 loops each: tAvg =       1,280.997 ms, σ =      0.430 ms, throughput =    312.3 loops/ms (x   2.94, reference x   1.00)
+            TestAnnotationBulk:   8 threads *    100000 loops each: tAvg =       8,778.359 ms, σ =     24.054 ms, throughput =     91.1 loops/ms (x   0.86, reference x   1.00)
+            TestAnnotationBulk:  16 threads *    100000 loops each: tAvg =       5,853.607 ms, σ =     78.618 ms, throughput =    273.3 loops/ms (x   2.57, reference x   1.00)
+            TestAnnotationBulk:  32 threads *    100000 loops each: tAvg =      12,306.029 ms, σ =    179.979 ms, throughput =    260.0 loops/ms (x   2.45, reference x   1.00)
+
+
+Executing: /home/peter/Apps64/jdk1.8.0-jdk8-tl/bin/java -server -Xmx4G -cp ../out/production/test -Xbootclasspath/p:../out/production/jdk test.ReflectionTest
+
+warm-up:
+
+       TestAnnotationRootCache:   1 threads *     10000 loops each: tAvg =         111.356 ms, σ =      0.000 ms, throughput =     89.8 loops/ms (x   1.00, reference x  16.42)
+       TestAnnotationRootCache:   1 threads *     10000 loops each: tAvg =          62.844 ms, σ =      0.000 ms, throughput =    159.1 loops/ms (x   1.77, reference x  29.10)
+       TestAnnotationRootCache:   1 threads *     10000 loops each: tAvg =          59.240 ms, σ =      0.000 ms, throughput =    168.8 loops/ms (x   1.88, reference x  30.87)
+       TestAnnotationRootCache:   1 threads *     10000 loops each: tAvg =          63.932 ms, σ =      0.000 ms, throughput =    156.4 loops/ms (x   1.74, reference x  28.61)
+       TestAnnotationRootCache:   1 threads *     10000 loops each: tAvg =          60.224 ms, σ =      0.000 ms, throughput =    166.0 loops/ms (x   1.85, reference x  30.37)
+
+        TestAnnotationExistent:   1 threads *   1000000 loops each: tAvg =         986.375 ms, σ =      0.000 ms, throughput =  1,013.8 loops/ms (x   1.00, reference x   1.76)
+        TestAnnotationExistent:   1 threads *   1000000 loops each: tAvg =         953.209 ms, σ =      0.000 ms, throughput =  1,049.1 loops/ms (x   1.03, reference x   1.82)
+        TestAnnotationExistent:   1 threads *   1000000 loops each: tAvg =         966.073 ms, σ =      0.000 ms, throughput =  1,035.1 loops/ms (x   1.02, reference x   1.80)
+        TestAnnotationExistent:   1 threads *   1000000 loops each: tAvg =         961.375 ms, σ =      0.000 ms, throughput =  1,040.2 loops/ms (x   1.03, reference x   1.81)
+        TestAnnotationExistent:   1 threads *   1000000 loops each: tAvg =         965.623 ms, σ =      0.000 ms, throughput =  1,035.6 loops/ms (x   1.02, reference x   1.80)
+
+     TestAnnotationNonexistent:   1 threads *   1000000 loops each: tAvg =         189.867 ms, σ =      0.000 ms, throughput =  5,266.8 loops/ms (x   1.00, reference x   4.56)
+     TestAnnotationNonexistent:   1 threads *   1000000 loops each: tAvg =         157.752 ms, σ =      0.000 ms, throughput =  6,339.0 loops/ms (x   1.20, reference x   5.48)
+     TestAnnotationNonexistent:   1 threads *   1000000 loops each: tAvg =         159.047 ms, σ =      0.000 ms, throughput =  6,287.5 loops/ms (x   1.19, reference x   5.44)
+     TestAnnotationNonexistent:   1 threads *   1000000 loops each: tAvg =         157.964 ms, σ =      0.000 ms, throughput =  6,330.6 loops/ms (x   1.20, reference x   5.48)
+     TestAnnotationNonexistent:   1 threads *   1000000 loops each: tAvg =         157.568 ms, σ =      0.000 ms, throughput =  6,346.5 loops/ms (x   1.20, reference x   5.49)
+
+            TestAnnotationBulk:   1 threads *    100000 loops each: tAvg =         224.813 ms, σ =      0.000 ms, throughput =    444.8 loops/ms (x   1.00, reference x   4.19)
+            TestAnnotationBulk:   1 threads *    100000 loops each: tAvg =         177.739 ms, σ =      0.000 ms, throughput =    562.6 loops/ms (x   1.26, reference x   5.30)
+            TestAnnotationBulk:   1 threads *    100000 loops each: tAvg =         186.351 ms, σ =      0.000 ms, throughput =    536.6 loops/ms (x   1.21, reference x   5.05)
+            TestAnnotationBulk:   1 threads *    100000 loops each: tAvg =         176.502 ms, σ =      0.000 ms, throughput =    566.6 loops/ms (x   1.27, reference x   5.34)
+            TestAnnotationBulk:   1 threads *    100000 loops each: tAvg =         176.237 ms, σ =      0.000 ms, throughput =    567.4 loops/ms (x   1.28, reference x   5.34)
+
+measure:
+
+       TestAnnotationRootCache:   1 threads *     10000 loops each: tAvg =          59.377 ms, σ =      0.000 ms, throughput =    168.4 loops/ms (x   1.00, reference x  30.80)
+       TestAnnotationRootCache:   2 threads *     10000 loops each: tAvg =          57.333 ms, σ =      0.863 ms, throughput =    348.8 loops/ms (x   2.07, reference x  33.95)
+       TestAnnotationRootCache:   4 threads *     10000 loops each: tAvg =          62.876 ms, σ =      4.776 ms, throughput =    636.2 loops/ms (x   3.78, reference x  33.33)
+       TestAnnotationRootCache:   8 threads *     10000 loops each: tAvg =          80.034 ms, σ =     13.156 ms, throughput =    999.6 loops/ms (x   5.94, reference x  44.48)
+       TestAnnotationRootCache:  16 threads *     10000 loops each: tAvg =          65.626 ms, σ =     13.038 ms, throughput =  2,438.1 loops/ms (x  14.48, reference x 109.06)
+       TestAnnotationRootCache:  32 threads *     10000 loops each: tAvg =         114.639 ms, σ =     42.557 ms, throughput =  2,791.4 loops/ms (x  16.57, reference x 123.86)
+
+        TestAnnotationExistent:   1 threads *   1000000 loops each: tAvg =         959.216 ms, σ =      0.000 ms, throughput =  1,042.5 loops/ms (x   1.00, reference x   1.81)
+        TestAnnotationExistent:   2 threads *   1000000 loops each: tAvg =         950.864 ms, σ =      2.632 ms, throughput =  2,103.4 loops/ms (x   2.02, reference x   1.48)
+        TestAnnotationExistent:   4 threads *   1000000 loops each: tAvg =         949.120 ms, σ =      2.933 ms, throughput =  4,214.4 loops/ms (x   4.04, reference x   1.51)
+        TestAnnotationExistent:   8 threads *   1000000 loops each: tAvg =       1,691.369 ms, σ =      2.172 ms, throughput =  4,729.9 loops/ms (x   4.54, reference x   3.27)
+        TestAnnotationExistent:  16 threads *   1000000 loops each: tAvg =       3,338.805 ms, σ =     33.369 ms, throughput =  4,792.1 loops/ms (x   4.60, reference x   5.05)
+        TestAnnotationExistent:  32 threads *   1000000 loops each: tAvg =       6,543.358 ms, σ =    103.650 ms, throughput =  4,890.5 loops/ms (x   4.69, reference x   4.73)
+
+     TestAnnotationNonexistent:   1 threads *   1000000 loops each: tAvg =         155.894 ms, σ =      0.000 ms, throughput =  6,414.6 loops/ms (x   1.00, reference x   5.55)
+     TestAnnotationNonexistent:   2 threads *   1000000 loops each: tAvg =         156.426 ms, σ =      0.048 ms, throughput = 12,785.6 loops/ms (x   1.99, reference x  17.96)
+     TestAnnotationNonexistent:   4 threads *   1000000 loops each: tAvg =         155.260 ms, σ =      0.220 ms, throughput = 25,763.2 loops/ms (x   4.02, reference x  45.17)
+     TestAnnotationNonexistent:   8 threads *   1000000 loops each: tAvg =         309.095 ms, σ =      1.898 ms, throughput = 25,882.0 loops/ms (x   4.03, reference x 108.57)
+     TestAnnotationNonexistent:  16 threads *   1000000 loops each: tAvg =         559.278 ms, σ =     23.062 ms, throughput = 28,608.3 loops/ms (x   4.46, reference x 121.23)
+     TestAnnotationNonexistent:  32 threads *   1000000 loops each: tAvg =         981.418 ms, σ =     68.305 ms, throughput = 32,605.9 loops/ms (x   5.08, reference x 128.99)
+
+            TestAnnotationBulk:   1 threads *    100000 loops each: tAvg =         177.087 ms, σ =      0.000 ms, throughput =    564.7 loops/ms (x   1.00, reference x   5.32)
+            TestAnnotationBulk:   2 threads *    100000 loops each: tAvg =         177.314 ms, σ =      0.156 ms, throughput =  1,127.9 loops/ms (x   2.00, reference x   4.53)
+            TestAnnotationBulk:   4 threads *    100000 loops each: tAvg =         177.330 ms, σ =      0.226 ms, throughput =  2,255.7 loops/ms (x   3.99, reference x   7.22)
+            TestAnnotationBulk:   8 threads *    100000 loops each: tAvg =         322.976 ms, σ =      8.160 ms, throughput =  2,477.0 loops/ms (x   4.39, reference x  27.18)
+            TestAnnotationBulk:  16 threads *    100000 loops each: tAvg =         582.004 ms, σ =     55.743 ms, throughput =  2,749.1 loops/ms (x   4.87, reference x  10.06)
+            TestAnnotationBulk:  32 threads *    100000 loops each: tAvg =       1,102.525 ms, σ =     78.398 ms, throughput =  2,902.4 loops/ms (x   5.14, reference x  11.16)
+
+[peter@cube test]$ JAVA_HOME=~/Apps64/jdk1.8.0-jdk8-tl ./run_test.sh s test.ReflectionTest
+Skipping non-patched run
+
+Executing: /home/peter/Apps64/jdk1.8.0-jdk8-tl/bin/java -server -Xmx4G -cp ../out/production/test -Xbootclasspath/p:../out/production/jdk test.ReflectionTest
+
+warm-up:
+
+       TestAnnotationRootCache:   1 threads *     10000 loops each: tAvg =         113.492 ms, σ =      0.000 ms, throughput =     88.1 loops/ms (x   1.00, reference x  16.12)
+       TestAnnotationRootCache:   1 threads *     10000 loops each: tAvg =          58.326 ms, σ =      0.000 ms, throughput =    171.5 loops/ms (x   1.95, reference x  31.36)
+       TestAnnotationRootCache:   1 threads *     10000 loops each: tAvg =          57.228 ms, σ =      0.000 ms, throughput =    174.7 loops/ms (x   1.98, reference x  31.96)
+       TestAnnotationRootCache:   1 threads *     10000 loops each: tAvg =          58.085 ms, σ =      0.000 ms, throughput =    172.2 loops/ms (x   1.95, reference x  31.49)
+       TestAnnotationRootCache:   1 threads *     10000 loops each: tAvg =          56.412 ms, σ =      0.000 ms, throughput =    177.3 loops/ms (x   2.01, reference x  32.42)
+
+        TestAnnotationExistent:   1 threads *   1000000 loops each: tAvg =         722.554 ms, σ =      0.000 ms, throughput =  1,384.0 loops/ms (x   1.00, reference x   2.40)
+        TestAnnotationExistent:   1 threads *   1000000 loops each: tAvg =         703.796 ms, σ =      0.000 ms, throughput =  1,420.9 loops/ms (x   1.03, reference x   2.47)
+        TestAnnotationExistent:   1 threads *   1000000 loops each: tAvg =         695.243 ms, σ =      0.000 ms, throughput =  1,438.3 loops/ms (x   1.04, reference x   2.50)
+        TestAnnotationExistent:   1 threads *   1000000 loops each: tAvg =         694.788 ms, σ =      0.000 ms, throughput =  1,439.3 loops/ms (x   1.04, reference x   2.50)
+        TestAnnotationExistent:   1 threads *   1000000 loops each: tAvg =         695.974 ms, σ =      0.000 ms, throughput =  1,436.8 loops/ms (x   1.04, reference x   2.49)
+
+     TestAnnotationNonexistent:   1 threads *   1000000 loops each: tAvg =         146.382 ms, σ =      0.000 ms, throughput =  6,831.4 loops/ms (x   1.00, reference x   5.91)
+     TestAnnotationNonexistent:   1 threads *   1000000 loops each: tAvg =         108.347 ms, σ =      0.000 ms, throughput =  9,229.6 loops/ms (x   1.35, reference x   7.98)
+     TestAnnotationNonexistent:   1 threads *   1000000 loops each: tAvg =         106.186 ms, σ =      0.000 ms, throughput =  9,417.4 loops/ms (x   1.38, reference x   8.15)
+     TestAnnotationNonexistent:   1 threads *   1000000 loops each: tAvg =         105.950 ms, σ =      0.000 ms, throughput =  9,438.4 loops/ms (x   1.38, reference x   8.16)
+     TestAnnotationNonexistent:   1 threads *   1000000 loops each: tAvg =         106.562 ms, σ =      0.000 ms, throughput =  9,384.2 loops/ms (x   1.37, reference x   8.12)
+
+            TestAnnotationBulk:   1 threads *    100000 loops each: tAvg =         262.277 ms, σ =      0.000 ms, throughput =    381.3 loops/ms (x   1.00, reference x   3.59)
+            TestAnnotationBulk:   1 threads *    100000 loops each: tAvg =         224.716 ms, σ =      0.000 ms, throughput =    445.0 loops/ms (x   1.17, reference x   4.19)
+            TestAnnotationBulk:   1 threads *    100000 loops each: tAvg =         223.694 ms, σ =      0.000 ms, throughput =    447.0 loops/ms (x   1.17, reference x   4.21)
+            TestAnnotationBulk:   1 threads *    100000 loops each: tAvg =         210.534 ms, σ =      0.000 ms, throughput =    475.0 loops/ms (x   1.25, reference x   4.47)
+            TestAnnotationBulk:   1 threads *    100000 loops each: tAvg =         209.906 ms, σ =      0.000 ms, throughput =    476.4 loops/ms (x   1.25, reference x   4.49)
+
+measure:
+
+       TestAnnotationRootCache:   1 threads *     10000 loops each: tAvg =          56.078 ms, σ =      0.000 ms, throughput =    178.3 loops/ms (x   1.00, reference x  32.61)
+       TestAnnotationRootCache:   2 threads *     10000 loops each: tAvg =          48.927 ms, σ =      0.459 ms, throughput =    408.8 loops/ms (x   2.29, reference x  39.78)
+       TestAnnotationRootCache:   4 threads *     10000 loops each: tAvg =          55.439 ms, σ =      4.209 ms, throughput =    721.5 loops/ms (x   4.05, reference x  37.80)
+       TestAnnotationRootCache:   8 threads *     10000 loops each: tAvg =          77.708 ms, σ =     10.793 ms, throughput =  1,029.5 loops/ms (x   5.77, reference x  45.82)
+       TestAnnotationRootCache:  16 threads *     10000 loops each: tAvg =          61.665 ms, σ =     12.809 ms, throughput =  2,594.7 loops/ms (x  14.55, reference x 116.07)
+       TestAnnotationRootCache:  32 threads *     10000 loops each: tAvg =          79.255 ms, σ =     24.317 ms, throughput =  4,037.6 loops/ms (x  22.64, reference x 179.16)
+
+        TestAnnotationExistent:   1 threads *   1000000 loops each: tAvg =         698.597 ms, σ =      0.000 ms, throughput =  1,431.4 loops/ms (x   1.00, reference x   2.49)
+        TestAnnotationExistent:   2 threads *   1000000 loops each: tAvg =         696.832 ms, σ =      0.641 ms, throughput =  2,870.1 loops/ms (x   2.01, reference x   2.02)
+        TestAnnotationExistent:   4 threads *   1000000 loops each: tAvg =         696.087 ms, σ =      0.659 ms, throughput =  5,746.4 loops/ms (x   4.01, reference x   2.06)
+        TestAnnotationExistent:   8 threads *   1000000 loops each: tAvg =       1,300.734 ms, σ =      1.116 ms, throughput =  6,150.4 loops/ms (x   4.30, reference x   4.25)
+        TestAnnotationExistent:  16 threads *   1000000 loops each: tAvg =       2,548.014 ms, σ =     22.761 ms, throughput =  6,279.4 loops/ms (x   4.39, reference x   6.62)
+        TestAnnotationExistent:  32 threads *   1000000 loops each: tAvg =       4,972.839 ms, σ =     54.989 ms, throughput =  6,435.0 loops/ms (x   4.50, reference x   6.22)
+
+     TestAnnotationNonexistent:   1 threads *   1000000 loops each: tAvg =         110.741 ms, σ =      0.000 ms, throughput =  9,030.1 loops/ms (x   1.00, reference x   7.81)
+     TestAnnotationNonexistent:   2 threads *   1000000 loops each: tAvg =         107.069 ms, σ =      1.007 ms, throughput = 18,679.5 loops/ms (x   2.07, reference x  26.23)
+     TestAnnotationNonexistent:   4 threads *   1000000 loops each: tAvg =         106.705 ms, σ =      1.026 ms, throughput = 37,486.5 loops/ms (x   4.15, reference x  65.72)
+     TestAnnotationNonexistent:   8 threads *   1000000 loops each: tAvg =         206.858 ms, σ =      1.408 ms, throughput = 38,673.8 loops/ms (x   4.28, reference x 162.22)
+     TestAnnotationNonexistent:  16 threads *   1000000 loops each: tAvg =         376.634 ms, σ =     51.695 ms, throughput = 42,481.5 loops/ms (x   4.70, reference x 180.02)
+     TestAnnotationNonexistent:  32 threads *   1000000 loops each: tAvg =         537.574 ms, σ =     68.993 ms, throughput = 59,526.7 loops/ms (x   6.59, reference x 235.49)
+
+            TestAnnotationBulk:   1 threads *    100000 loops each: tAvg =         208.327 ms, σ =      0.000 ms, throughput =    480.0 loops/ms (x   1.00, reference x   4.52)
+            TestAnnotationBulk:   2 threads *    100000 loops each: tAvg =         223.687 ms, σ =      1.757 ms, throughput =    894.1 loops/ms (x   1.86, reference x   3.59)
+            TestAnnotationBulk:   4 threads *    100000 loops each: tAvg =         232.275 ms, σ =      1.612 ms, throughput =  1,722.1 loops/ms (x   3.59, reference x   5.52)
+            TestAnnotationBulk:   8 threads *    100000 loops each: tAvg =         452.857 ms, σ =      4.251 ms, throughput =  1,766.6 loops/ms (x   3.68, reference x  19.38)
+            TestAnnotationBulk:  16 threads *    100000 loops each: tAvg =         835.044 ms, σ =     54.853 ms, throughput =  1,916.1 loops/ms (x   3.99, reference x   7.01)
+            TestAnnotationBulk:  32 threads *    100000 loops each: tAvg =       1,632.725 ms, σ =    103.267 ms, throughput =  1,959.9 loops/ms (x   4.08, reference x   7.54)

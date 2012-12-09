@@ -48,6 +48,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.Objects;
 import sun.misc.Unsafe;
 import sun.reflect.ConstantPool;
@@ -3154,7 +3155,7 @@ public final
             for (Map.Entry<Class<? extends Annotation>, Annotation> entry : superClass.privateGetAnnotations().entrySet()) {
                 Class<? extends Annotation> annotationClass = entry.getKey();
                 if (AnnotationType.getInstance(annotationClass).isInherited()) {
-                    if (annotations == null) annotations = new HashMap<>();
+                    if (annotations == null) annotations = new IdentityHashMap<>(10);
                     annotations.put(annotationClass, entry.getValue());
                 }
             }

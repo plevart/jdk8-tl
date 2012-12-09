@@ -266,6 +266,23 @@ public class ReflectionTest {
         }
     }
 
+    static void testBulkAnn(Class<?> clazz, Field[] fields, Constructor[] constructors, Method[] methods) {
+
+        clazz.getAnnotations();
+
+        for (Field f : fields) {
+            f.getAnnotations();
+        }
+
+        for (Constructor<?> c : constructors) {
+            c.getAnnotations();
+        }
+
+        for (Method m : methods) {
+            m.getAnnotations();
+        }
+    }
+
     static abstract class Test extends Thread {
         final int loops;
 
@@ -367,6 +384,33 @@ public class ReflectionTest {
         }
     }
 
+    static class TestAnnotationBulk extends Test {
+        public TestAnnotationBulk(int loops) {
+            super(loops);
+        }
+
+        @Override
+        protected void runTest() {
+            Field[] classAfields = ClassA.class.getFields();
+            Constructor[] classAconstructors = ClassA.class.getConstructors();
+            Method[] classAmethods = filterMethods(ClassA.class.getMethods());
+
+            Field[] classBfields = ClassB.class.getFields();
+            Constructor[] classBconstructors = ClassB.class.getConstructors();
+            Method[] classBmethods = filterMethods(ClassB.class.getMethods());
+
+            Field[] classCfields = ClassC.class.getFields();
+            Constructor[] classCconstructors = ClassC.class.getConstructors();
+            Method[] classCmethods = filterMethods(ClassC.class.getMethods());
+
+            for (int i = 0; i < loops; i++) {
+                testBulkAnn(ClassA.class, classAfields, classAconstructors, classAmethods);
+                testBulkAnn(ClassB.class, classBfields, classBconstructors, classBmethods);
+                testBulkAnn(ClassC.class, classCfields, classCconstructors, classCmethods);
+            }
+        }
+    }
+
     static double runTest(Class<? extends Test> testClass, int threads, int loops, double prevTp, boolean reference) {
 
         try {
@@ -418,7 +462,8 @@ public class ReflectionTest {
                 try (OutputStream out = new FileOutputStream(testClass.getSimpleName() + "." + threads + ".reftp")) {
                     out.write(Long.toUnsignedString(Double.doubleToLongBits(referenceTp)).getBytes());
                 }
-            } else {
+            }
+            else {
                 try (InputStream in = new FileInputStream(testClass.getSimpleName() + "." + threads + ".reftp")) {
                     byte[] bytes = new byte[32];
                     int len = in.read(bytes);
@@ -471,6 +516,12 @@ public class ReflectionTest {
         runTest(TestAnnotationNonexistent.class, 1, 1000000, tp, reference);
         runTest(TestAnnotationNonexistent.class, 1, 1000000, tp, reference);
         System.out.println();
+        tp = runTest(TestAnnotationBulk.class, 1, 100000, 0d, reference);
+        runTest(TestAnnotationBulk.class, 1, 100000, tp, reference);
+        runTest(TestAnnotationBulk.class, 1, 100000, tp, reference);
+        runTest(TestAnnotationBulk.class, 1, 100000, tp, reference);
+        runTest(TestAnnotationBulk.class, 1, 100000, tp, reference);
+        System.out.println();
 
         System.out.println("measure:\n");
         tp = runTest(TestAnnotationRootCache.class, 1, 10000, 0d, reference);
@@ -493,6 +544,13 @@ public class ReflectionTest {
         runTest(TestAnnotationNonexistent.class, 8, 1000000, tp, reference);
         runTest(TestAnnotationNonexistent.class, 16, 1000000, tp, reference);
         runTest(TestAnnotationNonexistent.class, 32, 1000000, tp, reference);
+        System.out.println();
+        tp = runTest(TestAnnotationBulk.class, 1, 100000, 0d, reference);
+        runTest(TestAnnotationBulk.class, 2, 100000, tp, reference);
+        runTest(TestAnnotationBulk.class, 4, 100000, tp, reference);
+        runTest(TestAnnotationBulk.class, 8, 100000, tp, reference);
+        runTest(TestAnnotationBulk.class, 16, 100000, tp, reference);
+        runTest(TestAnnotationBulk.class, 32, 100000, tp, reference);
         System.out.println();
     }
 

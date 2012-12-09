@@ -81,7 +81,7 @@ public class AnnotationParser {
                 ConstantPool constPool,
                 Class<?> container) {
         Map<Class<? extends Annotation>, Annotation> result =
-            new LinkedHashMap<Class<? extends Annotation>, Annotation>();
+            new IdentityHashMap<Class<? extends Annotation>, Annotation>(10);
         ByteBuffer buf = ByteBuffer.wrap(rawAnnotations);
         int numAnnotations = buf.getShort() & 0xFFFF;
         for (int i = 0; i < numAnnotations; i++) {
@@ -227,7 +227,7 @@ public class AnnotationParser {
 
         Map<String, Class<?>> memberTypes = type.memberTypes();
         Map<String, Object> memberValues =
-            new LinkedHashMap<String, Object>(type.memberDefaults());
+            new HashMap<String, Object>(type.memberDefaults());
 
         int numMembers = buf.getShort() & 0xFFFF;
         for (int i = 0; i < numMembers; i++) {

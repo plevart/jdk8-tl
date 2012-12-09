@@ -19,7 +19,7 @@ if [ "$BCP" == "" ]; then
     BCP=../out/production/jdk
 fi
 
-OPTS="-Xmx4G -cp $CP"
+OPTS="-server -Xmx4G -cp $CP"
 
 if [ "$1" == "s" ]; then
   shift;
