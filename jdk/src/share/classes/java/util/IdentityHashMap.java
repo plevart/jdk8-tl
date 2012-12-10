@@ -25,6 +25,7 @@
 
 package java.util;
 import java.io.*;
+import java.lang.reflect.Array;
 
 /**
  * This class implements the <tt>Map</tt> interface with a hash table, using
@@ -1061,6 +1062,36 @@ public class IdentityHashMap<K,V>
         }
         public void clear() {
             IdentityHashMap.this.clear();
+        }
+        public Object[] toArray()
+        {
+            return toArray(new Object[size()]);
+        }
+        @SuppressWarnings("unchecked")
+        public <T> T[] toArray(T[] a)
+        {
+            int expectedModCount = modCount;
+            int size = size();
+            if (a.length < size)
+                a = (T[]) Array.newInstance(a.getClass().getComponentType(), size);
+            Object[] tab = table;
+            int ti = 0;
+            int si = 0;
+            while (si < tab.length) {
+                if (tab[si++] != null) { // key present ?
+                    // more elements than expected
+                    if (ti >= a.length) {
+                        throw new ConcurrentModificationException();
+                    }
+                    a[ti++] = (T) tab[si]; // copy value
+                }
+                si++;
+            }
+            // fewer elements than expected or concurrent modification detected
+            if (ti < a.length || expectedModCount != modCount) {
+                throw new ConcurrentModificationException();
+            }
+            return a;
         }
     }
 
