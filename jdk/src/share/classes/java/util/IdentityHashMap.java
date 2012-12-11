@@ -1011,6 +1011,41 @@ public class IdentityHashMap<K,V>
                 result += System.identityHashCode(key);
             return result;
         }
+        public Object[] toArray()
+        {
+            return toArray(new Object[size()]);
+        }
+        @SuppressWarnings("unchecked")
+        public <T> T[] toArray(T[] a)
+        {
+            int expectedModCount = modCount;
+            int size = size();
+            if (a.length < size)
+                a = (T[]) Array.newInstance(a.getClass().getComponentType(), size);
+            Object[] tab = table;
+            int ti = 0;
+            int si = 0;
+            while (si < tab.length) {
+                Object key;
+                if ((key = tab[si]) != null) { // key present ?
+                    // more elements than expected -> concurrent modification from other thread
+                    if (ti >= size) {
+                        throw new ConcurrentModificationException();
+                    }
+                    a[ti++] = (T) unmaskNull(key); // unmask key
+                }
+                si+=2;
+            }
+            // fewer elements than expected or concurrent modification from other thread detected
+            if (ti < size || expectedModCount != modCount) {
+                throw new ConcurrentModificationException();
+            }
+            // final null marker as per spec
+            if (ti < a.length) {
+                a[ti] = null;
+            }
+            return a;
+        }
     }
 
     /**
@@ -1079,17 +1114,21 @@ public class IdentityHashMap<K,V>
             int si = 0;
             while (si < tab.length) {
                 if (tab[si++] != null) { // key present ?
-                    // more elements than expected
-                    if (ti >= a.length) {
+                    // more elements than expected -> concurrent modification from other thread
+                    if (ti >= size) {
                         throw new ConcurrentModificationException();
                     }
                     a[ti++] = (T) tab[si]; // copy value
                 }
                 si++;
             }
-            // fewer elements than expected or concurrent modification detected
-            if (ti < a.length || expectedModCount != modCount) {
+            // fewer elements than expected or concurrent modification from other thread detected
+            if (ti < size || expectedModCount != modCount) {
                 throw new ConcurrentModificationException();
+            }
+            // final null marker as per spec
+            if (ti < a.length) {
+                a[ti] = null;
             }
             return a;
         }
@@ -1180,25 +1219,37 @@ public class IdentityHashMap<K,V>
         }
 
         public Object[] toArray() {
-            int size = size();
-            Object[] result = new Object[size];
-            Iterator<Map.Entry<K,V>> it = iterator();
-            for (int i = 0; i < size; i++)
-                result[i] = new AbstractMap.SimpleEntry<>(it.next());
-            return result;
+            return toArray(new Object[size()]);
         }
 
         @SuppressWarnings("unchecked")
         public <T> T[] toArray(T[] a) {
+            int expectedModCount = modCount;
             int size = size();
             if (a.length < size)
-                a = (T[])java.lang.reflect.Array
-                    .newInstance(a.getClass().getComponentType(), size);
-            Iterator<Map.Entry<K,V>> it = iterator();
-            for (int i = 0; i < size; i++)
-                a[i] = (T) new AbstractMap.SimpleEntry<>(it.next());
-            if (a.length > size)
-                a[size] = null;
+                a = (T[]) Array.newInstance(a.getClass().getComponentType(), size);
+            Object[] tab = table;
+            int ti = 0;
+            int si = 0;
+            while (si < tab.length) {
+                Object key;
+                if ((key = tab[si++]) != null) { // key present ?
+                    // more elements than expected -> concurrent modification from other thread
+                    if (ti >= size) {
+                        throw new ConcurrentModificationException();
+                    }
+                    a[ti++] = (T) new AbstractMap.SimpleEntry(unmaskNull(key), tab[si]);
+                }
+                si++;
+            }
+            // fewer elements than expected or concurrent modification from other thread detected
+            if (ti < size || expectedModCount != modCount) {
+                throw new ConcurrentModificationException();
+            }
+            // final null marker as per spec
+            if (ti < a.length) {
+                a[ti] = null;
+            }
             return a;
         }
     }
