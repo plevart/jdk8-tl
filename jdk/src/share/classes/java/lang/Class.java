@@ -2265,15 +2265,15 @@ public final
         {
             SoftReference<ReflectionData<T>> reflectionData = this.reflectionData;
             int classRedefinedCount = this.classRedefinedCount;
-            ReflectionData<T> vd;
-            if (reflectionData != null && (vd = reflectionData.get()) != null && vd.redefinedCount == classRedefinedCount) {
-                return vd;
+            ReflectionData<T> rd;
+            if (reflectionData != null && (rd = reflectionData.get()) != null && rd.redefinedCount == classRedefinedCount) {
+                return rd;
             }
-            // no SoftReference or cleared SoftReference or stale VolatileData
-            vd = new ReflectionData<T>(classRedefinedCount);
+            // no SoftReference or cleared SoftReference or stale ReflectionData
+            rd = new ReflectionData<T>(classRedefinedCount);
             // try to CAS it...
-            if (ReflectionData.compareAndSwap(this, reflectionData, new SoftReference<>(vd))) {
-                return vd;
+            if (ReflectionData.compareAndSwap(this, reflectionData, new SoftReference<>(rd))) {
+                return rd;
             }
             // else retry
         }
@@ -2319,18 +2319,18 @@ public final
     private Field[] privateGetDeclaredFields(boolean publicOnly) {
         checkInitted();
         Field[] res = null;
-        ReflectionData<T> vd = reflectionData();
-        if (vd != null) {
-            res = publicOnly ? vd.declaredPublicFields : vd.declaredFields;
+        ReflectionData<T> rd = reflectionData();
+        if (rd != null) {
+            res = publicOnly ? rd.declaredPublicFields : rd.declaredFields;
             if (res != null) return res;
         }
         // No cached value available; request value from VM
         res = Reflection.filterFields(this, getDeclaredFields0(publicOnly));
-        if (vd != null) {
+        if (rd != null) {
             if (publicOnly) {
-                vd.declaredPublicFields = res;
+                rd.declaredPublicFields = res;
             } else {
-                vd.declaredFields = res;
+                rd.declaredFields = res;
             }
         }
         return res;
