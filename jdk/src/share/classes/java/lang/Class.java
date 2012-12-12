@@ -2214,8 +2214,8 @@ public final
     // Caches for certain reflective results
     private static boolean useCaches = true;
 
-    // volatile data that might get invalid when JVM TI RedefineClasses() is called
-    static class VolatileData<T> {
+    // reflection data that might get invalid when JVM TI RedefineClasses() is called
+    static class ReflectionData<T> {
         volatile Field[] declaredFields;
         volatile Field[] publicFields;
         volatile Method[] declaredMethods;
@@ -2225,57 +2225,54 @@ public final
         // Intermediate results for getFields and getMethods
         volatile Field[] declaredPublicFields;
         volatile Method[] declaredPublicMethods;
-        // Annotations
-        volatile Map<Class<? extends Annotation>, Annotation> annotations;
-        volatile Map<Class<? extends Annotation>, Annotation> declaredAnnotations;
-        // Value of classRedefinedCount when we created this VolatileData instance
+        // Value of classRedefinedCount when we created this ReflectionData instance
         final int redefinedCount;
 
-        VolatileData(int redefinedCount) {
+        ReflectionData(int redefinedCount) {
             this.redefinedCount = redefinedCount;
         }
 
         // initialize Unsafe machinery here, since we need to call Class.class instance method and would like to avoid
         // calling it in the static initializer of the Class class...
         private static final Unsafe unsafe;
-        // offset of Class.volatileData instance field
-        private static final long volatileDataOffset;
+        // offset of Class.reflectionData instance field
+        private static final long reflectionDataOffset;
 
         static {
             unsafe = Unsafe.getUnsafe();
             // bypass caches
-            Field volatileDataField = searchFields(Class.class.getDeclaredFields0(false), "volatileData");
-            if (volatileDataField == null) throw new Error("No volatileData field found in java.lang.Class");
-            volatileDataOffset = unsafe.objectFieldOffset(volatileDataField);
+            Field reflectionDataField = searchFields(Class.class.getDeclaredFields0(false), "reflectionData");
+            if (reflectionDataField == null) throw new Error("No reflectionData field found in java.lang.Class");
+            reflectionDataOffset = unsafe.objectFieldOffset(reflectionDataField);
         }
 
-        static <T> boolean compareAndSwap(Class<?> clazz, SoftReference<VolatileData<T>> oldData, SoftReference<VolatileData<T>> newData) {
-            return unsafe.compareAndSwapObject(clazz, volatileDataOffset, oldData, newData);
+        static <T> boolean compareAndSwap(Class<?> clazz, SoftReference<ReflectionData<T>> oldData, SoftReference<ReflectionData<T>> newData) {
+            return unsafe.compareAndSwapObject(clazz, reflectionDataOffset, oldData, newData);
         }
     }
     
-    private volatile transient SoftReference<VolatileData<T>> volatileData;
+    private volatile transient SoftReference<ReflectionData<T>> reflectionData;
 
     // Incremented by the VM on each call to JVM TI RedefineClasses()
     // that redefines this class or a superclass.
     private volatile transient int classRedefinedCount = 0;
 
-    // Lazily create and cache VolatileData
-    private VolatileData<T> volatileData() {
+    // Lazily create and cache ReflectionData
+    private ReflectionData<T> reflectionData() {
         if (!useCaches) return null;
 
         while (true)
         {
-            SoftReference<VolatileData<T>> volatileData = this.volatileData;
+            SoftReference<ReflectionData<T>> reflectionData = this.reflectionData;
             int classRedefinedCount = this.classRedefinedCount;
-            VolatileData<T> vd;
-            if (volatileData != null && (vd = volatileData.get()) != null && vd.redefinedCount == classRedefinedCount) {
+            ReflectionData<T> vd;
+            if (reflectionData != null && (vd = reflectionData.get()) != null && vd.redefinedCount == classRedefinedCount) {
                 return vd;
             }
             // no SoftReference or cleared SoftReference or stale VolatileData
-            vd = new VolatileData<T>(classRedefinedCount);
+            vd = new ReflectionData<T>(classRedefinedCount);
             // try to CAS it...
-            if (VolatileData.compareAndSwap(this, volatileData, new SoftReference<VolatileData<T>>(vd))) {
+            if (ReflectionData.compareAndSwap(this, reflectionData, new SoftReference<>(vd))) {
                 return vd;
             }
             // else retry
@@ -2322,7 +2319,7 @@ public final
     private Field[] privateGetDeclaredFields(boolean publicOnly) {
         checkInitted();
         Field[] res = null;
-        VolatileData<T> vd = volatileData();
+        ReflectionData<T> vd = reflectionData();
         if (vd != null) {
             res = publicOnly ? vd.declaredPublicFields : vd.declaredFields;
             if (res != null) return res;
@@ -2345,9 +2342,9 @@ public final
     private Field[] privateGetPublicFields(Set<Class<?>> traversedInterfaces) {
         checkInitted();
         Field[] res = null;
-        VolatileData<T> vd = volatileData();
-        if (vd != null) {
-            res = vd.publicFields;
+        ReflectionData<T> rd = reflectionData();
+        if (rd != null) {
+            res = rd.publicFields;
             if (res != null) return res;
         }
 
@@ -2380,8 +2377,8 @@ public final
 
         res = new Field[fields.size()];
         fields.toArray(res);
-        if (vd != null) {
-            vd.publicFields = res;
+        if (rd != null) {
+            rd.publicFields = res;
         }
         return res;
     }
@@ -2405,9 +2402,9 @@ public final
     private Constructor<T>[] privateGetDeclaredConstructors(boolean publicOnly) {
         checkInitted();
         Constructor<T>[] res = null;
-        VolatileData<T> vd = volatileData();
-        if (vd != null) {
-            res = publicOnly ? vd.publicConstructors : vd.declaredConstructors;
+        ReflectionData<T> rd = reflectionData();
+        if (rd != null) {
+            res = publicOnly ? rd.publicConstructors : rd.declaredConstructors;
             if (res != null) return res;
         }
         // No cached value available; request value from VM
@@ -2418,11 +2415,11 @@ public final
         } else {
             res = getDeclaredConstructors0(publicOnly);
         }
-        if (vd != null) {
+        if (rd != null) {
             if (publicOnly) {
-                vd.publicConstructors = res;
+                rd.publicConstructors = res;
             } else {
-                vd.declaredConstructors = res;
+                rd.declaredConstructors = res;
             }
         }
         return res;
@@ -2440,18 +2437,18 @@ public final
     private Method[] privateGetDeclaredMethods(boolean publicOnly) {
         checkInitted();
         Method[] res = null;
-        VolatileData<T> vd = volatileData();
-        if (vd != null) {
-            res = publicOnly ? vd.declaredPublicMethods : vd.declaredMethods;
+        ReflectionData<T> rd = reflectionData();
+        if (rd != null) {
+            res = publicOnly ? rd.declaredPublicMethods : rd.declaredMethods;
             if (res != null) return res;
         }
         // No cached value available; request value from VM
         res = Reflection.filterMethods(this, getDeclaredMethods0(publicOnly));
         if (useCaches) {
             if (publicOnly) {
-                vd.declaredPublicMethods = res;
+                rd.declaredPublicMethods = res;
             } else {
-                vd.declaredMethods = res;
+                rd.declaredMethods = res;
             }
         }
         return res;
@@ -2554,9 +2551,9 @@ public final
     private Method[] privateGetPublicMethods() {
         checkInitted();
         Method[] res = null;
-        VolatileData<T> vd = volatileData();
-        if (vd != null) {
-            res = vd.publicMethods;
+        ReflectionData<T> rd = reflectionData();
+        if (rd != null) {
+            res = rd.publicMethods;
             if (res != null) return res;
         }
 
@@ -2604,8 +2601,8 @@ public final
         methods.addAllIfNotPresent(inheritedMethods);
         methods.compactAndTrim();
         res = methods.getArray();
-        if (vd != null) {
-            vd.publicMethods = res;
+        if (rd != null) {
+            rd.publicMethods = res;
         }
         return res;
     }
@@ -3053,7 +3050,8 @@ public final
     public <A extends Annotation> A getAnnotation(Class<A> annotationClass) {
         Objects.requireNonNull(annotationClass);
 
-        return AnnotationSupport.getOneAnnotation(privateGetAnnotations(), annotationClass);
+        initAnnotationsIfNecessary();
+        return AnnotationSupport.getOneAnnotation(annotations, annotationClass);
     }
 
     /**
@@ -3073,14 +3071,16 @@ public final
     public <A extends Annotation> A[] getAnnotations(Class<A> annotationClass) {
         Objects.requireNonNull(annotationClass);
 
-        return AnnotationSupport.getMultipleAnnotations(privateGetAnnotations(), annotationClass);
+        initAnnotationsIfNecessary();
+        return AnnotationSupport.getMultipleAnnotations(annotations, annotationClass);
     }
 
     /**
      * @since 1.5
      */
     public Annotation[] getAnnotations() {
-        return AnnotationSupport.unpackToArray(privateGetAnnotations());
+        initAnnotationsIfNecessary();
+        return AnnotationSupport.unpackToArray(annotations);
     }
 
     /**
@@ -3090,7 +3090,8 @@ public final
     public <A extends Annotation> A getDeclaredAnnotation(Class<A> annotationClass) {
         Objects.requireNonNull(annotationClass);
 
-        return AnnotationSupport.getOneAnnotation(privateGetDeclaredAnnotations(volatileData()), annotationClass);
+        initAnnotationsIfNecessary();
+        return AnnotationSupport.getOneAnnotation(declaredAnnotations, annotationClass);
     }
 
     /**
@@ -3100,80 +3101,62 @@ public final
     public <A extends Annotation> A[] getDeclaredAnnotations(Class<A> annotationClass) {
         Objects.requireNonNull(annotationClass);
 
-        return AnnotationSupport.getMultipleAnnotations(privateGetDeclaredAnnotations(volatileData()), annotationClass);
+        initAnnotationsIfNecessary();
+        return AnnotationSupport.getMultipleAnnotations(declaredAnnotations, annotationClass);
     }
 
     /**
      * @since 1.5
      */
     public Annotation[] getDeclaredAnnotations()  {
-        return AnnotationSupport.unpackToArray(privateGetDeclaredAnnotations(volatileData()));
+        initAnnotationsIfNecessary();
+        return AnnotationSupport.unpackToArray(declaredAnnotations);
     }
 
     /** Returns one "directly" present annotation or null */
     <A extends Annotation> A getDirectDeclaredAnnotation(Class<A> annotationClass) {
         Objects.requireNonNull(annotationClass);
 
+        initAnnotationsIfNecessary();
         @SuppressWarnings("unchecked") // TODO check safe
-        A ret = (A)privateGetDeclaredAnnotations(volatileData()).get(annotationClass);
+        A ret = (A)declaredAnnotations.get(annotationClass);
         return ret;
     }
 
-    private Map<Class<? extends Annotation>, Annotation> privateGetDeclaredAnnotations(VolatileData<T> vd) {
-        Map<Class<? extends Annotation>, Annotation> declaredAnnotations;
-        if (vd != null) {
-            declaredAnnotations = vd.declaredAnnotations;
-            if (declaredAnnotations != null) return declaredAnnotations;
+    // Annotations cache
+    private transient Map<Class<? extends Annotation>, Annotation> annotations;
+    private transient Map<Class<? extends Annotation>, Annotation> declaredAnnotations;
+    // Value of classRedefinedCount when we last cleared the cached annotations and declaredAnnotations fields
+    private  transient int lastAnnotationsRedefinedCount = 0;
+
+    // Clears cached values that might possibly have been obsoleted by
+    // a class redefinition.
+    private void clearAnnotationCachesOnClassRedefinition() {
+        if (lastAnnotationsRedefinedCount != classRedefinedCount) {
+            annotations = declaredAnnotations = null;
+            lastAnnotationsRedefinedCount = classRedefinedCount;
         }
-
-        declaredAnnotations = AnnotationParser.parseAnnotations(
-            getRawAnnotations(), getConstantPool(), this
-        );
-
-        if (vd != null) {
-            vd.declaredAnnotations = declaredAnnotations;
-        }
-
-        return declaredAnnotations;
     }
 
-    private Map<Class<? extends Annotation>, Annotation> privateGetAnnotations() {
-        Map<Class<? extends Annotation>, Annotation> annotations;
-        VolatileData<T> vd = volatileData();
-        if (vd != null) {
-            annotations = vd.annotations;
-            if (annotations != null) return annotations;
-        }
-        else {
-            annotations = null;
-        }
-
+    private synchronized void initAnnotationsIfNecessary() {
+        clearAnnotationCachesOnClassRedefinition();
+        if (annotations != null)
+            return;
+        declaredAnnotations = AnnotationParser.parseAnnotations(
+            getRawAnnotations(), getConstantPool(), this);
         Class<?> superClass = getSuperclass();
-        if (superClass != null) {
-            // fill-in inherited
-            for (Map.Entry<Class<? extends Annotation>, Annotation> entry : superClass.privateGetAnnotations().entrySet()) {
-                Class<? extends Annotation> annotationClass = entry.getKey();
-                if (AnnotationType.getInstance(annotationClass).isInherited()) {
-                    if (annotations == null) annotations = new HashMap<>();
-                    annotations.put(annotationClass, entry.getValue());
-                }
+        if (superClass == null) {
+            annotations = declaredAnnotations;
+        } else {
+            annotations = new HashMap<>();
+            superClass.initAnnotationsIfNecessary();
+            for (Map.Entry<Class<? extends Annotation>, Annotation> e : superClass.annotations.entrySet()) {
+                Class<? extends Annotation> annotationClass = e.getKey();
+                if (AnnotationType.getInstance(annotationClass).isInherited())
+                    annotations.put(annotationClass, e.getValue());
             }
+            annotations.putAll(declaredAnnotations);
         }
-
-        if (annotations == null) {
-            // the same as declared for Object or interface or a class without any inherited annotations
-            annotations = privateGetDeclaredAnnotations(vd);
-        }
-        else {
-            // override with declared
-            annotations.putAll(privateGetDeclaredAnnotations(vd));
-        }
-
-        if (vd != null) {
-            vd.annotations = annotations;
-        }
-
-        return annotations;
     }
 
     // Annotation types cache their internal (AnnotationType) form
