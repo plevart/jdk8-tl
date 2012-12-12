@@ -1,3 +1,8 @@
+**** All tests run on i7-2600K CPU, Linux 3.6, JDK8 64bit server JIT
+
+
+** Original JDK8 IdentityHashMap vs. HashMap
+
 Executing: /home/peter/Apps64/jdk1.8.0-jdk8-tl/bin/java -server -Xmx4G -cp ../out/production/test test.IdentityHashMapTest reference
 
 size=5, HashMap.capacity=8, IdentityHashMap.capacity=8, loops=20000000
@@ -66,6 +71,8 @@ size=10000, HashMap.capacity=16384, IdentityHashMap.capacity=16384, loops=10000
         HashMap.entrySet().toArray():   1,555,499,818   1,554,753,833   1,556,336,639   1,553,543,247   1,554,779,183   1,554,568,078   1,554,506,446   1,554,395,688
 IdentityHashMap.entrySet().toArray():   1,876,789,133   1,885,102,621   1,888,619,077   1,900,201,468   1,873,864,366   1,893,435,084   1,887,320,023   1,885,570,278
 
+
+** Patched IdentityHashMap vs. original HashMap
 
 Executing: /home/peter/Apps64/jdk1.8.0-jdk8-tl/bin/java -server -Xmx4G -cp ../out/production/test -Xbootclasspath/p:../out/production/jdk test.IdentityHashMapTest
 
