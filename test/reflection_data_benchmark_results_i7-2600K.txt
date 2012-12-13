@@ -1,116 +1,340 @@
 Executing: /home/peter/Apps64/jdk1.8.0-jdk8-tl/bin/java -Xmx4G -cp ../out/production/test test.ReflectionDataTest reference
 
 warm-up:
-
-              TestBulkDeclared:   1 threads *    500000 loops each: tAvg =         544.094 ms, σ =      0.000 ms, throughput =    919.0 loops/ms (x   1.00, reference x   1.00)
-              TestBulkDeclared:   1 threads *    500000 loops each: tAvg =         243.191 ms, σ =      0.000 ms, throughput =  2,056.0 loops/ms (x   2.24, reference x   1.00)
-              TestBulkDeclared:   1 threads *    500000 loops each: tAvg =         228.824 ms, σ =      0.000 ms, throughput =  2,185.1 loops/ms (x   2.38, reference x   1.00)
-              TestBulkDeclared:   1 threads *    500000 loops each: tAvg =         219.689 ms, σ =      0.000 ms, throughput =  2,275.9 loops/ms (x   2.48, reference x   1.00)
-              TestBulkDeclared:   1 threads *    500000 loops each: tAvg =         213.464 ms, σ =      0.000 ms, throughput =  2,342.3 loops/ms (x   2.55, reference x   1.00)
-
-                TestBulkPublic:   1 threads *    500000 loops each: tAvg =       1,128.627 ms, σ =      0.000 ms, throughput =    443.0 loops/ms (x   1.00, reference x   1.00)
-                TestBulkPublic:   1 threads *    500000 loops each: tAvg =         989.540 ms, σ =      0.000 ms, throughput =    505.3 loops/ms (x   1.14, reference x   1.00)
-                TestBulkPublic:   1 threads *    500000 loops each: tAvg =         982.722 ms, σ =      0.000 ms, throughput =    508.8 loops/ms (x   1.15, reference x   1.00)
-                TestBulkPublic:   1 threads *    500000 loops each: tAvg =         983.437 ms, σ =      0.000 ms, throughput =    508.4 loops/ms (x   1.15, reference x   1.00)
-                TestBulkPublic:   1 threads *    500000 loops each: tAvg =         983.208 ms, σ =      0.000 ms, throughput =    508.5 loops/ms (x   1.15, reference x   1.00)
-
-            TestByNameDeclared:   1 threads *    500000 loops each: tAvg =       1,536.823 ms, σ =      0.000 ms, throughput =    325.3 loops/ms (x   1.00, reference x   1.00)
-            TestByNameDeclared:   1 threads *    500000 loops each: tAvg =       1,379.874 ms, σ =      0.000 ms, throughput =    362.4 loops/ms (x   1.11, reference x   1.00)
-            TestByNameDeclared:   1 threads *    500000 loops each: tAvg =       1,394.148 ms, σ =      0.000 ms, throughput =    358.6 loops/ms (x   1.10, reference x   1.00)
-            TestByNameDeclared:   1 threads *    500000 loops each: tAvg =       1,389.184 ms, σ =      0.000 ms, throughput =    359.9 loops/ms (x   1.11, reference x   1.00)
-            TestByNameDeclared:   1 threads *    500000 loops each: tAvg =       1,393.649 ms, σ =      0.000 ms, throughput =    358.8 loops/ms (x   1.10, reference x   1.00)
-
-              TestByNamePublic:   1 threads *    500000 loops each: tAvg =       2,545.470 ms, σ =      0.000 ms, throughput =    196.4 loops/ms (x   1.00, reference x   1.00)
-              TestByNamePublic:   1 threads *    500000 loops each: tAvg =       2,225.943 ms, σ =      0.000 ms, throughput =    224.6 loops/ms (x   1.14, reference x   1.00)
-              TestByNamePublic:   1 threads *    500000 loops each: tAvg =       2,225.375 ms, σ =      0.000 ms, throughput =    224.7 loops/ms (x   1.14, reference x   1.00)
-              TestByNamePublic:   1 threads *    500000 loops each: tAvg =       2,220.388 ms, σ =      0.000 ms, throughput =    225.2 loops/ms (x   1.15, reference x   1.00)
-              TestByNamePublic:   1 threads *    500000 loops each: tAvg =       2,208.243 ms, σ =      0.000 ms, throughput =    226.4 loops/ms (x   1.15, reference x   1.00)
-
+       getDeclaredConstructors:   1 threads *    500000 loops each: tAvg =         169.059 ms, σ =      0.000 ms, throughput =  2,957.5 loops/ms (x   1.00, reference x   1.00)
+       getDeclaredConstructors:   1 threads *    500000 loops each: tAvg =          69.227 ms, σ =      0.000 ms, throughput =  7,222.6 loops/ms (x   2.44, reference x   1.00)
+       getDeclaredConstructors:   1 threads *    500000 loops each: tAvg =          67.093 ms, σ =      0.000 ms, throughput =  7,452.3 loops/ms (x   2.52, reference x   1.00)
+       getDeclaredConstructors:   1 threads *    500000 loops each: tAvg =          63.680 ms, σ =      0.000 ms, throughput =  7,851.7 loops/ms (x   2.65, reference x   1.00)
+       getDeclaredConstructors:   1 threads *    500000 loops each: tAvg =          66.168 ms, σ =      0.000 ms, throughput =  7,556.5 loops/ms (x   2.55, reference x   1.00)
 measure:
+       getDeclaredConstructors:   1 threads *    500000 loops each: tAvg =          61.693 ms, σ =      0.000 ms, throughput =  8,104.7 loops/ms (x   1.00, reference x   1.00)
+       getDeclaredConstructors:   2 threads *    500000 loops each: tAvg =          67.154 ms, σ =      0.274 ms, throughput = 14,891.1 loops/ms (x   1.84, reference x   1.00)
+       getDeclaredConstructors:   4 threads *    500000 loops each: tAvg =          80.882 ms, σ =      3.167 ms, throughput = 24,727.4 loops/ms (x   3.05, reference x   1.00)
+       getDeclaredConstructors:   8 threads *    500000 loops each: tAvg =         145.227 ms, σ =      2.778 ms, throughput = 27,543.1 loops/ms (x   3.40, reference x   1.00)
+       getDeclaredConstructors:  16 threads *    500000 loops each: tAvg =         191.673 ms, σ =     24.492 ms, throughput = 41,737.8 loops/ms (x   5.15, reference x   1.00)
+       getDeclaredConstructors:  32 threads *    500000 loops each: tAvg =         308.662 ms, σ =     54.193 ms, throughput = 51,836.6 loops/ms (x   6.40, reference x   1.00)
 
-              TestBulkDeclared:   1 threads *    500000 loops each: tAvg =         219.257 ms, σ =      0.000 ms, throughput =  2,280.4 loops/ms (x   1.00, reference x   1.00)
-              TestBulkDeclared:   2 threads *    500000 loops each: tAvg =         223.502 ms, σ =      0.047 ms, throughput =  4,474.2 loops/ms (x   1.96, reference x   1.00)
-              TestBulkDeclared:   4 threads *    500000 loops each: tAvg =         238.680 ms, σ =      7.333 ms, throughput =  8,379.4 loops/ms (x   3.67, reference x   1.00)
-              TestBulkDeclared:   8 threads *    500000 loops each: tAvg =         426.484 ms, σ =     22.588 ms, throughput =  9,379.0 loops/ms (x   4.11, reference x   1.00)
-              TestBulkDeclared:  16 threads *    500000 loops each: tAvg =         803.745 ms, σ =     48.243 ms, throughput =  9,953.4 loops/ms (x   4.36, reference x   1.00)
-              TestBulkDeclared:  32 threads *    500000 loops each: tAvg =       1,611.490 ms, σ =     96.408 ms, throughput =  9,928.7 loops/ms (x   4.35, reference x   1.00)
+warm-up:
+            getDeclaredMethods:   1 threads *    500000 loops each: tAvg =         184.814 ms, σ =      0.000 ms, throughput =  2,705.4 loops/ms (x   1.00, reference x   1.00)
+            getDeclaredMethods:   1 threads *    500000 loops each: tAvg =          99.123 ms, σ =      0.000 ms, throughput =  5,044.2 loops/ms (x   1.86, reference x   1.00)
+            getDeclaredMethods:   1 threads *    500000 loops each: tAvg =          93.067 ms, σ =      0.000 ms, throughput =  5,372.5 loops/ms (x   1.99, reference x   1.00)
+            getDeclaredMethods:   1 threads *    500000 loops each: tAvg =          96.324 ms, σ =      0.000 ms, throughput =  5,190.8 loops/ms (x   1.92, reference x   1.00)
+            getDeclaredMethods:   1 threads *    500000 loops each: tAvg =          96.701 ms, σ =      0.000 ms, throughput =  5,170.6 loops/ms (x   1.91, reference x   1.00)
+measure:
+            getDeclaredMethods:   1 threads *    500000 loops each: tAvg =          93.005 ms, σ =      0.000 ms, throughput =  5,376.0 loops/ms (x   1.00, reference x   1.00)
+            getDeclaredMethods:   2 threads *    500000 loops each: tAvg =          95.169 ms, σ =      0.119 ms, throughput = 10,507.6 loops/ms (x   1.95, reference x   1.00)
+            getDeclaredMethods:   4 threads *    500000 loops each: tAvg =         112.443 ms, σ =      1.064 ms, throughput = 17,786.8 loops/ms (x   3.31, reference x   1.00)
+            getDeclaredMethods:   8 threads *    500000 loops each: tAvg =         220.061 ms, σ =      5.416 ms, throughput = 18,176.8 loops/ms (x   3.38, reference x   1.00)
+            getDeclaredMethods:  16 threads *    500000 loops each: tAvg =         398.741 ms, σ =     44.607 ms, throughput = 20,063.2 loops/ms (x   3.73, reference x   1.00)
+            getDeclaredMethods:  32 threads *    500000 loops each: tAvg =         802.999 ms, σ =     46.640 ms, throughput = 19,925.3 loops/ms (x   3.71, reference x   1.00)
 
-                TestBulkPublic:   1 threads *    500000 loops each: tAvg =         977.804 ms, σ =      0.000 ms, throughput =    511.3 loops/ms (x   1.00, reference x   1.00)
-                TestBulkPublic:   2 threads *    500000 loops each: tAvg =         988.483 ms, σ =      0.305 ms, throughput =  1,011.7 loops/ms (x   1.98, reference x   1.00)
-                TestBulkPublic:   4 threads *    500000 loops each: tAvg =       1,057.034 ms, σ =     38.958 ms, throughput =  1,892.1 loops/ms (x   3.70, reference x   1.00)
-                TestBulkPublic:   8 threads *    500000 loops each: tAvg =       1,869.436 ms, σ =     20.491 ms, throughput =  2,139.7 loops/ms (x   4.18, reference x   1.00)
-                TestBulkPublic:  16 threads *    500000 loops each: tAvg =       3,620.990 ms, σ =     91.239 ms, throughput =  2,209.3 loops/ms (x   4.32, reference x   1.00)
-                TestBulkPublic:  32 threads *    500000 loops each: tAvg =       7,268.132 ms, σ =    174.351 ms, throughput =  2,201.4 loops/ms (x   4.31, reference x   1.00)
+warm-up:
+             getDeclaredFields:   1 threads *    500000 loops each: tAvg =         161.936 ms, σ =      0.000 ms, throughput =  3,087.6 loops/ms (x   1.00, reference x   1.00)
+             getDeclaredFields:   1 threads *    500000 loops each: tAvg =          69.017 ms, σ =      0.000 ms, throughput =  7,244.6 loops/ms (x   2.35, reference x   1.00)
+             getDeclaredFields:   1 threads *    500000 loops each: tAvg =          66.199 ms, σ =      0.000 ms, throughput =  7,553.0 loops/ms (x   2.45, reference x   1.00)
+             getDeclaredFields:   1 threads *    500000 loops each: tAvg =          67.267 ms, σ =      0.000 ms, throughput =  7,433.1 loops/ms (x   2.41, reference x   1.00)
+             getDeclaredFields:   1 threads *    500000 loops each: tAvg =          63.552 ms, σ =      0.000 ms, throughput =  7,867.6 loops/ms (x   2.55, reference x   1.00)
+measure:
+             getDeclaredFields:   1 threads *    500000 loops each: tAvg =          62.920 ms, σ =      0.000 ms, throughput =  7,946.6 loops/ms (x   1.00, reference x   1.00)
+             getDeclaredFields:   2 threads *    500000 loops each: tAvg =          67.138 ms, σ =      0.171 ms, throughput = 14,894.8 loops/ms (x   1.87, reference x   1.00)
+             getDeclaredFields:   4 threads *    500000 loops each: tAvg =          83.797 ms, σ =     16.735 ms, throughput = 23,867.3 loops/ms (x   3.00, reference x   1.00)
+             getDeclaredFields:   8 threads *    500000 loops each: tAvg =         123.479 ms, σ =     11.133 ms, throughput = 32,394.1 loops/ms (x   4.08, reference x   1.00)
+             getDeclaredFields:  16 threads *    500000 loops each: tAvg =         221.843 ms, σ =     20.258 ms, throughput = 36,061.5 loops/ms (x   4.54, reference x   1.00)
+             getDeclaredFields:  32 threads *    500000 loops each: tAvg =         439.935 ms, σ =     41.813 ms, throughput = 36,369.0 loops/ms (x   4.58, reference x   1.00)
 
-            TestByNameDeclared:   1 threads *    500000 loops each: tAvg =       1,366.647 ms, σ =      0.000 ms, throughput =    365.9 loops/ms (x   1.00, reference x   1.00)
-            TestByNameDeclared:   2 threads *    500000 loops each: tAvg =       1,421.320 ms, σ =     13.952 ms, throughput =    703.6 loops/ms (x   1.92, reference x   1.00)
-            TestByNameDeclared:   4 threads *    500000 loops each: tAvg =       1,425.820 ms, σ =      5.749 ms, throughput =  1,402.7 loops/ms (x   3.83, reference x   1.00)
-            TestByNameDeclared:   8 threads *    500000 loops each: tAvg =       2,741.868 ms, σ =     39.975 ms, throughput =  1,458.9 loops/ms (x   3.99, reference x   1.00)
-            TestByNameDeclared:  16 threads *    500000 loops each: tAvg =       5,365.821 ms, σ =    183.201 ms, throughput =  1,490.9 loops/ms (x   4.08, reference x   1.00)
-            TestByNameDeclared:  32 threads *    500000 loops each: tAvg =      11,046.042 ms, σ =    234.310 ms, throughput =  1,448.5 loops/ms (x   3.96, reference x   1.00)
+warm-up:
+               getConstructors:   1 threads *    500000 loops each: tAvg =         155.082 ms, σ =      0.000 ms, throughput =  3,224.1 loops/ms (x   1.00, reference x   1.00)
+               getConstructors:   1 threads *    500000 loops each: tAvg =          71.678 ms, σ =      0.000 ms, throughput =  6,975.7 loops/ms (x   2.16, reference x   1.00)
+               getConstructors:   1 threads *    500000 loops each: tAvg =          61.893 ms, σ =      0.000 ms, throughput =  8,078.5 loops/ms (x   2.51, reference x   1.00)
+               getConstructors:   1 threads *    500000 loops each: tAvg =          62.653 ms, σ =      0.000 ms, throughput =  7,980.4 loops/ms (x   2.48, reference x   1.00)
+               getConstructors:   1 threads *    500000 loops each: tAvg =          64.832 ms, σ =      0.000 ms, throughput =  7,712.2 loops/ms (x   2.39, reference x   1.00)
+measure:
+               getConstructors:   1 threads *    500000 loops each: tAvg =          66.726 ms, σ =      0.000 ms, throughput =  7,493.4 loops/ms (x   1.00, reference x   1.00)
+               getConstructors:   2 threads *    500000 loops each: tAvg =          63.618 ms, σ =      0.106 ms, throughput = 15,718.8 loops/ms (x   2.10, reference x   1.00)
+               getConstructors:   4 threads *    500000 loops each: tAvg =          68.943 ms, σ =      2.085 ms, throughput = 29,009.3 loops/ms (x   3.87, reference x   1.00)
+               getConstructors:   8 threads *    500000 loops each: tAvg =         125.974 ms, σ =     10.497 ms, throughput = 31,752.7 loops/ms (x   4.24, reference x   1.00)
+               getConstructors:  16 threads *    500000 loops each: tAvg =         233.480 ms, σ =     25.654 ms, throughput = 34,264.2 loops/ms (x   4.57, reference x   1.00)
+               getConstructors:  32 threads *    500000 loops each: tAvg =         379.922 ms, σ =     50.402 ms, throughput = 42,113.9 loops/ms (x   5.62, reference x   1.00)
 
-              TestByNamePublic:   1 threads *    500000 loops each: tAvg =       2,271.865 ms, σ =      0.000 ms, throughput =    220.1 loops/ms (x   1.00, reference x   1.00)
-              TestByNamePublic:   2 threads *    500000 loops each: tAvg =       2,370.514 ms, σ =      0.234 ms, throughput =    421.8 loops/ms (x   1.92, reference x   1.00)
-              TestByNamePublic:   4 threads *    500000 loops each: tAvg =       2,266.236 ms, σ =      6.763 ms, throughput =    882.5 loops/ms (x   4.01, reference x   1.00)
-              TestByNamePublic:   8 threads *    500000 loops each: tAvg =       4,289.203 ms, σ =     73.295 ms, throughput =    932.6 loops/ms (x   4.24, reference x   1.00)
-              TestByNamePublic:  16 threads *    500000 loops each: tAvg =       8,568.506 ms, σ =    172.912 ms, throughput =    933.7 loops/ms (x   4.24, reference x   1.00)
-              TestByNamePublic:  32 threads *    500000 loops each: tAvg =      17,092.070 ms, σ =    308.513 ms, throughput =    936.1 loops/ms (x   4.25, reference x   1.00)
+warm-up:
+                    getMethods:   1 threads *    500000 loops each: tAvg =         599.343 ms, σ =      0.000 ms, throughput =    834.2 loops/ms (x   1.00, reference x   1.00)
+                    getMethods:   1 threads *    500000 loops each: tAvg =         563.287 ms, σ =      0.000 ms, throughput =    887.6 loops/ms (x   1.06, reference x   1.00)
+                    getMethods:   1 threads *    500000 loops each: tAvg =         567.064 ms, σ =      0.000 ms, throughput =    881.7 loops/ms (x   1.06, reference x   1.00)
+                    getMethods:   1 threads *    500000 loops each: tAvg =         562.424 ms, σ =      0.000 ms, throughput =    889.0 loops/ms (x   1.07, reference x   1.00)
+                    getMethods:   1 threads *    500000 loops each: tAvg =         574.561 ms, σ =      0.000 ms, throughput =    870.2 loops/ms (x   1.04, reference x   1.00)
+measure:
+                    getMethods:   1 threads *    500000 loops each: tAvg =         570.130 ms, σ =      0.000 ms, throughput =    877.0 loops/ms (x   1.00, reference x   1.00)
+                    getMethods:   2 threads *    500000 loops each: tAvg =         567.072 ms, σ =      0.808 ms, throughput =  1,763.4 loops/ms (x   2.01, reference x   1.00)
+                    getMethods:   4 threads *    500000 loops each: tAvg =         637.269 ms, σ =      7.700 ms, throughput =  3,138.4 loops/ms (x   3.58, reference x   1.00)
+                    getMethods:   8 threads *    500000 loops each: tAvg =       1,202.760 ms, σ =     14.472 ms, throughput =  3,325.7 loops/ms (x   3.79, reference x   1.00)
+                    getMethods:  16 threads *    500000 loops each: tAvg =       2,334.575 ms, σ =     75.144 ms, throughput =  3,426.7 loops/ms (x   3.91, reference x   1.00)
+                    getMethods:  32 threads *    500000 loops each: tAvg =       4,573.502 ms, σ =    204.715 ms, throughput =  3,498.4 loops/ms (x   3.99, reference x   1.00)
+
+warm-up:
+                     getFields:   1 threads *    500000 loops each: tAvg =         349.223 ms, σ =      0.000 ms, throughput =  1,431.7 loops/ms (x   1.00, reference x   1.00)
+                     getFields:   1 threads *    500000 loops each: tAvg =         326.865 ms, σ =      0.000 ms, throughput =  1,529.7 loops/ms (x   1.07, reference x   1.00)
+                     getFields:   1 threads *    500000 loops each: tAvg =         326.739 ms, σ =      0.000 ms, throughput =  1,530.3 loops/ms (x   1.07, reference x   1.00)
+                     getFields:   1 threads *    500000 loops each: tAvg =         325.752 ms, σ =      0.000 ms, throughput =  1,534.9 loops/ms (x   1.07, reference x   1.00)
+                     getFields:   1 threads *    500000 loops each: tAvg =         326.554 ms, σ =      0.000 ms, throughput =  1,531.1 loops/ms (x   1.07, reference x   1.00)
+measure:
+                     getFields:   1 threads *    500000 loops each: tAvg =         324.355 ms, σ =      0.000 ms, throughput =  1,541.5 loops/ms (x   1.00, reference x   1.00)
+                     getFields:   2 threads *    500000 loops each: tAvg =         329.067 ms, σ =      0.134 ms, throughput =  3,038.9 loops/ms (x   1.97, reference x   1.00)
+                     getFields:   4 threads *    500000 loops each: tAvg =         345.169 ms, σ =     13.813 ms, throughput =  5,794.3 loops/ms (x   3.76, reference x   1.00)
+                     getFields:   8 threads *    500000 loops each: tAvg =         650.312 ms, σ =     10.431 ms, throughput =  6,150.9 loops/ms (x   3.99, reference x   1.00)
+                     getFields:  16 threads *    500000 loops each: tAvg =       1,241.201 ms, σ =     68.576 ms, throughput =  6,445.4 loops/ms (x   4.18, reference x   1.00)
+                     getFields:  32 threads *    500000 loops each: tAvg =       2,434.162 ms, σ =    121.684 ms, throughput =  6,573.1 loops/ms (x   4.26, reference x   1.00)
+
+warm-up:
+        getDeclaredConstructor:   1 threads *    500000 loops each: tAvg =         342.579 ms, σ =      0.000 ms, throughput =  1,459.5 loops/ms (x   1.00, reference x   1.00)
+        getDeclaredConstructor:   1 threads *    500000 loops each: tAvg =         322.338 ms, σ =      0.000 ms, throughput =  1,551.2 loops/ms (x   1.06, reference x   1.00)
+        getDeclaredConstructor:   1 threads *    500000 loops each: tAvg =         316.556 ms, σ =      0.000 ms, throughput =  1,579.5 loops/ms (x   1.08, reference x   1.00)
+        getDeclaredConstructor:   1 threads *    500000 loops each: tAvg =         325.286 ms, σ =      0.000 ms, throughput =  1,537.1 loops/ms (x   1.05, reference x   1.00)
+        getDeclaredConstructor:   1 threads *    500000 loops each: tAvg =         316.971 ms, σ =      0.000 ms, throughput =  1,577.4 loops/ms (x   1.08, reference x   1.00)
+measure:
+        getDeclaredConstructor:   1 threads *    500000 loops each: tAvg =         316.798 ms, σ =      0.000 ms, throughput =  1,578.3 loops/ms (x   1.00, reference x   1.00)
+        getDeclaredConstructor:   2 threads *    500000 loops each: tAvg =         316.646 ms, σ =      0.349 ms, throughput =  3,158.1 loops/ms (x   2.00, reference x   1.00)
+        getDeclaredConstructor:   4 threads *    500000 loops each: tAvg =         321.316 ms, σ =      1.420 ms, throughput =  6,224.4 loops/ms (x   3.94, reference x   1.00)
+        getDeclaredConstructor:   8 threads *    500000 loops each: tAvg =         620.401 ms, σ =      3.620 ms, throughput =  6,447.4 loops/ms (x   4.09, reference x   1.00)
+        getDeclaredConstructor:  16 threads *    500000 loops each: tAvg =       1,170.530 ms, σ =     64.319 ms, throughput =  6,834.5 loops/ms (x   4.33, reference x   1.00)
+        getDeclaredConstructor:  32 threads *    500000 loops each: tAvg =       2,334.664 ms, σ =    134.402 ms, throughput =  6,853.2 loops/ms (x   4.34, reference x   1.00)
+
+warm-up:
+             getDeclaredMethod:   1 threads *    500000 loops each: tAvg =         932.998 ms, σ =      0.000 ms, throughput =    535.9 loops/ms (x   1.00, reference x   1.00)
+             getDeclaredMethod:   1 threads *    500000 loops each: tAvg =         898.605 ms, σ =      0.000 ms, throughput =    556.4 loops/ms (x   1.04, reference x   1.00)
+             getDeclaredMethod:   1 threads *    500000 loops each: tAvg =         900.519 ms, σ =      0.000 ms, throughput =    555.2 loops/ms (x   1.04, reference x   1.00)
+             getDeclaredMethod:   1 threads *    500000 loops each: tAvg =         882.874 ms, σ =      0.000 ms, throughput =    566.3 loops/ms (x   1.06, reference x   1.00)
+             getDeclaredMethod:   1 threads *    500000 loops each: tAvg =         894.594 ms, σ =      0.000 ms, throughput =    558.9 loops/ms (x   1.04, reference x   1.00)
+measure:
+             getDeclaredMethod:   1 threads *    500000 loops each: tAvg =         887.371 ms, σ =      0.000 ms, throughput =    563.5 loops/ms (x   1.00, reference x   1.00)
+             getDeclaredMethod:   2 threads *    500000 loops each: tAvg =         902.118 ms, σ =      0.025 ms, throughput =  1,108.5 loops/ms (x   1.97, reference x   1.00)
+             getDeclaredMethod:   4 threads *    500000 loops each: tAvg =         895.678 ms, σ =      2.494 ms, throughput =  2,232.9 loops/ms (x   3.96, reference x   1.00)
+             getDeclaredMethod:   8 threads *    500000 loops each: tAvg =       1,795.735 ms, σ =     30.576 ms, throughput =  2,227.5 loops/ms (x   3.95, reference x   1.00)
+             getDeclaredMethod:  16 threads *    500000 loops each: tAvg =       3,563.517 ms, σ =     96.188 ms, throughput =  2,245.0 loops/ms (x   3.98, reference x   1.00)
+             getDeclaredMethod:  32 threads *    500000 loops each: tAvg =       7,217.301 ms, σ =    192.428 ms, throughput =  2,216.9 loops/ms (x   3.93, reference x   1.00)
+
+warm-up:
+              getDeclaredField:   1 threads *    500000 loops each: tAvg =         228.087 ms, σ =      0.000 ms, throughput =  2,192.1 loops/ms (x   1.00, reference x   1.00)
+              getDeclaredField:   1 threads *    500000 loops each: tAvg =         144.489 ms, σ =      0.000 ms, throughput =  3,460.5 loops/ms (x   1.58, reference x   1.00)
+              getDeclaredField:   1 threads *    500000 loops each: tAvg =         146.617 ms, σ =      0.000 ms, throughput =  3,410.2 loops/ms (x   1.56, reference x   1.00)
+              getDeclaredField:   1 threads *    500000 loops each: tAvg =         142.882 ms, σ =      0.000 ms, throughput =  3,499.4 loops/ms (x   1.60, reference x   1.00)
+              getDeclaredField:   1 threads *    500000 loops each: tAvg =         141.478 ms, σ =      0.000 ms, throughput =  3,534.1 loops/ms (x   1.61, reference x   1.00)
+measure:
+              getDeclaredField:   1 threads *    500000 loops each: tAvg =         139.460 ms, σ =      0.000 ms, throughput =  3,585.3 loops/ms (x   1.00, reference x   1.00)
+              getDeclaredField:   2 threads *    500000 loops each: tAvg =         146.614 ms, σ =      0.270 ms, throughput =  6,820.6 loops/ms (x   1.90, reference x   1.00)
+              getDeclaredField:   4 threads *    500000 loops each: tAvg =         147.606 ms, σ =      4.089 ms, throughput = 13,549.6 loops/ms (x   3.78, reference x   1.00)
+              getDeclaredField:   8 threads *    500000 loops each: tAvg =         298.841 ms, σ =     14.900 ms, throughput = 13,385.0 loops/ms (x   3.73, reference x   1.00)
+              getDeclaredField:  16 threads *    500000 loops each: tAvg =         531.298 ms, σ =     40.489 ms, throughput = 15,057.5 loops/ms (x   4.20, reference x   1.00)
+              getDeclaredField:  32 threads *    500000 loops each: tAvg =       1,018.269 ms, σ =     82.291 ms, throughput = 15,712.9 loops/ms (x   4.38, reference x   1.00)
+
+warm-up:
+                getConstructor:   1 threads *    500000 loops each: tAvg =         135.986 ms, σ =      0.000 ms, throughput =  3,676.8 loops/ms (x   1.00, reference x   1.00)
+                getConstructor:   1 threads *    500000 loops each: tAvg =          65.414 ms, σ =      0.000 ms, throughput =  7,643.6 loops/ms (x   2.08, reference x   1.00)
+                getConstructor:   1 threads *    500000 loops each: tAvg =          59.965 ms, σ =      0.000 ms, throughput =  8,338.1 loops/ms (x   2.27, reference x   1.00)
+                getConstructor:   1 threads *    500000 loops each: tAvg =          61.566 ms, σ =      0.000 ms, throughput =  8,121.3 loops/ms (x   2.21, reference x   1.00)
+                getConstructor:   1 threads *    500000 loops each: tAvg =          63.706 ms, σ =      0.000 ms, throughput =  7,848.5 loops/ms (x   2.13, reference x   1.00)
+measure:
+                getConstructor:   1 threads *    500000 loops each: tAvg =          62.247 ms, σ =      0.000 ms, throughput =  8,032.5 loops/ms (x   1.00, reference x   1.00)
+                getConstructor:   2 threads *    500000 loops each: tAvg =          67.103 ms, σ =      0.274 ms, throughput = 14,902.4 loops/ms (x   1.86, reference x   1.00)
+                getConstructor:   4 threads *    500000 loops each: tAvg =          77.553 ms, σ =      7.422 ms, throughput = 25,788.9 loops/ms (x   3.21, reference x   1.00)
+                getConstructor:   8 threads *    500000 loops each: tAvg =         128.943 ms, σ =     11.846 ms, throughput = 31,021.5 loops/ms (x   3.86, reference x   1.00)
+                getConstructor:  16 threads *    500000 loops each: tAvg =         204.009 ms, σ =     28.355 ms, throughput = 39,214.0 loops/ms (x   4.88, reference x   1.00)
+                getConstructor:  32 threads *    500000 loops each: tAvg =         336.235 ms, σ =     70.493 ms, throughput = 47,585.8 loops/ms (x   5.92, reference x   1.00)
+
+warm-up:
+                     getMethod:   1 threads *    500000 loops each: tAvg =       1,548.365 ms, σ =      0.000 ms, throughput =    322.9 loops/ms (x   1.00, reference x   1.00)
+                     getMethod:   1 threads *    500000 loops each: tAvg =       1,505.664 ms, σ =      0.000 ms, throughput =    332.1 loops/ms (x   1.03, reference x   1.00)
+                     getMethod:   1 threads *    500000 loops each: tAvg =       1,493.300 ms, σ =      0.000 ms, throughput =    334.8 loops/ms (x   1.04, reference x   1.00)
+                     getMethod:   1 threads *    500000 loops each: tAvg =       1,489.011 ms, σ =      0.000 ms, throughput =    335.8 loops/ms (x   1.04, reference x   1.00)
+                     getMethod:   1 threads *    500000 loops each: tAvg =       1,479.441 ms, σ =      0.000 ms, throughput =    338.0 loops/ms (x   1.05, reference x   1.00)
+measure:
+                     getMethod:   1 threads *    500000 loops each: tAvg =       1,490.298 ms, σ =      0.000 ms, throughput =    335.5 loops/ms (x   1.00, reference x   1.00)
+                     getMethod:   2 threads *    500000 loops each: tAvg =       1,567.794 ms, σ =      6.896 ms, throughput =    637.8 loops/ms (x   1.90, reference x   1.00)
+                     getMethod:   4 threads *    500000 loops each: tAvg =       1,675.875 ms, σ =     15.302 ms, throughput =  1,193.4 loops/ms (x   3.56, reference x   1.00)
+                     getMethod:   8 threads *    500000 loops each: tAvg =       3,280.351 ms, σ =     38.656 ms, throughput =  1,219.4 loops/ms (x   3.63, reference x   1.00)
+                     getMethod:  16 threads *    500000 loops each: tAvg =       6,486.581 ms, σ =    232.428 ms, throughput =  1,233.3 loops/ms (x   3.68, reference x   1.00)
+                     getMethod:  32 threads *    500000 loops each: tAvg =      13,195.591 ms, σ =    321.836 ms, throughput =  1,212.5 loops/ms (x   3.61, reference x   1.00)
+
+warm-up:
+                      getField:   1 threads *    500000 loops each: tAvg =       1,200.026 ms, σ =      0.000 ms, throughput =    416.7 loops/ms (x   1.00, reference x   1.00)
+                      getField:   1 threads *    500000 loops each: tAvg =       1,166.402 ms, σ =      0.000 ms, throughput =    428.7 loops/ms (x   1.03, reference x   1.00)
+                      getField:   1 threads *    500000 loops each: tAvg =       1,161.281 ms, σ =      0.000 ms, throughput =    430.6 loops/ms (x   1.03, reference x   1.00)
+                      getField:   1 threads *    500000 loops each: tAvg =       1,159.796 ms, σ =      0.000 ms, throughput =    431.1 loops/ms (x   1.03, reference x   1.00)
+                      getField:   1 threads *    500000 loops each: tAvg =       1,157.845 ms, σ =      0.000 ms, throughput =    431.8 loops/ms (x   1.04, reference x   1.00)
+measure:
+                      getField:   1 threads *    500000 loops each: tAvg =       1,151.671 ms, σ =      0.000 ms, throughput =    434.2 loops/ms (x   1.00, reference x   1.00)
+                      getField:   2 threads *    500000 loops each: tAvg =       1,175.698 ms, σ =      3.721 ms, throughput =    850.6 loops/ms (x   1.96, reference x   1.00)
+                      getField:   4 threads *    500000 loops each: tAvg =       1,242.945 ms, σ =     49.974 ms, throughput =  1,609.1 loops/ms (x   3.71, reference x   1.00)
+                      getField:   8 threads *    500000 loops each: tAvg =       2,286.561 ms, σ =     38.946 ms, throughput =  1,749.4 loops/ms (x   4.03, reference x   1.00)
+                      getField:  16 threads *    500000 loops each: tAvg =       4,542.485 ms, σ =    134.529 ms, throughput =  1,761.2 loops/ms (x   4.06, reference x   1.00)
+                      getField:  32 threads *    500000 loops each: tAvg =       9,109.435 ms, σ =    271.021 ms, throughput =  1,756.4 loops/ms (x   4.05, reference x   1.00)
 
 
 Executing: /home/peter/Apps64/jdk1.8.0-jdk8-tl/bin/java -Xmx4G -cp ../out/production/test -Xbootclasspath/p:../out/production/jdk test.ReflectionDataTest
 
 warm-up:
-
-              TestBulkDeclared:   1 threads *    500000 loops each: tAvg =         530.778 ms, σ =      0.000 ms, throughput =    942.0 loops/ms (x   1.00, reference x   0.41)
-              TestBulkDeclared:   1 threads *    500000 loops each: tAvg =         238.837 ms, σ =      0.000 ms, throughput =  2,093.5 loops/ms (x   2.22, reference x   0.92)
-              TestBulkDeclared:   1 threads *    500000 loops each: tAvg =         241.637 ms, σ =      0.000 ms, throughput =  2,069.2 loops/ms (x   2.20, reference x   0.91)
-              TestBulkDeclared:   1 threads *    500000 loops each: tAvg =         234.263 ms, σ =      0.000 ms, throughput =  2,134.4 loops/ms (x   2.27, reference x   0.94)
-              TestBulkDeclared:   1 threads *    500000 loops each: tAvg =         232.874 ms, σ =      0.000 ms, throughput =  2,147.1 loops/ms (x   2.28, reference x   0.94)
-
-                TestBulkPublic:   1 threads *    500000 loops each: tAvg =         755.311 ms, σ =      0.000 ms, throughput =    662.0 loops/ms (x   1.00, reference x   1.29)
-                TestBulkPublic:   1 threads *    500000 loops each: tAvg =         495.498 ms, σ =      0.000 ms, throughput =  1,009.1 loops/ms (x   1.52, reference x   1.97)
-                TestBulkPublic:   1 threads *    500000 loops each: tAvg =         460.606 ms, σ =      0.000 ms, throughput =  1,085.5 loops/ms (x   1.64, reference x   2.12)
-                TestBulkPublic:   1 threads *    500000 loops each: tAvg =         456.779 ms, σ =      0.000 ms, throughput =  1,094.6 loops/ms (x   1.65, reference x   2.14)
-                TestBulkPublic:   1 threads *    500000 loops each: tAvg =         463.448 ms, σ =      0.000 ms, throughput =  1,078.9 loops/ms (x   1.63, reference x   2.11)
-
-            TestByNameDeclared:   1 threads *    500000 loops each: tAvg =       1,755.669 ms, σ =      0.000 ms, throughput =    284.8 loops/ms (x   1.00, reference x   0.78)
-            TestByNameDeclared:   1 threads *    500000 loops each: tAvg =         497.306 ms, σ =      0.000 ms, throughput =  1,005.4 loops/ms (x   3.53, reference x   2.75)
-            TestByNameDeclared:   1 threads *    500000 loops each: tAvg =         495.811 ms, σ =      0.000 ms, throughput =  1,008.4 loops/ms (x   3.54, reference x   2.76)
-            TestByNameDeclared:   1 threads *    500000 loops each: tAvg =         489.329 ms, σ =      0.000 ms, throughput =  1,021.8 loops/ms (x   3.59, reference x   2.79)
-            TestByNameDeclared:   1 threads *    500000 loops each: tAvg =         495.354 ms, σ =      0.000 ms, throughput =  1,009.4 loops/ms (x   3.54, reference x   2.76)
-
-              TestByNamePublic:   1 threads *    500000 loops each: tAvg =       2,542.216 ms, σ =      0.000 ms, throughput =    196.7 loops/ms (x   1.00, reference x   0.89)
-              TestByNamePublic:   1 threads *    500000 loops each: tAvg =       2,239.519 ms, σ =      0.000 ms, throughput =    223.3 loops/ms (x   1.14, reference x   1.01)
-              TestByNamePublic:   1 threads *    500000 loops each: tAvg =       2,171.023 ms, σ =      0.000 ms, throughput =    230.3 loops/ms (x   1.17, reference x   1.05)
-              TestByNamePublic:   1 threads *    500000 loops each: tAvg =       2,189.542 ms, σ =      0.000 ms, throughput =    228.4 loops/ms (x   1.16, reference x   1.04)
-              TestByNamePublic:   1 threads *    500000 loops each: tAvg =       2,173.657 ms, σ =      0.000 ms, throughput =    230.0 loops/ms (x   1.17, reference x   1.05)
-
+       getDeclaredConstructors:   1 threads *    500000 loops each: tAvg =         163.460 ms, σ =      0.000 ms, throughput =  3,058.8 loops/ms (x   1.00, reference x   0.38)
+       getDeclaredConstructors:   1 threads *    500000 loops each: tAvg =          73.086 ms, σ =      0.000 ms, throughput =  6,841.2 loops/ms (x   2.24, reference x   0.84)
+       getDeclaredConstructors:   1 threads *    500000 loops each: tAvg =          65.224 ms, σ =      0.000 ms, throughput =  7,665.9 loops/ms (x   2.51, reference x   0.95)
+       getDeclaredConstructors:   1 threads *    500000 loops each: tAvg =          66.039 ms, σ =      0.000 ms, throughput =  7,571.2 loops/ms (x   2.48, reference x   0.93)
+       getDeclaredConstructors:   1 threads *    500000 loops each: tAvg =          63.997 ms, σ =      0.000 ms, throughput =  7,812.9 loops/ms (x   2.55, reference x   0.96)
 measure:
+       getDeclaredConstructors:   1 threads *    500000 loops each: tAvg =          62.435 ms, σ =      0.000 ms, throughput =  8,008.4 loops/ms (x   1.00, reference x   0.99)
+       getDeclaredConstructors:   2 threads *    500000 loops each: tAvg =          66.919 ms, σ =      0.591 ms, throughput = 14,943.5 loops/ms (x   1.87, reference x   1.00)
+       getDeclaredConstructors:   4 threads *    500000 loops each: tAvg =          93.188 ms, σ =     18.300 ms, throughput = 21,462.1 loops/ms (x   2.68, reference x   0.87)
+       getDeclaredConstructors:   8 threads *    500000 loops each: tAvg =         121.625 ms, σ =      2.554 ms, throughput = 32,887.9 loops/ms (x   4.11, reference x   1.19)
+       getDeclaredConstructors:  16 threads *    500000 loops each: tAvg =         232.598 ms, σ =     30.077 ms, throughput = 34,394.1 loops/ms (x   4.29, reference x   0.82)
+       getDeclaredConstructors:  32 threads *    500000 loops each: tAvg =         367.903 ms, σ =     58.608 ms, throughput = 43,489.7 loops/ms (x   5.43, reference x   0.84)
 
-              TestBulkDeclared:   1 threads *    500000 loops each: tAvg =         225.411 ms, σ =      0.000 ms, throughput =  2,218.2 loops/ms (x   1.00, reference x   0.97)
-              TestBulkDeclared:   2 threads *    500000 loops each: tAvg =         227.622 ms, σ =      0.807 ms, throughput =  4,393.3 loops/ms (x   1.98, reference x   0.98)
-              TestBulkDeclared:   4 threads *    500000 loops each: tAvg =         247.652 ms, σ =      1.032 ms, throughput =  8,075.9 loops/ms (x   3.64, reference x   0.96)
-              TestBulkDeclared:   8 threads *    500000 loops each: tAvg =         431.861 ms, σ =     26.091 ms, throughput =  9,262.2 loops/ms (x   4.18, reference x   0.99)
-              TestBulkDeclared:  16 threads *    500000 loops each: tAvg =         808.617 ms, σ =     68.196 ms, throughput =  9,893.4 loops/ms (x   4.46, reference x   0.99)
-              TestBulkDeclared:  32 threads *    500000 loops each: tAvg =       1,556.119 ms, σ =    100.032 ms, throughput = 10,282.0 loops/ms (x   4.64, reference x   1.04)
+warm-up:
+            getDeclaredMethods:   1 threads *    500000 loops each: tAvg =         196.789 ms, σ =      0.000 ms, throughput =  2,540.8 loops/ms (x   1.00, reference x   0.47)
+            getDeclaredMethods:   1 threads *    500000 loops each: tAvg =         101.841 ms, σ =      0.000 ms, throughput =  4,909.6 loops/ms (x   1.93, reference x   0.91)
+            getDeclaredMethods:   1 threads *    500000 loops each: tAvg =          96.782 ms, σ =      0.000 ms, throughput =  5,166.3 loops/ms (x   2.03, reference x   0.96)
+            getDeclaredMethods:   1 threads *    500000 loops each: tAvg =         105.044 ms, σ =      0.000 ms, throughput =  4,759.9 loops/ms (x   1.87, reference x   0.89)
+            getDeclaredMethods:   1 threads *    500000 loops each: tAvg =         102.429 ms, σ =      0.000 ms, throughput =  4,881.4 loops/ms (x   1.92, reference x   0.91)
+measure:
+            getDeclaredMethods:   1 threads *    500000 loops each: tAvg =          94.056 ms, σ =      0.000 ms, throughput =  5,316.0 loops/ms (x   1.00, reference x   0.99)
+            getDeclaredMethods:   2 threads *    500000 loops each: tAvg =         100.958 ms, σ =      0.209 ms, throughput =  9,905.1 loops/ms (x   1.86, reference x   0.94)
+            getDeclaredMethods:   4 threads *    500000 loops each: tAvg =         118.470 ms, σ =     10.421 ms, throughput = 16,881.9 loops/ms (x   3.18, reference x   0.95)
+            getDeclaredMethods:   8 threads *    500000 loops each: tAvg =         219.900 ms, σ =     10.095 ms, throughput = 18,190.1 loops/ms (x   3.42, reference x   1.00)
+            getDeclaredMethods:  16 threads *    500000 loops each: tAvg =         392.228 ms, σ =     52.395 ms, throughput = 20,396.3 loops/ms (x   3.84, reference x   1.02)
+            getDeclaredMethods:  32 threads *    500000 loops each: tAvg =         796.530 ms, σ =     71.875 ms, throughput = 20,087.1 loops/ms (x   3.78, reference x   1.01)
 
-                TestBulkPublic:   1 threads *    500000 loops each: tAvg =         467.838 ms, σ =      0.000 ms, throughput =  1,068.7 loops/ms (x   1.00, reference x   2.09)
-                TestBulkPublic:   2 threads *    500000 loops each: tAvg =         519.708 ms, σ =      0.732 ms, throughput =  1,924.2 loops/ms (x   1.80, reference x   1.90)
-                TestBulkPublic:   4 threads *    500000 loops each: tAvg =         730.596 ms, σ =      7.869 ms, throughput =  2,737.5 loops/ms (x   2.56, reference x   1.45)
-                TestBulkPublic:   8 threads *    500000 loops each: tAvg =       1,518.631 ms, σ =     11.595 ms, throughput =  2,634.0 loops/ms (x   2.46, reference x   1.23)
-                TestBulkPublic:  16 threads *    500000 loops each: tAvg =       2,952.870 ms, σ =     92.425 ms, throughput =  2,709.2 loops/ms (x   2.53, reference x   1.23)
-                TestBulkPublic:  32 threads *    500000 loops each: tAvg =       5,935.458 ms, σ =    158.120 ms, throughput =  2,695.7 loops/ms (x   2.52, reference x   1.22)
+warm-up:
+             getDeclaredFields:   1 threads *    500000 loops each: tAvg =         155.404 ms, σ =      0.000 ms, throughput =  3,217.4 loops/ms (x   1.00, reference x   0.40)
+             getDeclaredFields:   1 threads *    500000 loops each: tAvg =          74.529 ms, σ =      0.000 ms, throughput =  6,708.8 loops/ms (x   2.09, reference x   0.84)
+             getDeclaredFields:   1 threads *    500000 loops each: tAvg =          66.899 ms, σ =      0.000 ms, throughput =  7,473.9 loops/ms (x   2.32, reference x   0.94)
+             getDeclaredFields:   1 threads *    500000 loops each: tAvg =          67.311 ms, σ =      0.000 ms, throughput =  7,428.2 loops/ms (x   2.31, reference x   0.93)
+             getDeclaredFields:   1 threads *    500000 loops each: tAvg =          68.191 ms, σ =      0.000 ms, throughput =  7,332.4 loops/ms (x   2.28, reference x   0.92)
+measure:
+             getDeclaredFields:   1 threads *    500000 loops each: tAvg =          69.901 ms, σ =      0.000 ms, throughput =  7,153.0 loops/ms (x   1.00, reference x   0.90)
+             getDeclaredFields:   2 threads *    500000 loops each: tAvg =          69.429 ms, σ =      0.263 ms, throughput = 14,403.2 loops/ms (x   2.01, reference x   0.97)
+             getDeclaredFields:   4 threads *    500000 loops each: tAvg =          71.485 ms, σ =      0.228 ms, throughput = 27,977.9 loops/ms (x   3.91, reference x   1.17)
+             getDeclaredFields:   8 threads *    500000 loops each: tAvg =         119.520 ms, σ =      2.674 ms, throughput = 33,467.1 loops/ms (x   4.68, reference x   1.03)
+             getDeclaredFields:  16 threads *    500000 loops each: tAvg =         207.650 ms, σ =     31.780 ms, throughput = 38,526.4 loops/ms (x   5.39, reference x   1.07)
+             getDeclaredFields:  32 threads *    500000 loops each: tAvg =         439.059 ms, σ =     69.046 ms, throughput = 36,441.6 loops/ms (x   5.09, reference x   1.00)
 
-            TestByNameDeclared:   1 threads *    500000 loops each: tAvg =         478.480 ms, σ =      0.000 ms, throughput =  1,045.0 loops/ms (x   1.00, reference x   2.86)
-            TestByNameDeclared:   2 threads *    500000 loops each: tAvg =         481.025 ms, σ =      1.953 ms, throughput =  2,078.9 loops/ms (x   1.99, reference x   2.95)
-            TestByNameDeclared:   4 threads *    500000 loops each: tAvg =         488.029 ms, σ =      2.096 ms, throughput =  4,098.1 loops/ms (x   3.92, reference x   2.92)
-            TestByNameDeclared:   8 threads *    500000 loops each: tAvg =         992.901 ms, σ =      6.163 ms, throughput =  4,028.6 loops/ms (x   3.86, reference x   2.76)
-            TestByNameDeclared:  16 threads *    500000 loops each: tAvg =       1,947.813 ms, σ =    104.352 ms, throughput =  4,107.2 loops/ms (x   3.93, reference x   2.75)
-            TestByNameDeclared:  32 threads *    500000 loops each: tAvg =       3,866.780 ms, σ =    146.841 ms, throughput =  4,137.8 loops/ms (x   3.96, reference x   2.86)
+warm-up:
+               getConstructors:   1 threads *    500000 loops each: tAvg =         151.362 ms, σ =      0.000 ms, throughput =  3,303.3 loops/ms (x   1.00, reference x   0.44)
+               getConstructors:   1 threads *    500000 loops each: tAvg =          70.037 ms, σ =      0.000 ms, throughput =  7,139.1 loops/ms (x   2.16, reference x   0.95)
+               getConstructors:   1 threads *    500000 loops each: tAvg =          73.859 ms, σ =      0.000 ms, throughput =  6,769.7 loops/ms (x   2.05, reference x   0.90)
+               getConstructors:   1 threads *    500000 loops each: tAvg =          69.628 ms, σ =      0.000 ms, throughput =  7,181.1 loops/ms (x   2.17, reference x   0.96)
+               getConstructors:   1 threads *    500000 loops each: tAvg =          66.935 ms, σ =      0.000 ms, throughput =  7,470.0 loops/ms (x   2.26, reference x   1.00)
+measure:
+               getConstructors:   1 threads *    500000 loops each: tAvg =          67.485 ms, σ =      0.000 ms, throughput =  7,409.1 loops/ms (x   1.00, reference x   0.99)
+               getConstructors:   2 threads *    500000 loops each: tAvg =          67.503 ms, σ =      0.418 ms, throughput = 14,814.2 loops/ms (x   2.00, reference x   0.94)
+               getConstructors:   4 threads *    500000 loops each: tAvg =          71.501 ms, σ =      1.719 ms, throughput = 27,971.7 loops/ms (x   3.78, reference x   0.96)
+               getConstructors:   8 threads *    500000 loops each: tAvg =         132.486 ms, σ =     11.098 ms, throughput = 30,191.8 loops/ms (x   4.07, reference x   0.95)
+               getConstructors:  16 threads *    500000 loops each: tAvg =         223.763 ms, σ =     31.028 ms, throughput = 35,752.0 loops/ms (x   4.83, reference x   1.04)
+               getConstructors:  32 threads *    500000 loops each: tAvg =         444.765 ms, σ =     78.756 ms, throughput = 35,974.1 loops/ms (x   4.86, reference x   0.85)
 
-              TestByNamePublic:   1 threads *    500000 loops each: tAvg =       2,213.249 ms, σ =      0.000 ms, throughput =    225.9 loops/ms (x   1.00, reference x   1.03)
-              TestByNamePublic:   2 threads *    500000 loops each: tAvg =       2,481.873 ms, σ =      1.729 ms, throughput =    402.9 loops/ms (x   1.78, reference x   0.96)
-              TestByNamePublic:   4 threads *    500000 loops each: tAvg =       2,407.408 ms, σ =    143.335 ms, throughput =    830.8 loops/ms (x   3.68, reference x   0.94)
-              TestByNamePublic:   8 threads *    500000 loops each: tAvg =       4,293.422 ms, σ =     81.532 ms, throughput =    931.7 loops/ms (x   4.12, reference x   1.00)
-              TestByNamePublic:  16 threads *    500000 loops each: tAvg =       8,585.756 ms, σ =    180.312 ms, throughput =    931.8 loops/ms (x   4.12, reference x   1.00)
-              TestByNamePublic:  32 threads *    500000 loops each: tAvg =      17,101.007 ms, σ =    368.265 ms, throughput =    935.6 loops/ms (x   4.14, reference x   1.00)
+warm-up:
+                    getMethods:   1 threads *    500000 loops each: tAvg =         408.229 ms, σ =      0.000 ms, throughput =  1,224.8 loops/ms (x   1.00, reference x   1.40)
+                    getMethods:   1 threads *    500000 loops each: tAvg =         338.018 ms, σ =      0.000 ms, throughput =  1,479.2 loops/ms (x   1.21, reference x   1.69)
+                    getMethods:   1 threads *    500000 loops each: tAvg =         324.091 ms, σ =      0.000 ms, throughput =  1,542.8 loops/ms (x   1.26, reference x   1.76)
+                    getMethods:   1 threads *    500000 loops each: tAvg =         339.473 ms, σ =      0.000 ms, throughput =  1,472.9 loops/ms (x   1.20, reference x   1.68)
+                    getMethods:   1 threads *    500000 loops each: tAvg =         329.559 ms, σ =      0.000 ms, throughput =  1,517.2 loops/ms (x   1.24, reference x   1.73)
+measure:
+                    getMethods:   1 threads *    500000 loops each: tAvg =         332.024 ms, σ =      0.000 ms, throughput =  1,505.9 loops/ms (x   1.00, reference x   1.72)
+                    getMethods:   2 threads *    500000 loops each: tAvg =         344.449 ms, σ =      0.921 ms, throughput =  2,903.2 loops/ms (x   1.93, reference x   1.65)
+                    getMethods:   4 threads *    500000 loops each: tAvg =         578.978 ms, σ =      1.058 ms, throughput =  3,454.4 loops/ms (x   2.29, reference x   1.10)
+                    getMethods:   8 threads *    500000 loops each: tAvg =       1,190.517 ms, σ =     22.141 ms, throughput =  3,359.9 loops/ms (x   2.23, reference x   1.01)
+                    getMethods:  16 threads *    500000 loops each: tAvg =       2,378.509 ms, σ =     56.120 ms, throughput =  3,363.5 loops/ms (x   2.23, reference x   0.98)
+                    getMethods:  32 threads *    500000 loops each: tAvg =       4,666.742 ms, σ =    145.599 ms, throughput =  3,428.5 loops/ms (x   2.28, reference x   0.98)
+
+warm-up:
+                     getFields:   1 threads *    500000 loops each: tAvg =         164.079 ms, σ =      0.000 ms, throughput =  3,047.3 loops/ms (x   1.00, reference x   1.98)
+                     getFields:   1 threads *    500000 loops each: tAvg =          84.312 ms, σ =      0.000 ms, throughput =  5,930.4 loops/ms (x   1.95, reference x   3.85)
+                     getFields:   1 threads *    500000 loops each: tAvg =          76.843 ms, σ =      0.000 ms, throughput =  6,506.8 loops/ms (x   2.14, reference x   4.22)
+                     getFields:   1 threads *    500000 loops each: tAvg =          75.325 ms, σ =      0.000 ms, throughput =  6,637.9 loops/ms (x   2.18, reference x   4.31)
+                     getFields:   1 threads *    500000 loops each: tAvg =          81.790 ms, σ =      0.000 ms, throughput =  6,113.2 loops/ms (x   2.01, reference x   3.97)
+measure:
+                     getFields:   1 threads *    500000 loops each: tAvg =          74.825 ms, σ =      0.000 ms, throughput =  6,682.2 loops/ms (x   1.00, reference x   4.33)
+                     getFields:   2 threads *    500000 loops each: tAvg =          78.036 ms, σ =      0.102 ms, throughput = 12,814.6 loops/ms (x   1.92, reference x   4.22)
+                     getFields:   4 threads *    500000 loops each: tAvg =         102.417 ms, σ =      2.459 ms, throughput = 19,528.0 loops/ms (x   2.92, reference x   3.37)
+                     getFields:   8 threads *    500000 loops each: tAvg =         201.139 ms, σ =      4.381 ms, throughput = 19,886.8 loops/ms (x   2.98, reference x   3.23)
+                     getFields:  16 threads *    500000 loops each: tAvg =         341.583 ms, σ =     31.767 ms, throughput = 23,420.4 loops/ms (x   3.50, reference x   3.63)
+                     getFields:  32 threads *    500000 loops each: tAvg =         611.795 ms, σ =     89.566 ms, throughput = 26,152.5 loops/ms (x   3.91, reference x   3.98)
+
+warm-up:
+        getDeclaredConstructor:   1 threads *    500000 loops each: tAvg =         170.288 ms, σ =      0.000 ms, throughput =  2,936.2 loops/ms (x   1.00, reference x   1.86)
+        getDeclaredConstructor:   1 threads *    500000 loops each: tAvg =          54.962 ms, σ =      0.000 ms, throughput =  9,097.3 loops/ms (x   3.10, reference x   5.76)
+        getDeclaredConstructor:   1 threads *    500000 loops each: tAvg =          50.683 ms, σ =      0.000 ms, throughput =  9,865.3 loops/ms (x   3.36, reference x   6.25)
+        getDeclaredConstructor:   1 threads *    500000 loops each: tAvg =          47.321 ms, σ =      0.000 ms, throughput = 10,566.1 loops/ms (x   3.60, reference x   6.69)
+        getDeclaredConstructor:   1 threads *    500000 loops each: tAvg =          55.063 ms, σ =      0.000 ms, throughput =  9,080.5 loops/ms (x   3.09, reference x   5.75)
+measure:
+        getDeclaredConstructor:   1 threads *    500000 loops each: tAvg =          49.963 ms, σ =      0.000 ms, throughput = 10,007.3 loops/ms (x   1.00, reference x   6.34)
+        getDeclaredConstructor:   2 threads *    500000 loops each: tAvg =          49.094 ms, σ =      0.023 ms, throughput = 20,368.9 loops/ms (x   2.04, reference x   6.45)
+        getDeclaredConstructor:   4 threads *    500000 loops each: tAvg =          68.911 ms, σ =     21.305 ms, throughput = 29,022.9 loops/ms (x   2.90, reference x   4.66)
+        getDeclaredConstructor:   8 threads *    500000 loops each: tAvg =         102.601 ms, σ =     25.396 ms, throughput = 38,985.9 loops/ms (x   3.90, reference x   6.05)
+        getDeclaredConstructor:  16 threads *    500000 loops each: tAvg =         138.947 ms, σ =     27.573 ms, throughput = 57,575.9 loops/ms (x   5.75, reference x   8.42)
+        getDeclaredConstructor:  32 threads *    500000 loops each: tAvg =         231.635 ms, σ =     57.686 ms, throughput = 69,074.1 loops/ms (x   6.90, reference x  10.08)
+
+warm-up:
+             getDeclaredMethod:   1 threads *    500000 loops each: tAvg =         677.930 ms, σ =      0.000 ms, throughput =    737.5 loops/ms (x   1.00, reference x   1.31)
+             getDeclaredMethod:   1 threads *    500000 loops each: tAvg =         325.991 ms, σ =      0.000 ms, throughput =  1,533.8 loops/ms (x   2.08, reference x   2.72)
+             getDeclaredMethod:   1 threads *    500000 loops each: tAvg =         295.293 ms, σ =      0.000 ms, throughput =  1,693.2 loops/ms (x   2.30, reference x   3.01)
+             getDeclaredMethod:   1 threads *    500000 loops each: tAvg =         290.734 ms, σ =      0.000 ms, throughput =  1,719.8 loops/ms (x   2.33, reference x   3.05)
+             getDeclaredMethod:   1 threads *    500000 loops each: tAvg =         292.466 ms, σ =      0.000 ms, throughput =  1,709.6 loops/ms (x   2.32, reference x   3.03)
+measure:
+             getDeclaredMethod:   1 threads *    500000 loops each: tAvg =         294.692 ms, σ =      0.000 ms, throughput =  1,696.7 loops/ms (x   1.00, reference x   3.01)
+             getDeclaredMethod:   2 threads *    500000 loops each: tAvg =         289.772 ms, σ =      0.182 ms, throughput =  3,451.0 loops/ms (x   2.03, reference x   3.11)
+             getDeclaredMethod:   4 threads *    500000 loops each: tAvg =         292.956 ms, σ =      1.634 ms, throughput =  6,827.0 loops/ms (x   4.02, reference x   3.06)
+             getDeclaredMethod:   8 threads *    500000 loops each: tAvg =         605.869 ms, σ =      4.067 ms, throughput =  6,602.1 loops/ms (x   3.89, reference x   2.96)
+             getDeclaredMethod:  16 threads *    500000 loops each: tAvg =       1,181.846 ms, σ =     57.010 ms, throughput =  6,769.1 loops/ms (x   3.99, reference x   3.02)
+             getDeclaredMethod:  32 threads *    500000 loops each: tAvg =       2,223.879 ms, σ =    111.745 ms, throughput =  7,194.6 loops/ms (x   4.24, reference x   3.25)
+
+warm-up:
+              getDeclaredField:   1 threads *    500000 loops each: tAvg =         224.898 ms, σ =      0.000 ms, throughput =  2,223.2 loops/ms (x   1.00, reference x   0.62)
+              getDeclaredField:   1 threads *    500000 loops each: tAvg =         141.251 ms, σ =      0.000 ms, throughput =  3,539.8 loops/ms (x   1.59, reference x   0.99)
+              getDeclaredField:   1 threads *    500000 loops each: tAvg =         135.582 ms, σ =      0.000 ms, throughput =  3,687.8 loops/ms (x   1.66, reference x   1.03)
+              getDeclaredField:   1 threads *    500000 loops each: tAvg =         136.184 ms, σ =      0.000 ms, throughput =  3,671.5 loops/ms (x   1.65, reference x   1.02)
+              getDeclaredField:   1 threads *    500000 loops each: tAvg =         137.240 ms, σ =      0.000 ms, throughput =  3,643.3 loops/ms (x   1.64, reference x   1.02)
+measure:
+              getDeclaredField:   1 threads *    500000 loops each: tAvg =         141.315 ms, σ =      0.000 ms, throughput =  3,538.2 loops/ms (x   1.00, reference x   0.99)
+              getDeclaredField:   2 threads *    500000 loops each: tAvg =         136.855 ms, σ =      0.505 ms, throughput =  7,307.0 loops/ms (x   2.07, reference x   1.07)
+              getDeclaredField:   4 threads *    500000 loops each: tAvg =         142.834 ms, σ =      2.675 ms, throughput = 14,002.2 loops/ms (x   3.96, reference x   1.03)
+              getDeclaredField:   8 threads *    500000 loops each: tAvg =         284.869 ms, σ =      1.396 ms, throughput = 14,041.5 loops/ms (x   3.97, reference x   1.05)
+              getDeclaredField:  16 threads *    500000 loops each: tAvg =         531.038 ms, σ =     58.378 ms, throughput = 15,064.8 loops/ms (x   4.26, reference x   1.00)
+              getDeclaredField:  32 threads *    500000 loops each: tAvg =         952.820 ms, σ =     96.620 ms, throughput = 16,792.3 loops/ms (x   4.75, reference x   1.07)
+
+warm-up:
+                getConstructor:   1 threads *    500000 loops each: tAvg =         162.591 ms, σ =      0.000 ms, throughput =  3,075.2 loops/ms (x   1.00, reference x   0.38)
+                getConstructor:   1 threads *    500000 loops each: tAvg =          55.130 ms, σ =      0.000 ms, throughput =  9,069.5 loops/ms (x   2.95, reference x   1.13)
+                getConstructor:   1 threads *    500000 loops each: tAvg =          49.017 ms, σ =      0.000 ms, throughput = 10,200.6 loops/ms (x   3.32, reference x   1.27)
+                getConstructor:   1 threads *    500000 loops each: tAvg =          51.910 ms, σ =      0.000 ms, throughput =  9,632.0 loops/ms (x   3.13, reference x   1.20)
+                getConstructor:   1 threads *    500000 loops each: tAvg =          48.933 ms, σ =      0.000 ms, throughput = 10,218.1 loops/ms (x   3.32, reference x   1.27)
+measure:
+                getConstructor:   1 threads *    500000 loops each: tAvg =          47.918 ms, σ =      0.000 ms, throughput = 10,434.4 loops/ms (x   1.00, reference x   1.30)
+                getConstructor:   2 threads *    500000 loops each: tAvg =          50.025 ms, σ =      0.394 ms, throughput = 19,989.9 loops/ms (x   1.92, reference x   1.34)
+                getConstructor:   4 threads *    500000 loops each: tAvg =          53.715 ms, σ =      0.945 ms, throughput = 37,233.4 loops/ms (x   3.57, reference x   1.44)
+                getConstructor:   8 threads *    500000 loops each: tAvg =         103.898 ms, σ =     18.012 ms, throughput = 38,499.2 loops/ms (x   3.69, reference x   1.24)
+                getConstructor:  16 threads *    500000 loops each: tAvg =         158.382 ms, σ =     24.189 ms, throughput = 50,510.7 loops/ms (x   4.84, reference x   1.29)
+                getConstructor:  32 threads *    500000 loops each: tAvg =         217.317 ms, σ =     57.824 ms, throughput = 73,625.3 loops/ms (x   7.06, reference x   1.55)
+
+warm-up:
+                     getMethod:   1 threads *    500000 loops each: tAvg =       1,551.495 ms, σ =      0.000 ms, throughput =    322.3 loops/ms (x   1.00, reference x   0.96)
+                     getMethod:   1 threads *    500000 loops each: tAvg =       1,490.706 ms, σ =      0.000 ms, throughput =    335.4 loops/ms (x   1.04, reference x   1.00)
+                     getMethod:   1 threads *    500000 loops each: tAvg =       1,487.067 ms, σ =      0.000 ms, throughput =    336.2 loops/ms (x   1.04, reference x   1.00)
+                     getMethod:   1 threads *    500000 loops each: tAvg =       1,493.253 ms, σ =      0.000 ms, throughput =    334.8 loops/ms (x   1.04, reference x   1.00)
+                     getMethod:   1 threads *    500000 loops each: tAvg =       1,483.463 ms, σ =      0.000 ms, throughput =    337.0 loops/ms (x   1.05, reference x   1.00)
+measure:
+                     getMethod:   1 threads *    500000 loops each: tAvg =       1,497.399 ms, σ =      0.000 ms, throughput =    333.9 loops/ms (x   1.00, reference x   1.00)
+                     getMethod:   2 threads *    500000 loops each: tAvg =       1,616.739 ms, σ =      0.343 ms, throughput =    618.5 loops/ms (x   1.85, reference x   0.97)
+                     getMethod:   4 threads *    500000 loops each: tAvg =       1,636.486 ms, σ =     12.824 ms, throughput =  1,222.1 loops/ms (x   3.66, reference x   1.02)
+                     getMethod:   8 threads *    500000 loops each: tAvg =       3,110.340 ms, σ =     49.276 ms, throughput =  1,286.0 loops/ms (x   3.85, reference x   1.05)
+                     getMethod:  16 threads *    500000 loops each: tAvg =       6,217.092 ms, σ =    205.308 ms, throughput =  1,286.8 loops/ms (x   3.85, reference x   1.04)
+                     getMethod:  32 threads *    500000 loops each: tAvg =      12,616.980 ms, σ =    286.977 ms, throughput =  1,268.1 loops/ms (x   3.80, reference x   1.05)
+
+warm-up:
+                      getField:   1 threads *    500000 loops each: tAvg =       1,321.272 ms, σ =      0.000 ms, throughput =    378.4 loops/ms (x   1.00, reference x   0.87)
+                      getField:   1 threads *    500000 loops each: tAvg =       1,305.011 ms, σ =      0.000 ms, throughput =    383.1 loops/ms (x   1.01, reference x   0.88)
+                      getField:   1 threads *    500000 loops each: tAvg =       1,300.858 ms, σ =      0.000 ms, throughput =    384.4 loops/ms (x   1.02, reference x   0.89)
+                      getField:   1 threads *    500000 loops each: tAvg =       1,292.021 ms, σ =      0.000 ms, throughput =    387.0 loops/ms (x   1.02, reference x   0.89)
+                      getField:   1 threads *    500000 loops each: tAvg =       1,302.748 ms, σ =      0.000 ms, throughput =    383.8 loops/ms (x   1.01, reference x   0.88)
+measure:
+                      getField:   1 threads *    500000 loops each: tAvg =       1,297.395 ms, σ =      0.000 ms, throughput =    385.4 loops/ms (x   1.00, reference x   0.89)
+                      getField:   2 threads *    500000 loops each: tAvg =       1,299.225 ms, σ =      3.056 ms, throughput =    769.7 loops/ms (x   2.00, reference x   0.90)
+                      getField:   4 threads *    500000 loops each: tAvg =       1,314.871 ms, σ =     19.175 ms, throughput =  1,521.1 loops/ms (x   3.95, reference x   0.95)
+                      getField:   8 threads *    500000 loops each: tAvg =       2,314.944 ms, σ =      9.896 ms, throughput =  1,727.9 loops/ms (x   4.48, reference x   0.99)
+                      getField:  16 threads *    500000 loops each: tAvg =       4,681.151 ms, σ =     74.392 ms, throughput =  1,709.0 loops/ms (x   4.43, reference x   0.97)
+                      getField:  32 threads *    500000 loops each: tAvg =       9,334.830 ms, σ =    187.209 ms, throughput =  1,714.0 loops/ms (x   4.45, reference x   0.98)
