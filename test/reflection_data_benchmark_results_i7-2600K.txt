@@ -1,3 +1,5 @@
+*** Original JDK8 code:
+
 Executing: /home/peter/Apps64/jdk1.8.0-jdk8-tl/bin/java -Xmx4G -cp ../out/production/test test.ReflectionDataTest reference
 
 warm-up:
@@ -168,6 +170,8 @@ measure:
                       getField:  16 threads *    500000 loops each: tAvg =       4,542.485 ms, σ =    134.529 ms, throughput =  1,761.2 loops/ms (x   4.06, reference x   1.00)
                       getField:  32 threads *    500000 loops each: tAvg =       9,109.435 ms, σ =    271.021 ms, throughput =  1,756.4 loops/ms (x   4.05, reference x   1.00)
 
+
+*** patched java.lang.Class:
 
 Executing: /home/peter/Apps64/jdk1.8.0-jdk8-tl/bin/java -Xmx4G -cp ../out/production/test -Xbootclasspath/p:../out/production/jdk test.ReflectionDataTest
 
