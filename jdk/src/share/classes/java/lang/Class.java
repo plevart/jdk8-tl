@@ -2232,8 +2232,8 @@ public final
             this.redefinedCount = redefinedCount;
         }
 
-        // initialize Unsafe machinery here, since we need to call Class.class instance method and would like to avoid
-        // calling it in the static initializer of the Class class...
+        // initialize Unsafe machinery here, since we need to call Class.class instance method
+        // and would like to avoid calling it in the static initializer of the Class class...
         private static final Unsafe unsafe;
         // offset of Class.reflectionData instance field
         private static final long reflectionDataOffset;
@@ -2241,12 +2241,17 @@ public final
         static {
             unsafe = Unsafe.getUnsafe();
             // bypass caches
-            Field reflectionDataField = searchFields(Class.class.getDeclaredFields0(false), "reflectionData");
-            if (reflectionDataField == null) throw new Error("No reflectionData field found in java.lang.Class");
+            Field reflectionDataField = searchFields(
+                Class.class.getDeclaredFields0(false), "reflectionData"
+            );
+            if (reflectionDataField == null)
+                throw new Error("No reflectionData field found in java.lang.Class");
             reflectionDataOffset = unsafe.objectFieldOffset(reflectionDataField);
         }
 
-        static <T> boolean compareAndSwap(Class<?> clazz, SoftReference<ReflectionData<T>> oldData, SoftReference<ReflectionData<T>> newData) {
+        static <T> boolean compareAndSwap(Class<?> clazz,
+                                          SoftReference<ReflectionData<T>> oldData,
+                                          SoftReference<ReflectionData<T>> newData) {
             return unsafe.compareAndSwapObject(clazz, reflectionDataOffset, oldData, newData);
         }
     }
@@ -2259,23 +2264,39 @@ public final
 
     // Lazily create and cache ReflectionData
     private ReflectionData<T> reflectionData() {
+        SoftReference<ReflectionData<T>> reflectionData = this.reflectionData;
+        int classRedefinedCount = this.classRedefinedCount;
+        ReflectionData<T> rd;
+        if (useCaches &&
+            reflectionData != null &&
+            (rd = reflectionData.get()) != null &&
+            rd.redefinedCount == classRedefinedCount) {
+            return rd;
+        }
+        // else no SoftReference or cleared SoftReference or stale ReflectionData
+        // -> create and replace new instance
+        return newReflectionData(reflectionData, classRedefinedCount);
+    }
+
+    private ReflectionData<T> newReflectionData(SoftReference<ReflectionData<T>> oldReflectionData,
+                                                int classRedefinedCount) {
         if (!useCaches) return null;
 
         while (true)
         {
-            SoftReference<ReflectionData<T>> reflectionData = this.reflectionData;
-            int classRedefinedCount = this.classRedefinedCount;
-            ReflectionData<T> rd;
-            if (reflectionData != null && (rd = reflectionData.get()) != null && rd.redefinedCount == classRedefinedCount) {
-                return rd;
-            }
-            // no SoftReference or cleared SoftReference or stale ReflectionData
-            rd = new ReflectionData<T>(classRedefinedCount);
+            ReflectionData<T> rd = new ReflectionData<>(classRedefinedCount);
             // try to CAS it...
-            if (ReflectionData.compareAndSwap(this, reflectionData, new SoftReference<>(rd))) {
+            if (ReflectionData.compareAndSwap(this, oldReflectionData, new SoftReference<>(rd))) {
                 return rd;
             }
             // else retry
+            oldReflectionData = this.reflectionData;
+            classRedefinedCount = this.classRedefinedCount;
+            if (oldReflectionData != null &&
+                (rd = oldReflectionData.get()) != null &&
+                rd.redefinedCount == classRedefinedCount) {
+                return rd;
+            }
         }
     }
 
@@ -2317,9 +2338,12 @@ public final
     // be propagated to the outside world, but must instead be copied
     // via ReflectionFactory.copyField.
     private Field[] privateGetDeclaredFields(boolean publicOnly) {
+        return privateGetDeclaredFields(publicOnly, reflectionData());
+    }
+    // A variant called from methods that already obtained ReflectionData instance
+    private Field[] privateGetDeclaredFields(boolean publicOnly, ReflectionData<T> rd) {
         checkInitted();
-        Field[] res = null;
-        ReflectionData<T> rd = reflectionData();
+        Field[] res;
         if (rd != null) {
             res = publicOnly ? rd.declaredPublicFields : rd.declaredFields;
             if (res != null) return res;
@@ -2341,7 +2365,7 @@ public final
     // via ReflectionFactory.copyField.
     private Field[] privateGetPublicFields(Set<Class<?>> traversedInterfaces) {
         checkInitted();
-        Field[] res = null;
+        Field[] res;
         ReflectionData<T> rd = reflectionData();
         if (rd != null) {
             res = rd.publicFields;
@@ -2356,7 +2380,7 @@ public final
         }
 
         // Local fields
-        Field[] tmp = privateGetDeclaredFields(true);
+        Field[] tmp = privateGetDeclaredFields(true, rd);
         addAll(fields, tmp);
 
         // Direct superinterfaces, recursively
@@ -2401,7 +2425,7 @@ public final
     // instead be copied via ReflectionFactory.copyConstructor.
     private Constructor<T>[] privateGetDeclaredConstructors(boolean publicOnly) {
         checkInitted();
-        Constructor<T>[] res = null;
+        Constructor<T>[] res;
         ReflectionData<T> rd = reflectionData();
         if (rd != null) {
             res = publicOnly ? rd.publicConstructors : rd.declaredConstructors;
@@ -2435,16 +2459,19 @@ public final
     // be propagated to the outside world, but must instead be copied
     // via ReflectionFactory.copyMethod.
     private Method[] privateGetDeclaredMethods(boolean publicOnly) {
+        return privateGetDeclaredMethods(publicOnly, reflectionData());
+    }
+    // A variant called from methods that already obtained ReflectionData instance
+    private Method[] privateGetDeclaredMethods(boolean publicOnly, ReflectionData<T> rd) {
         checkInitted();
-        Method[] res = null;
-        ReflectionData<T> rd = reflectionData();
+        Method[] res;
         if (rd != null) {
             res = publicOnly ? rd.declaredPublicMethods : rd.declaredMethods;
             if (res != null) return res;
         }
         // No cached value available; request value from VM
         res = Reflection.filterMethods(this, getDeclaredMethods0(publicOnly));
-        if (useCaches) {
+        if (rd != null) {
             if (publicOnly) {
                 rd.declaredPublicMethods = res;
             } else {
@@ -2550,7 +2577,7 @@ public final
     // via ReflectionFactory.copyMethod.
     private Method[] privateGetPublicMethods() {
         checkInitted();
-        Method[] res = null;
+        Method[] res;
         ReflectionData<T> rd = reflectionData();
         if (rd != null) {
             res = rd.publicMethods;
@@ -2561,7 +2588,7 @@ public final
         // Start by fetching public declared methods
         MethodArray methods = new MethodArray();
         {
-            Method[] tmp = privateGetDeclaredMethods(true);
+            Method[] tmp = privateGetDeclaredMethods(true, rd);
             methods.addAll(tmp);
         }
         // Now recur over superclass and direct superinterfaces.
@@ -2630,7 +2657,7 @@ public final
         // of Field objects which have to be created for the common
         // case where the field being requested is declared in the
         // class which is being queried.
-        Field res = null;
+        Field res;
         // Search declared public fields
         if ((res = searchFields(privateGetDeclaredFields(true), name)) != null) {
             return res;
@@ -2682,7 +2709,7 @@ public final
         // number of Method objects which have to be created for the
         // common case where the method being requested is declared in
         // the class which is being queried.
-        Method res = null;
+        Method res;
         // Search declared public methods
         if ((res = searchMethods(privateGetDeclaredMethods(true),
                                  name,
