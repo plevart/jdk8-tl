@@ -1,0 +1,116 @@
+Executing: /home/peter/Apps64/jdk1.8.0-jdk8-tl/bin/java -Xmx4G -cp ../out/production/test test.ReflectionDataTest reference
+
+warm-up:
+
+              TestBulkDeclared:   1 threads *    500000 loops each: tAvg =         544.094 ms, σ =      0.000 ms, throughput =    919.0 loops/ms (x   1.00, reference x   1.00)
+              TestBulkDeclared:   1 threads *    500000 loops each: tAvg =         243.191 ms, σ =      0.000 ms, throughput =  2,056.0 loops/ms (x   2.24, reference x   1.00)
+              TestBulkDeclared:   1 threads *    500000 loops each: tAvg =         228.824 ms, σ =      0.000 ms, throughput =  2,185.1 loops/ms (x   2.38, reference x   1.00)
+              TestBulkDeclared:   1 threads *    500000 loops each: tAvg =         219.689 ms, σ =      0.000 ms, throughput =  2,275.9 loops/ms (x   2.48, reference x   1.00)
+              TestBulkDeclared:   1 threads *    500000 loops each: tAvg =         213.464 ms, σ =      0.000 ms, throughput =  2,342.3 loops/ms (x   2.55, reference x   1.00)
+
+                TestBulkPublic:   1 threads *    500000 loops each: tAvg =       1,128.627 ms, σ =      0.000 ms, throughput =    443.0 loops/ms (x   1.00, reference x   1.00)
+                TestBulkPublic:   1 threads *    500000 loops each: tAvg =         989.540 ms, σ =      0.000 ms, throughput =    505.3 loops/ms (x   1.14, reference x   1.00)
+                TestBulkPublic:   1 threads *    500000 loops each: tAvg =         982.722 ms, σ =      0.000 ms, throughput =    508.8 loops/ms (x   1.15, reference x   1.00)
+                TestBulkPublic:   1 threads *    500000 loops each: tAvg =         983.437 ms, σ =      0.000 ms, throughput =    508.4 loops/ms (x   1.15, reference x   1.00)
+                TestBulkPublic:   1 threads *    500000 loops each: tAvg =         983.208 ms, σ =      0.000 ms, throughput =    508.5 loops/ms (x   1.15, reference x   1.00)
+
+            TestByNameDeclared:   1 threads *    500000 loops each: tAvg =       1,536.823 ms, σ =      0.000 ms, throughput =    325.3 loops/ms (x   1.00, reference x   1.00)
+            TestByNameDeclared:   1 threads *    500000 loops each: tAvg =       1,379.874 ms, σ =      0.000 ms, throughput =    362.4 loops/ms (x   1.11, reference x   1.00)
+            TestByNameDeclared:   1 threads *    500000 loops each: tAvg =       1,394.148 ms, σ =      0.000 ms, throughput =    358.6 loops/ms (x   1.10, reference x   1.00)
+            TestByNameDeclared:   1 threads *    500000 loops each: tAvg =       1,389.184 ms, σ =      0.000 ms, throughput =    359.9 loops/ms (x   1.11, reference x   1.00)
+            TestByNameDeclared:   1 threads *    500000 loops each: tAvg =       1,393.649 ms, σ =      0.000 ms, throughput =    358.8 loops/ms (x   1.10, reference x   1.00)
+
+              TestByNamePublic:   1 threads *    500000 loops each: tAvg =       2,545.470 ms, σ =      0.000 ms, throughput =    196.4 loops/ms (x   1.00, reference x   1.00)
+              TestByNamePublic:   1 threads *    500000 loops each: tAvg =       2,225.943 ms, σ =      0.000 ms, throughput =    224.6 loops/ms (x   1.14, reference x   1.00)
+              TestByNamePublic:   1 threads *    500000 loops each: tAvg =       2,225.375 ms, σ =      0.000 ms, throughput =    224.7 loops/ms (x   1.14, reference x   1.00)
+              TestByNamePublic:   1 threads *    500000 loops each: tAvg =       2,220.388 ms, σ =      0.000 ms, throughput =    225.2 loops/ms (x   1.15, reference x   1.00)
+              TestByNamePublic:   1 threads *    500000 loops each: tAvg =       2,208.243 ms, σ =      0.000 ms, throughput =    226.4 loops/ms (x   1.15, reference x   1.00)
+
+measure:
+
+              TestBulkDeclared:   1 threads *    500000 loops each: tAvg =         219.257 ms, σ =      0.000 ms, throughput =  2,280.4 loops/ms (x   1.00, reference x   1.00)
+              TestBulkDeclared:   2 threads *    500000 loops each: tAvg =         223.502 ms, σ =      0.047 ms, throughput =  4,474.2 loops/ms (x   1.96, reference x   1.00)
+              TestBulkDeclared:   4 threads *    500000 loops each: tAvg =         238.680 ms, σ =      7.333 ms, throughput =  8,379.4 loops/ms (x   3.67, reference x   1.00)
+              TestBulkDeclared:   8 threads *    500000 loops each: tAvg =         426.484 ms, σ =     22.588 ms, throughput =  9,379.0 loops/ms (x   4.11, reference x   1.00)
+              TestBulkDeclared:  16 threads *    500000 loops each: tAvg =         803.745 ms, σ =     48.243 ms, throughput =  9,953.4 loops/ms (x   4.36, reference x   1.00)
+              TestBulkDeclared:  32 threads *    500000 loops each: tAvg =       1,611.490 ms, σ =     96.408 ms, throughput =  9,928.7 loops/ms (x   4.35, reference x   1.00)
+
+                TestBulkPublic:   1 threads *    500000 loops each: tAvg =         977.804 ms, σ =      0.000 ms, throughput =    511.3 loops/ms (x   1.00, reference x   1.00)
+                TestBulkPublic:   2 threads *    500000 loops each: tAvg =         988.483 ms, σ =      0.305 ms, throughput =  1,011.7 loops/ms (x   1.98, reference x   1.00)
+                TestBulkPublic:   4 threads *    500000 loops each: tAvg =       1,057.034 ms, σ =     38.958 ms, throughput =  1,892.1 loops/ms (x   3.70, reference x   1.00)
+                TestBulkPublic:   8 threads *    500000 loops each: tAvg =       1,869.436 ms, σ =     20.491 ms, throughput =  2,139.7 loops/ms (x   4.18, reference x   1.00)
+                TestBulkPublic:  16 threads *    500000 loops each: tAvg =       3,620.990 ms, σ =     91.239 ms, throughput =  2,209.3 loops/ms (x   4.32, reference x   1.00)
+                TestBulkPublic:  32 threads *    500000 loops each: tAvg =       7,268.132 ms, σ =    174.351 ms, throughput =  2,201.4 loops/ms (x   4.31, reference x   1.00)
+
+            TestByNameDeclared:   1 threads *    500000 loops each: tAvg =       1,366.647 ms, σ =      0.000 ms, throughput =    365.9 loops/ms (x   1.00, reference x   1.00)
+            TestByNameDeclared:   2 threads *    500000 loops each: tAvg =       1,421.320 ms, σ =     13.952 ms, throughput =    703.6 loops/ms (x   1.92, reference x   1.00)
+            TestByNameDeclared:   4 threads *    500000 loops each: tAvg =       1,425.820 ms, σ =      5.749 ms, throughput =  1,402.7 loops/ms (x   3.83, reference x   1.00)
+            TestByNameDeclared:   8 threads *    500000 loops each: tAvg =       2,741.868 ms, σ =     39.975 ms, throughput =  1,458.9 loops/ms (x   3.99, reference x   1.00)
+            TestByNameDeclared:  16 threads *    500000 loops each: tAvg =       5,365.821 ms, σ =    183.201 ms, throughput =  1,490.9 loops/ms (x   4.08, reference x   1.00)
+            TestByNameDeclared:  32 threads *    500000 loops each: tAvg =      11,046.042 ms, σ =    234.310 ms, throughput =  1,448.5 loops/ms (x   3.96, reference x   1.00)
+
+              TestByNamePublic:   1 threads *    500000 loops each: tAvg =       2,271.865 ms, σ =      0.000 ms, throughput =    220.1 loops/ms (x   1.00, reference x   1.00)
+              TestByNamePublic:   2 threads *    500000 loops each: tAvg =       2,370.514 ms, σ =      0.234 ms, throughput =    421.8 loops/ms (x   1.92, reference x   1.00)
+              TestByNamePublic:   4 threads *    500000 loops each: tAvg =       2,266.236 ms, σ =      6.763 ms, throughput =    882.5 loops/ms (x   4.01, reference x   1.00)
+              TestByNamePublic:   8 threads *    500000 loops each: tAvg =       4,289.203 ms, σ =     73.295 ms, throughput =    932.6 loops/ms (x   4.24, reference x   1.00)
+              TestByNamePublic:  16 threads *    500000 loops each: tAvg =       8,568.506 ms, σ =    172.912 ms, throughput =    933.7 loops/ms (x   4.24, reference x   1.00)
+              TestByNamePublic:  32 threads *    500000 loops each: tAvg =      17,092.070 ms, σ =    308.513 ms, throughput =    936.1 loops/ms (x   4.25, reference x   1.00)
+
+
+Executing: /home/peter/Apps64/jdk1.8.0-jdk8-tl/bin/java -Xmx4G -cp ../out/production/test -Xbootclasspath/p:../out/production/jdk test.ReflectionDataTest
+
+warm-up:
+
+              TestBulkDeclared:   1 threads *    500000 loops each: tAvg =         530.778 ms, σ =      0.000 ms, throughput =    942.0 loops/ms (x   1.00, reference x   0.41)
+              TestBulkDeclared:   1 threads *    500000 loops each: tAvg =         238.837 ms, σ =      0.000 ms, throughput =  2,093.5 loops/ms (x   2.22, reference x   0.92)
+              TestBulkDeclared:   1 threads *    500000 loops each: tAvg =         241.637 ms, σ =      0.000 ms, throughput =  2,069.2 loops/ms (x   2.20, reference x   0.91)
+              TestBulkDeclared:   1 threads *    500000 loops each: tAvg =         234.263 ms, σ =      0.000 ms, throughput =  2,134.4 loops/ms (x   2.27, reference x   0.94)
+              TestBulkDeclared:   1 threads *    500000 loops each: tAvg =         232.874 ms, σ =      0.000 ms, throughput =  2,147.1 loops/ms (x   2.28, reference x   0.94)
+
+                TestBulkPublic:   1 threads *    500000 loops each: tAvg =         755.311 ms, σ =      0.000 ms, throughput =    662.0 loops/ms (x   1.00, reference x   1.29)
+                TestBulkPublic:   1 threads *    500000 loops each: tAvg =         495.498 ms, σ =      0.000 ms, throughput =  1,009.1 loops/ms (x   1.52, reference x   1.97)
+                TestBulkPublic:   1 threads *    500000 loops each: tAvg =         460.606 ms, σ =      0.000 ms, throughput =  1,085.5 loops/ms (x   1.64, reference x   2.12)
+                TestBulkPublic:   1 threads *    500000 loops each: tAvg =         456.779 ms, σ =      0.000 ms, throughput =  1,094.6 loops/ms (x   1.65, reference x   2.14)
+                TestBulkPublic:   1 threads *    500000 loops each: tAvg =         463.448 ms, σ =      0.000 ms, throughput =  1,078.9 loops/ms (x   1.63, reference x   2.11)
+
+            TestByNameDeclared:   1 threads *    500000 loops each: tAvg =       1,755.669 ms, σ =      0.000 ms, throughput =    284.8 loops/ms (x   1.00, reference x   0.78)
+            TestByNameDeclared:   1 threads *    500000 loops each: tAvg =         497.306 ms, σ =      0.000 ms, throughput =  1,005.4 loops/ms (x   3.53, reference x   2.75)
+            TestByNameDeclared:   1 threads *    500000 loops each: tAvg =         495.811 ms, σ =      0.000 ms, throughput =  1,008.4 loops/ms (x   3.54, reference x   2.76)
+            TestByNameDeclared:   1 threads *    500000 loops each: tAvg =         489.329 ms, σ =      0.000 ms, throughput =  1,021.8 loops/ms (x   3.59, reference x   2.79)
+            TestByNameDeclared:   1 threads *    500000 loops each: tAvg =         495.354 ms, σ =      0.000 ms, throughput =  1,009.4 loops/ms (x   3.54, reference x   2.76)
+
+              TestByNamePublic:   1 threads *    500000 loops each: tAvg =       2,542.216 ms, σ =      0.000 ms, throughput =    196.7 loops/ms (x   1.00, reference x   0.89)
+              TestByNamePublic:   1 threads *    500000 loops each: tAvg =       2,239.519 ms, σ =      0.000 ms, throughput =    223.3 loops/ms (x   1.14, reference x   1.01)
+              TestByNamePublic:   1 threads *    500000 loops each: tAvg =       2,171.023 ms, σ =      0.000 ms, throughput =    230.3 loops/ms (x   1.17, reference x   1.05)
+              TestByNamePublic:   1 threads *    500000 loops each: tAvg =       2,189.542 ms, σ =      0.000 ms, throughput =    228.4 loops/ms (x   1.16, reference x   1.04)
+              TestByNamePublic:   1 threads *    500000 loops each: tAvg =       2,173.657 ms, σ =      0.000 ms, throughput =    230.0 loops/ms (x   1.17, reference x   1.05)
+
+measure:
+
+              TestBulkDeclared:   1 threads *    500000 loops each: tAvg =         225.411 ms, σ =      0.000 ms, throughput =  2,218.2 loops/ms (x   1.00, reference x   0.97)
+              TestBulkDeclared:   2 threads *    500000 loops each: tAvg =         227.622 ms, σ =      0.807 ms, throughput =  4,393.3 loops/ms (x   1.98, reference x   0.98)
+              TestBulkDeclared:   4 threads *    500000 loops each: tAvg =         247.652 ms, σ =      1.032 ms, throughput =  8,075.9 loops/ms (x   3.64, reference x   0.96)
+              TestBulkDeclared:   8 threads *    500000 loops each: tAvg =         431.861 ms, σ =     26.091 ms, throughput =  9,262.2 loops/ms (x   4.18, reference x   0.99)
+              TestBulkDeclared:  16 threads *    500000 loops each: tAvg =         808.617 ms, σ =     68.196 ms, throughput =  9,893.4 loops/ms (x   4.46, reference x   0.99)
+              TestBulkDeclared:  32 threads *    500000 loops each: tAvg =       1,556.119 ms, σ =    100.032 ms, throughput = 10,282.0 loops/ms (x   4.64, reference x   1.04)
+
+                TestBulkPublic:   1 threads *    500000 loops each: tAvg =         467.838 ms, σ =      0.000 ms, throughput =  1,068.7 loops/ms (x   1.00, reference x   2.09)
+                TestBulkPublic:   2 threads *    500000 loops each: tAvg =         519.708 ms, σ =      0.732 ms, throughput =  1,924.2 loops/ms (x   1.80, reference x   1.90)
+                TestBulkPublic:   4 threads *    500000 loops each: tAvg =         730.596 ms, σ =      7.869 ms, throughput =  2,737.5 loops/ms (x   2.56, reference x   1.45)
+                TestBulkPublic:   8 threads *    500000 loops each: tAvg =       1,518.631 ms, σ =     11.595 ms, throughput =  2,634.0 loops/ms (x   2.46, reference x   1.23)
+                TestBulkPublic:  16 threads *    500000 loops each: tAvg =       2,952.870 ms, σ =     92.425 ms, throughput =  2,709.2 loops/ms (x   2.53, reference x   1.23)
+                TestBulkPublic:  32 threads *    500000 loops each: tAvg =       5,935.458 ms, σ =    158.120 ms, throughput =  2,695.7 loops/ms (x   2.52, reference x   1.22)
+
+            TestByNameDeclared:   1 threads *    500000 loops each: tAvg =         478.480 ms, σ =      0.000 ms, throughput =  1,045.0 loops/ms (x   1.00, reference x   2.86)
+            TestByNameDeclared:   2 threads *    500000 loops each: tAvg =         481.025 ms, σ =      1.953 ms, throughput =  2,078.9 loops/ms (x   1.99, reference x   2.95)
+            TestByNameDeclared:   4 threads *    500000 loops each: tAvg =         488.029 ms, σ =      2.096 ms, throughput =  4,098.1 loops/ms (x   3.92, reference x   2.92)
+            TestByNameDeclared:   8 threads *    500000 loops each: tAvg =         992.901 ms, σ =      6.163 ms, throughput =  4,028.6 loops/ms (x   3.86, reference x   2.76)
+            TestByNameDeclared:  16 threads *    500000 loops each: tAvg =       1,947.813 ms, σ =    104.352 ms, throughput =  4,107.2 loops/ms (x   3.93, reference x   2.75)
+            TestByNameDeclared:  32 threads *    500000 loops each: tAvg =       3,866.780 ms, σ =    146.841 ms, throughput =  4,137.8 loops/ms (x   3.96, reference x   2.86)
+
+              TestByNamePublic:   1 threads *    500000 loops each: tAvg =       2,213.249 ms, σ =      0.000 ms, throughput =    225.9 loops/ms (x   1.00, reference x   1.03)
+              TestByNamePublic:   2 threads *    500000 loops each: tAvg =       2,481.873 ms, σ =      1.729 ms, throughput =    402.9 loops/ms (x   1.78, reference x   0.96)
+              TestByNamePublic:   4 threads *    500000 loops each: tAvg =       2,407.408 ms, σ =    143.335 ms, throughput =    830.8 loops/ms (x   3.68, reference x   0.94)
+              TestByNamePublic:   8 threads *    500000 loops each: tAvg =       4,293.422 ms, σ =     81.532 ms, throughput =    931.7 loops/ms (x   4.12, reference x   1.00)
+              TestByNamePublic:  16 threads *    500000 loops each: tAvg =       8,585.756 ms, σ =    180.312 ms, throughput =    931.8 loops/ms (x   4.12, reference x   1.00)
+              TestByNamePublic:  32 threads *    500000 loops each: tAvg =      17,101.007 ms, σ =    368.265 ms, throughput =    935.6 loops/ms (x   4.14, reference x   1.00)
