@@ -2232,8 +2232,8 @@ public final
             this.redefinedCount = redefinedCount;
         }
 
-        // initialize Unsafe machinery here, since we need to call Class.class instance method
-        // and would like to avoid calling it in the static initializer of the Class class...
+        // initialize Unsafe machinery here, since we need to call Class.class instance method and would like to avoid
+        // calling it in the static initializer of the Class class...
         private static final Unsafe unsafe;
         // offset of Class.reflectionData instance field
         private static final long reflectionDataOffset;
@@ -2241,17 +2241,12 @@ public final
         static {
             unsafe = Unsafe.getUnsafe();
             // bypass caches
-            Field reflectionDataField = searchFields(
-                Class.class.getDeclaredFields0(false), "reflectionData"
-            );
-            if (reflectionDataField == null)
-                throw new Error("No reflectionData field found in java.lang.Class");
+            Field reflectionDataField = searchFields(Class.class.getDeclaredFields0(false), "reflectionData");
+            if (reflectionDataField == null) throw new Error("No reflectionData field found in java.lang.Class");
             reflectionDataOffset = unsafe.objectFieldOffset(reflectionDataField);
         }
 
-        static <T> boolean compareAndSwap(Class<?> clazz,
-                                          SoftReference<ReflectionData<T>> oldData,
-                                          SoftReference<ReflectionData<T>> newData) {
+        static <T> boolean compareAndSwap(Class<?> clazz, SoftReference<ReflectionData<T>> oldData, SoftReference<ReflectionData<T>> newData) {
             return unsafe.compareAndSwapObject(clazz, reflectionDataOffset, oldData, newData);
         }
     }
@@ -2338,12 +2333,9 @@ public final
     // be propagated to the outside world, but must instead be copied
     // via ReflectionFactory.copyField.
     private Field[] privateGetDeclaredFields(boolean publicOnly) {
-        return privateGetDeclaredFields(publicOnly, reflectionData());
-    }
-    // A variant called from methods that already obtained ReflectionData instance
-    private Field[] privateGetDeclaredFields(boolean publicOnly, ReflectionData<T> rd) {
         checkInitted();
-        Field[] res;
+        Field[] res = null;
+        ReflectionData<T> rd = reflectionData();
         if (rd != null) {
             res = publicOnly ? rd.declaredPublicFields : rd.declaredFields;
             if (res != null) return res;
@@ -2365,7 +2357,7 @@ public final
     // via ReflectionFactory.copyField.
     private Field[] privateGetPublicFields(Set<Class<?>> traversedInterfaces) {
         checkInitted();
-        Field[] res;
+        Field[] res = null;
         ReflectionData<T> rd = reflectionData();
         if (rd != null) {
             res = rd.publicFields;
@@ -2380,7 +2372,7 @@ public final
         }
 
         // Local fields
-        Field[] tmp = privateGetDeclaredFields(true, rd);
+        Field[] tmp = privateGetDeclaredFields(true);
         addAll(fields, tmp);
 
         // Direct superinterfaces, recursively
@@ -2425,7 +2417,7 @@ public final
     // instead be copied via ReflectionFactory.copyConstructor.
     private Constructor<T>[] privateGetDeclaredConstructors(boolean publicOnly) {
         checkInitted();
-        Constructor<T>[] res;
+        Constructor<T>[] res = null;
         ReflectionData<T> rd = reflectionData();
         if (rd != null) {
             res = publicOnly ? rd.publicConstructors : rd.declaredConstructors;
@@ -2459,19 +2451,16 @@ public final
     // be propagated to the outside world, but must instead be copied
     // via ReflectionFactory.copyMethod.
     private Method[] privateGetDeclaredMethods(boolean publicOnly) {
-        return privateGetDeclaredMethods(publicOnly, reflectionData());
-    }
-    // A variant called from methods that already obtained ReflectionData instance
-    private Method[] privateGetDeclaredMethods(boolean publicOnly, ReflectionData<T> rd) {
         checkInitted();
-        Method[] res;
+        Method[] res = null;
+        ReflectionData<T> rd = reflectionData();
         if (rd != null) {
             res = publicOnly ? rd.declaredPublicMethods : rd.declaredMethods;
             if (res != null) return res;
         }
         // No cached value available; request value from VM
         res = Reflection.filterMethods(this, getDeclaredMethods0(publicOnly));
-        if (rd != null) {
+        if (useCaches) {
             if (publicOnly) {
                 rd.declaredPublicMethods = res;
             } else {
@@ -2577,7 +2566,7 @@ public final
     // via ReflectionFactory.copyMethod.
     private Method[] privateGetPublicMethods() {
         checkInitted();
-        Method[] res;
+        Method[] res = null;
         ReflectionData<T> rd = reflectionData();
         if (rd != null) {
             res = rd.publicMethods;
@@ -2588,7 +2577,7 @@ public final
         // Start by fetching public declared methods
         MethodArray methods = new MethodArray();
         {
-            Method[] tmp = privateGetDeclaredMethods(true, rd);
+            Method[] tmp = privateGetDeclaredMethods(true);
             methods.addAll(tmp);
         }
         // Now recur over superclass and direct superinterfaces.
@@ -2657,7 +2646,7 @@ public final
         // of Field objects which have to be created for the common
         // case where the field being requested is declared in the
         // class which is being queried.
-        Field res;
+        Field res = null;
         // Search declared public fields
         if ((res = searchFields(privateGetDeclaredFields(true), name)) != null) {
             return res;
@@ -2709,7 +2698,7 @@ public final
         // number of Method objects which have to be created for the
         // common case where the method being requested is declared in
         // the class which is being queried.
-        Method res;
+        Method res = null;
         // Search declared public methods
         if ((res = searchMethods(privateGetDeclaredMethods(true),
                                  name,
