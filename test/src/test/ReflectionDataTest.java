@@ -1,14 +1,9 @@
 package test;
 
-import sun.reflect.annotation.AnnotationType;
-
 import java.io.*;
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.*;
+import java.util.Objects;
 
 public class ReflectionDataTest {
     public static class Class0 {}
@@ -118,6 +113,7 @@ public class ReflectionDataTest {
             }
         }
     }
+
     static class getDeclaredFields extends Test {
         public getDeclaredFields(int loops) {
             super(loops);

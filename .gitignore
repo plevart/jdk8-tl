@@ -6,3 +6,4 @@
 .mavenrc.override
 out
 target
+*.reftp
