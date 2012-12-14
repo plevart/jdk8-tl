@@ -104,6 +104,10 @@ public class SizeOf
                 return (obj == Character.valueOf((Character) obj));
             }
         }
+        else if (obj instanceof Class)
+        {
+            return true;
+        }
         return false;
     }
 
@@ -111,7 +115,7 @@ public class SizeOf
     {
         long bytes;
         Class clazz;
-        if (obj == null || visited.put(obj, Boolean.TRUE) != null || isSharedFlyweight(obj))
+        if (obj == null || visited.put(obj, Boolean.TRUE) != null || (level > 0 && isSharedFlyweight(obj)))
         {
             bytes = 0L;
             visitor.startObject(obj, level, bytes);
