@@ -64,11 +64,10 @@ public class SizeOf
 
     /**
      * Returns true if this is a well-known shared flyweight.
-     * For example, interned Strings, Booleans and Number objects
+     * For example, interned Strings, Booleans and Number objects or Class instances
      */
     private boolean isSharedFlyweight(Object obj)
     {
-        // optimization - all of our flyweights are Comparable
         if (obj instanceof Comparable)
         {
             if (obj instanceof Enum)
@@ -206,9 +205,8 @@ public class SizeOf
 
         Visitor STDOUT = new Visitor()
         {
-            boolean inField
-                ,
-                inObject;
+            boolean inField;
+            boolean inObject;
 
             private String indent(int level)
             {
@@ -242,17 +240,20 @@ public class SizeOf
                     Class<?> clazz = o.getClass();
                     if (clazz.isArray())
                     {
-                        System.out.print(typeName(clazz.getComponentType()) + "[" + Array.getLength(o) + "]");
+                        System.out.print(typeName(clazz.getComponentType()) +
+                                             "[" + Array.getLength(o) +
+                                             "]@" + Integer.toHexString(System.identityHashCode(o)));
                     }
                     else
                     {
-                        System.out.print(typeName(clazz));
+                        System.out.print(typeName(clazz) +
+                                             "@" + Integer.toHexString(System.identityHashCode(o)));
                     }
 
                     if (shallowBytes == 0)
-                        System.out.print("->(interned)");
+                        System.out.print("(interned)");
                     else
-                        System.out.print("->(" + shallowBytes + " bytes)");
+                        System.out.print("(" + shallowBytes + " bytes)");
                 }
 
                 inField = false;
