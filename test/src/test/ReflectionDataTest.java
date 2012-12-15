@@ -352,8 +352,8 @@ public class ReflectionDataTest {
 
             double tAvg = (double) tSum / tests.length;
             double vSum = 0L;
-            for (int i = 0; i < tests.length; i++) {
-                vSum += ((double) tests[i].t - tAvg) * ((double) tests[i].t - tAvg);
+            for (Test test : tests) {
+                vSum += ((double) test.t - tAvg) * ((double) test.t - tAvg);
             }
             double v = vSum / tests.length;
             double σ = Math.sqrt(v);

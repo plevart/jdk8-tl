@@ -1,54 +1,39 @@
 package test;
 
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.IdentityHashMap;
 
 /**
- *
- 536
- 1016
- 1064
- 1272
- 1472
- 3232
-
-
+ * 536
+ * 1016
+ * 1064
+ * 1272
+ * 1472
+ * 3232
  */
 public class SizeOfTest {
-
-    @Retention(RetentionPolicy.RUNTIME)
-    @interface Ann {}
-
-    class Cls {
-        int f;
-        void m() {}
-    }
-
     public static void main(String[] args) {
-
-        new SizeOf(SizeOf.Visitor.STDOUT).deepSizeOf(Object.class);
 
         SizeOf sizeOf = new SizeOf(SizeOf.Visitor.NULL);
 
-        System.out.println(sizeOf.deepSizeOf(Cls.class));
+        HashMap hm = new HashMap();
+        IdentityHashMap ihm = new IdentityHashMap(5);
 
-        Cls.class.getDeclaredFields();
-        System.out.println(sizeOf.deepSizeOf(Cls.class));
+        hm.values();
+        ihm.values();
 
-        Cls.class.getFields();
-        System.out.println(sizeOf.deepSizeOf(Cls.class));
-
-        Cls.class.getDeclaredConstructors();
-        System.out.println(sizeOf.deepSizeOf(Cls.class));
-
-        Cls.class.getDeclaredMethods();
-        System.out.println(sizeOf.deepSizeOf(Cls.class));
-
-        Cls.class.getMethods();
-        System.out.println(sizeOf.deepSizeOf(Cls.class));
+        for (int i = 0; i < 101; i++) {
+            long hms, ihms;
+            System.out.println(
+                i + " " +
+                    (hms = sizeOf.deepSizeOf(hm)) +
+                    " " +
+                    (ihms = sizeOf.deepSizeOf(ihm)) +
+                    " " + (ihms - hms)
+            );
+            hm.put(i, i);
+            ihm.put(i, i);
+        }
     }
 }
