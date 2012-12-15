@@ -2232,8 +2232,8 @@ public final
             this.redefinedCount = redefinedCount;
         }
 
-        // initialize Unsafe machinery here, since we need to call Class.class instance method and would like to avoid
-        // calling it in the static initializer of the Class class...
+        // initialize Unsafe machinery here, since we need to call Class.class instance method
+        // and would like to avoid calling it in the static initializer of the Class class...
         private static final Unsafe unsafe;
         // offset of Class.reflectionData instance field
         private static final long reflectionDataOffset;
@@ -2241,12 +2241,17 @@ public final
         static {
             unsafe = Unsafe.getUnsafe();
             // bypass caches
-            Field reflectionDataField = searchFields(Class.class.getDeclaredFields0(false), "reflectionData");
-            if (reflectionDataField == null) throw new Error("No reflectionData field found in java.lang.Class");
+            Field reflectionDataField = searchFields(Class.class.getDeclaredFields0(false),
+                                                     "reflectionData");
+            if (reflectionDataField == null) {
+                throw new Error("No reflectionData field found in java.lang.Class");
+            }
             reflectionDataOffset = unsafe.objectFieldOffset(reflectionDataField);
         }
 
-        static <T> boolean compareAndSwap(Class<?> clazz, SoftReference<ReflectionData<T>> oldData, SoftReference<ReflectionData<T>> newData) {
+        static <T> boolean compareAndSwap(Class<?> clazz,
+                                          SoftReference<ReflectionData<T>> oldData,
+                                          SoftReference<ReflectionData<T>> newData) {
             return unsafe.compareAndSwapObject(clazz, reflectionDataOffset, oldData, newData);
         }
     }
@@ -2279,7 +2284,7 @@ public final
 
         while (true)
         {
-            ReflectionData<T> rd = new ReflectionData<>(classRedefinedCount);
+            ReflectionData<T> rd = new ReflectionData<T>(classRedefinedCount);
             // try to CAS it...
             if (ReflectionData.compareAndSwap(this, oldReflectionData, new SoftReference<>(rd))) {
                 return rd;
@@ -2334,22 +2339,41 @@ public final
     // via ReflectionFactory.copyField.
     private Field[] privateGetDeclaredFields(boolean publicOnly) {
         checkInitted();
-        Field[] res = null;
         ReflectionData<T> rd = reflectionData();
-        if (rd != null) {
-            res = publicOnly ? rd.declaredPublicFields : rd.declaredFields;
-            if (res != null) return res;
-        }
-        // No cached value available; request value from VM
-        res = Reflection.filterFields(this, getDeclaredFields0(publicOnly));
-        if (rd != null) {
+        if (rd != null) { // using caches
             if (publicOnly) {
-                rd.declaredPublicFields = res;
-            } else {
-                rd.declaredFields = res;
+                Field[] declaredPublicFields = rd.declaredPublicFields;
+                if (declaredPublicFields != null) return declaredPublicFields;
+                // no declaredPublicFields cached
+                Field[] declaredFields = rd.declaredFields;
+                if (declaredFields == null) {
+                    // no declaredFields cached -> only retrieve public fields from VM
+                    declaredPublicFields = Reflection.filterFields(this, getDeclaredFields0(true));
+                }
+                else {
+                    // declaredFields already cached -> filter public only out of them
+                    declaredPublicFields = Reflection.filterPublicOnly(declaredFields);
+                }
+                rd.declaredPublicFields = declaredPublicFields;
+                return declaredPublicFields;
+            }
+            else {
+                Field[] declaredFields = rd.declaredFields;
+                if (declaredFields != null) return declaredFields;
+                // no declaredFields cached
+                declaredFields = Reflection.filterFields(this, getDeclaredFields0(false));
+                rd.declaredFields = declaredFields;
+                if (rd.declaredPublicFields != null) {
+                    // declaredPublicFields already cached -> 
+                    // replace them with filtered version to eliminate duplicates
+                    rd.declaredPublicFields = Reflection.filterPublicOnly(declaredFields);
+                }
+                return declaredFields;
             }
         }
-        return res;
+        else { // not using caches
+            return Reflection.filterFields(this, getDeclaredFields0(publicOnly));
+        }
     }
 
     // Returns an array of "root" fields. These Field objects must NOT
@@ -2357,7 +2381,7 @@ public final
     // via ReflectionFactory.copyField.
     private Field[] privateGetPublicFields(Set<Class<?>> traversedInterfaces) {
         checkInitted();
-        Field[] res = null;
+        Field[] res;
         ReflectionData<T> rd = reflectionData();
         if (rd != null) {
             res = rd.publicFields;
@@ -2416,31 +2440,53 @@ public final
     // objects must NOT be propagated to the outside world, but must
     // instead be copied via ReflectionFactory.copyConstructor.
     private Constructor<T>[] privateGetDeclaredConstructors(boolean publicOnly) {
-        checkInitted();
-        Constructor<T>[] res = null;
         ReflectionData<T> rd = reflectionData();
-        if (rd != null) {
-            res = publicOnly ? rd.publicConstructors : rd.declaredConstructors;
-            if (res != null) return res;
-        }
-        // No cached value available; request value from VM
-        if (isInterface()) {
-            @SuppressWarnings("unchecked")
-            Constructor<T>[] temporaryRes = (Constructor<T>[]) new Constructor<?>[0];
-            res = temporaryRes;
-        } else {
-            res = getDeclaredConstructors0(publicOnly);
-        }
-        if (rd != null) {
+        if (rd != null) { // using caches
             if (publicOnly) {
-                rd.publicConstructors = res;
-            } else {
-                rd.declaredConstructors = res;
+                Constructor<T>[] publicConstructors = rd.publicConstructors;
+                if (publicConstructors != null) return publicConstructors;
+                // no publicConstructors cached
+                Constructor<T>[] declaredConstructors = rd.declaredConstructors;
+                if (declaredConstructors == null) {
+                    // no declaredConstructors cached -> only retrieve public constructors from VM
+                    publicConstructors = privateGetDeclaredConstructors0(true);
+                }
+                else {
+                    // declaredConstructors already cached -> filter public only out of them
+                    publicConstructors = Reflection.filterPublicOnly(declaredConstructors);
+                }
+                rd.publicConstructors = publicConstructors;
+                return publicConstructors;
+            }
+            else {
+                Constructor<T>[] declaredConstructors = rd.declaredConstructors;
+                if (declaredConstructors != null) return declaredConstructors;
+                // no declaredConstructors cached
+                declaredConstructors = privateGetDeclaredConstructors0(false);
+                rd.declaredConstructors = declaredConstructors;
+                if (rd.publicConstructors != null) {
+                    // publicConstructors already cached -> 
+                    // replace them with filtered version to eliminate duplicates
+                    rd.publicConstructors = Reflection.filterPublicOnly(declaredConstructors);
+                }
+                return declaredConstructors;
             }
         }
-        return res;
+        else { // not using caches
+            return privateGetDeclaredConstructors0(publicOnly);
+        }
     }
 
+    private Constructor<T>[] privateGetDeclaredConstructors0(boolean publicOnly) {
+        if (isInterface()) {
+            @SuppressWarnings("unchecked")
+            Constructor<T>[] empty = (Constructor<T>[]) new Constructor<?>[0];
+            return empty;
+        } else {
+            return getDeclaredConstructors0(publicOnly);
+        }
+    }
+    
     //
     //
     // java.lang.reflect.Method handling
@@ -2452,22 +2498,41 @@ public final
     // via ReflectionFactory.copyMethod.
     private Method[] privateGetDeclaredMethods(boolean publicOnly) {
         checkInitted();
-        Method[] res = null;
         ReflectionData<T> rd = reflectionData();
-        if (rd != null) {
-            res = publicOnly ? rd.declaredPublicMethods : rd.declaredMethods;
-            if (res != null) return res;
-        }
-        // No cached value available; request value from VM
-        res = Reflection.filterMethods(this, getDeclaredMethods0(publicOnly));
-        if (useCaches) {
+        if (rd != null) { // using caches
             if (publicOnly) {
-                rd.declaredPublicMethods = res;
-            } else {
-                rd.declaredMethods = res;
+                Method[] declaredPublicMethods = rd.declaredPublicMethods;
+                if (declaredPublicMethods != null) return declaredPublicMethods;
+                // no declaredPublicMethods cached
+                Method[] declaredMethods = rd.declaredMethods;
+                if (declaredMethods == null) {
+                    // no declaredMethods cached -> only retrieve public methods from VM
+                    declaredPublicMethods = Reflection.filterMethods(this, getDeclaredMethods0(true));
+                }
+                else {
+                    // declaredMethods already cached -> filter public only out of them
+                    declaredPublicMethods = Reflection.filterPublicOnly(declaredMethods);
+                }
+                rd.declaredPublicMethods = declaredPublicMethods;
+                return declaredPublicMethods;
+            }
+            else {
+                Method[] declaredMethods = rd.declaredMethods;
+                if (declaredMethods != null) return declaredMethods;
+                // no declaredMethods cached
+                declaredMethods = Reflection.filterMethods(this, getDeclaredMethods0(false));
+                rd.declaredMethods = declaredMethods;
+                if (rd.declaredPublicMethods != null) {
+                    // declaredPublicMethods already cached -> 
+                    // replace them with filtered version to eliminate duplicates
+                    rd.declaredPublicMethods = Reflection.filterPublicOnly(declaredMethods);
+                }
+                return declaredMethods;
             }
         }
-        return res;
+        else { // not using caches
+            return Reflection.filterMethods(this, getDeclaredMethods0(publicOnly));
+        }
     }
 
     static class MethodArray {
@@ -2566,7 +2631,7 @@ public final
     // via ReflectionFactory.copyMethod.
     private Method[] privateGetPublicMethods() {
         checkInitted();
-        Method[] res = null;
+        Method[] res;
         ReflectionData<T> rd = reflectionData();
         if (rd != null) {
             res = rd.publicMethods;

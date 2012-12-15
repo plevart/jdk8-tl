@@ -270,29 +270,45 @@ public class Reflection {
         return map;
     }
 
-    public static Field[] filterFields(Class<?> containingClass,
-                                       Field[] fields) {
-        if (fieldFilterMap == null) {
-            // Bootstrapping
-            return fields;
-        }
-        return (Field[])filter(fields, fieldFilterMap.get(containingClass));
+    public static Field[] filterFields(Class<?> containingClass, Field[] fields) {
+        if (fields.length == 0) return fields;
+        Map<Class<?>, String[]> fieldFilterMap = Reflection.fieldFilterMap;
+        String[] filteredNames = fieldFilterMap == null ? null : fieldFilterMap.get(containingClass);
+        return (filteredNames == null) ? fields : filter(fields, filteredNames);
     }
 
     public static Method[] filterMethods(Class<?> containingClass, Method[] methods) {
-        if (methodFilterMap == null) {
-            // Bootstrapping
-            return methods;
-        }
-        return (Method[])filter(methods, methodFilterMap.get(containingClass));
+        if (methods.length == 0) return methods;
+        Map<Class<?>, String[]> methodFilterMap = Reflection.methodFilterMap;
+        String[] filteredNames = methodFilterMap == null ? null : methodFilterMap.get(containingClass);
+        return (filteredNames == null) ? methods : filter(methods, filteredNames);
     }
 
-    private static Member[] filter(Member[] members, String[] filteredNames) {
-        if ((filteredNames == null) || (members.length == 0)) {
+    public static <M extends Member> M[] filterPublicOnly(M[] members) {
+        int numNewMembers = 0;
+        for (M member : members) {
+            if (Modifier.isPublic(member.getModifiers())) {
+                numNewMembers++;
+            }
+        }
+        if (numNewMembers == members.length) {
             return members;
         }
+        @SuppressWarnings("unchecked")
+        M[] newMembers =
+            (M[])Array.newInstance(members.getClass().getComponentType(), numNewMembers);
+        int destIdx = 0;
+        for (M member : members) {
+            if (Modifier.isPublic(member.getModifiers())) {
+                newMembers[destIdx++] = member;
+            }
+        }
+        return newMembers;
+    }
+
+    private static <M extends Member> M[] filter(M[] members, String[] filteredNames) {
         int numNewMembers = 0;
-        for (Member member : members) {
+        for (M member : members) {
             boolean shouldSkip = false;
             for (String filteredName : filteredNames) {
                 if (member.getName() == filteredName) {
@@ -304,10 +320,14 @@ public class Reflection {
                 ++numNewMembers;
             }
         }
-        Member[] newMembers =
-            (Member[])Array.newInstance(members[0].getClass(), numNewMembers);
+        if (numNewMembers == members.length) {
+            return members;
+        }
+        @SuppressWarnings("unchecked")
+        M[] newMembers =
+            (M[])Array.newInstance(members.getClass().getComponentType(), numNewMembers);
         int destIdx = 0;
-        for (Member member : members) {
+        for (M member : members) {
             boolean shouldSkip = false;
             for (String filteredName : filteredNames) {
                 if (member.getName() == filteredName) {
