@@ -270,18 +270,21 @@ public class Reflection {
         return map;
     }
 
-    public static Field[] filterFields(Class<?> containingClass, Field[] fields) {
-        if (fields.length == 0) return fields;
-        Map<Class<?>, String[]> fieldFilterMap = Reflection.fieldFilterMap;
-        String[] filteredNames = fieldFilterMap == null ? null : fieldFilterMap.get(containingClass);
-        return (filteredNames == null) ? fields : filter(fields, filteredNames);
+    public static Field[] filterFields(Class<?> containingClass,
+                                       Field[] fields) {
+        if (fieldFilterMap == null) {
+            // Bootstrapping
+            return fields;
+        }
+        return filter(fields, fieldFilterMap.get(containingClass));
     }
 
     public static Method[] filterMethods(Class<?> containingClass, Method[] methods) {
-        if (methods.length == 0) return methods;
-        Map<Class<?>, String[]> methodFilterMap = Reflection.methodFilterMap;
-        String[] filteredNames = methodFilterMap == null ? null : methodFilterMap.get(containingClass);
-        return (filteredNames == null) ? methods : filter(methods, filteredNames);
+        if (methodFilterMap == null) {
+            // Bootstrapping
+            return methods;
+        }
+        return filter(methods, methodFilterMap.get(containingClass));
     }
 
     public static <M extends Member> M[] filterPublicOnly(M[] members) {
@@ -307,6 +310,9 @@ public class Reflection {
     }
 
     private static <M extends Member> M[] filter(M[] members, String[] filteredNames) {
+        if (filteredNames == null) {
+            return members;
+        }
         int numNewMembers = 0;
         for (M member : members) {
             boolean shouldSkip = false;
