@@ -35,33 +35,30 @@ public class SizeOfTest {
 
     static void test(Class<?> clazz) {
 
-        List<Class<?>> classes = new ArrayList<>();
-        for (Class<?> c = clazz; c != null; c = c.getSuperclass())
-            classes.add(c);
-
         System.out.println();
-        System.out.println("Deep size of ReflectionData in: " + clazz.getName());
+        System.out.printf("Deep size of ReflectionData in: %s.class\n", clazz.getName());
         System.out.println();
 
         SizeOf sizeOf = new SizeOf(SizeOf.Visitor.NULL);
 
-        sizeOf.deepSizeOf(getReflectionData(clazz));
-
+        System.out.printf("before              any calls: %,7d bytes\n", sizeOf.deepSizeOf(getReflectionData(clazz)));
         clazz.getDeclaredConstructors();
-        System.out.println("after getDeclaredConstructors: " + sizeOf.deepSizeOf(getReflectionData(clazz)) + " bytes");
+        System.out.printf("after getDeclaredConstructors: %,7d bytes\n", sizeOf.deepSizeOf(getReflectionData(clazz)));
         clazz.getDeclaredFields();
-        System.out.println("after       getDeclaredFields: " + sizeOf.deepSizeOf(getReflectionData(clazz)) + " bytes");
+        System.out.printf("after       getDeclaredFields: %,7d bytes\n", sizeOf.deepSizeOf(getReflectionData(clazz)));
         clazz.getDeclaredMethods();
-        System.out.println("after      getDeclaredMethods: " + sizeOf.deepSizeOf(getReflectionData(clazz)) + " bytes");
+        System.out.printf("after      getDeclaredMethods: %,7d bytes\n", sizeOf.deepSizeOf(getReflectionData(clazz)));
         clazz.getConstructors();
-        System.out.println("after         getConstructors: " + sizeOf.deepSizeOf(getReflectionData(clazz)) + " bytes");
+        System.out.printf("after         getConstructors: %,7d bytes\n", sizeOf.deepSizeOf(getReflectionData(clazz)));
         clazz.getFields();
-        System.out.println("after               getFields: " + sizeOf.deepSizeOf(getReflectionData(clazz)) + " bytes");
+        System.out.printf("after               getFields: %,7d bytes\n", sizeOf.deepSizeOf(getReflectionData(clazz)));
         clazz.getMethods();
-        System.out.println("after              getMethods: " + sizeOf.deepSizeOf(getReflectionData(clazz)) + " bytes");
+        System.out.printf("after              getMethods: %,7d bytes\n", sizeOf.deepSizeOf(getReflectionData(clazz)));
     }
 
     public static void main(String[] args) throws Exception {
+        test(Object.class);
+        test(String.class);
         test(HashMap.class);
         test(JTable.class);
     }
