@@ -21,12 +21,6 @@ public class SizeOf
         SizeOf.instrumentation = instrumentation;
     }
 
-    public static void agentmain(String agentArgs,
-                                 Instrumentation inst)
-    {
-        SizeOf.instrumentation = instrumentation;
-    }
-
     private final Visitor visitor;
 
     public SizeOf()
@@ -66,7 +60,7 @@ public class SizeOf
      * Returns true if this is a well-known shared flyweight.
      * For example, interned Strings, Booleans and Number objects or Class instances
      */
-    private boolean isSharedFlyweight(Object obj)
+    private boolean isInterned(Object obj)
     {
         if (obj instanceof Comparable)
         {
@@ -114,7 +108,7 @@ public class SizeOf
     {
         long bytes;
         Class clazz;
-        if (obj == null || visited.put(obj, Boolean.TRUE) != null || (level > 0 && isSharedFlyweight(obj)))
+        if (obj == null || visited.put(obj, Boolean.TRUE) != null || (level > 0 && isInterned(obj)))
         {
             bytes = 0L;
             visitor.startObject(obj, level, bytes);
