@@ -1,0 +1,88 @@
+***
+*** Before modified privateGetDeclaredXXX methods:
+***
+
+Deep size of ReflectionData in: java.lang.Object.class
+
+before              any calls:       0 bytes
+after getDeclaredConstructors:     192 bytes
+after       getDeclaredFields:     192 bytes
+after      getDeclaredMethods:   1,552 bytes
+after         getConstructors:   1,664 bytes
+after               getFields:   1,696 bytes
+after              getMethods:   2,856 bytes
+
+Deep size of ReflectionData in: java.lang.String.class
+
+before              any calls:     704 bytes
+after getDeclaredConstructors:   2,472 bytes
+after       getDeclaredFields:   2,472 bytes
+after      getDeclaredMethods:  10,808 bytes
+after         getConstructors:  12,464 bytes
+after               getFields:  12,712 bytes
+after              getMethods:  21,056 bytes
+
+Deep size of ReflectionData in: java.util.HashMap.class
+
+before              any calls:       0 bytes
+after getDeclaredConstructors:     472 bytes
+after       getDeclaredFields:   1,328 bytes
+after      getDeclaredMethods:   5,856 bytes
+after         getConstructors:   6,360 bytes
+after               getFields:   6,392 bytes
+after              getMethods:   9,576 bytes
+
+Deep size of ReflectionData in: javax.swing.JTable.class
+
+before              any calls:       0 bytes
+after getDeclaredConstructors:     784 bytes
+after       getDeclaredFields:   4,224 bytes
+after      getDeclaredMethods:  26,072 bytes
+after         getConstructors:  26,792 bytes
+after               getFields:  28,600 bytes
+after              getMethods:  79,912 bytes
+
+
+***
+*** After modified privateGetDeclaredXXX methods:
+***
+
+Deep size of ReflectionData in: java.lang.Object.class
+
+before              any calls:       0 bytes
+after getDeclaredConstructors:     192 bytes
+after       getDeclaredFields:     192 bytes
+after      getDeclaredMethods:   1,552 bytes
+after         getConstructors:   1,552 bytes
+after               getFields:   1,568 bytes
+after              getMethods:   1,680 bytes
+
+Deep size of ReflectionData in: java.lang.String.class
+
+before              any calls:       0 bytes
+after getDeclaredConstructors:   1,816 bytes
+after       getDeclaredFields:   2,368 bytes
+after      getDeclaredMethods:  10,704 bytes
+after         getConstructors:  10,784 bytes
+after               getFields:  10,832 bytes
+after              getMethods:  12,096 bytes
+
+Deep size of ReflectionData in: java.util.HashMap.class
+
+before              any calls:       0 bytes
+after getDeclaredConstructors:     472 bytes
+after       getDeclaredFields:   1,328 bytes
+after      getDeclaredMethods:   5,856 bytes
+after         getConstructors:   5,856 bytes
+after               getFields:   5,888 bytes
+after              getMethods:   7,024 bytes
+
+Deep size of ReflectionData in: javax.swing.JTable.class
+
+before              any calls:       0 bytes
+after getDeclaredConstructors:     784 bytes
+after       getDeclaredFields:   4,224 bytes
+after      getDeclaredMethods:  26,072 bytes
+after         getConstructors:  26,072 bytes
+after               getFields:  27,520 bytes
+after              getMethods:  62,960 bytes
