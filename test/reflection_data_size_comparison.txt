@@ -1,5 +1,5 @@
 ***
-*** Before modified privateGetDeclaredXXX methods:
+*** Original JDK8 privateGetDeclaredXXX methods:
 ***
 
 Deep size of ReflectionData in: java.lang.Object.class
@@ -44,7 +44,7 @@ after              getMethods:  79,912 bytes
 
 
 ***
-*** After modified privateGetDeclaredXXX methods:
+*** With modified privateGetDeclaredXXX methods:
 ***
 
 Deep size of ReflectionData in: java.lang.Object.class
