@@ -305,9 +305,6 @@ public class Reflection {
             }
             ++numNewMembers;
         }
-        if (numNewMembers == members.length) {
-            return members;
-        }
         @SuppressWarnings("unchecked")
         M[] newMembers =
             (M[])Array.newInstance(members.getClass().getComponentType(), numNewMembers);
