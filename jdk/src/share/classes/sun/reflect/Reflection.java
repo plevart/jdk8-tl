@@ -272,59 +272,38 @@ public class Reflection {
 
     public static Field[] filterFields(Class<?> containingClass,
                                        Field[] fields) {
-        if (fieldFilterMap == null) {
-            // Bootstrapping
+        Map<Class<?>,String[]> fieldFilterMap = Reflection.fieldFilterMap;
+        String[] filteredNames;
+        if (fieldFilterMap == null || // Bootstrapping
+            (filteredNames = fieldFilterMap.get(containingClass)) == null ||
+            fields.length == 0) {
             return fields;
         }
-        return filter(fields, fieldFilterMap.get(containingClass));
+        return filter(fields, filteredNames);
     }
 
-    public static Method[] filterMethods(Class<?> containingClass, Method[] methods) {
-        if (methodFilterMap == null) {
-            // Bootstrapping
+    public static Method[] filterMethods(Class<?> containingClass,
+                                         Method[] methods) {
+        Map<Class<?>,String[]> methodFilterMap = Reflection.methodFilterMap;
+        String[] filteredNames;
+        if (methodFilterMap == null || // Bootstrapping
+            (filteredNames = methodFilterMap.get(containingClass)) == null ||
+            methods.length == 0) {
             return methods;
         }
-        return filter(methods, methodFilterMap.get(containingClass));
-    }
-
-    public static <M extends Member> M[] filterPublicOnly(M[] members) {
-        int numNewMembers = 0;
-        for (M member : members) {
-            if (Modifier.isPublic(member.getModifiers())) {
-                numNewMembers++;
-            }
-        }
-        if (numNewMembers == members.length) {
-            return members;
-        }
-        @SuppressWarnings("unchecked")
-        M[] newMembers =
-            (M[])Array.newInstance(members.getClass().getComponentType(), numNewMembers);
-        int destIdx = 0;
-        for (M member : members) {
-            if (Modifier.isPublic(member.getModifiers())) {
-                newMembers[destIdx++] = member;
-            }
-        }
-        return newMembers;
+        return filter(methods, filteredNames);
     }
 
     private static <M extends Member> M[] filter(M[] members, String[] filteredNames) {
-        if (filteredNames == null) {
-            return members;
-        }
         int numNewMembers = 0;
+        skipCount:
         for (M member : members) {
-            boolean shouldSkip = false;
             for (String filteredName : filteredNames) {
                 if (member.getName() == filteredName) {
-                    shouldSkip = true;
-                    break;
+                    continue skipCount;
                 }
             }
-            if (!shouldSkip) {
-                ++numNewMembers;
-            }
+            ++numNewMembers;
         }
         if (numNewMembers == members.length) {
             return members;
@@ -333,17 +312,14 @@ public class Reflection {
         M[] newMembers =
             (M[])Array.newInstance(members.getClass().getComponentType(), numNewMembers);
         int destIdx = 0;
+        skipCopy:
         for (M member : members) {
-            boolean shouldSkip = false;
             for (String filteredName : filteredNames) {
                 if (member.getName() == filteredName) {
-                    shouldSkip = true;
-                    break;
+                    continue skipCopy;
                 }
             }
-            if (!shouldSkip) {
-                newMembers[destIdx++] = member;
-            }
+            newMembers[destIdx++] = member;
         }
         return newMembers;
     }
