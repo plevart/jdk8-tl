@@ -19,18 +19,20 @@ if [ "$BCP" == "" ]; then
     BCP=../out/production/jdk
 fi
 
-OPTS="-Xmx4G -cp $CP"
+if [ "$JVM_OPTS" == "" ]; then
+  JVM_OPTS="-Xmx4G"
+fi
+
+OPTS="$JVM_OPTS -cp $CP"
 
 if [ "$1" == "s" ]; then
   shift;
   echo "Skipping non-patched run"
 else
-
-echo ""
-echo "Executing: $JAVA_BIN $OPTS $* reference"
-echo ""
-$JAVA_BIN $OPTS $* reference
-
+  echo ""
+  echo "Executing: $JAVA_BIN $OPTS $* reference"
+  echo ""
+  $JAVA_BIN $OPTS $* reference
 fi
 
 OPTS="$OPTS -Xbootclasspath/p:$BCP"
