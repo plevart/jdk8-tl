@@ -1,20 +1,26 @@
 package test;
 
+import java.util.EnumSet;
+import java.util.Objects;
+
 /**
  */
 public class EnumTest
 {
-    static enum MyEnum {
+    static enum MyEnum
+    {
         ONE, TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT, NINE, TEN
     }
 
-    static void assertTrue(boolean value) {
+    static void assertTrue(boolean value)
+    {
         if (!value) throw new AssertionError();
     }
 
-    static long test() {
+    static long testMyEnumValueOf()
+    {
         long t0 = System.nanoTime();
-        for (int i = 0; i < 30000000; i++)
+        for (int i = 0; i < 30_000_000; i++)
         {
             assertTrue(MyEnum.valueOf("ONE") == MyEnum.ONE);
             assertTrue(MyEnum.valueOf("TWO") == MyEnum.TWO);
@@ -30,14 +36,47 @@ public class EnumTest
         return System.nanoTime() - t0;
     }
 
-    static void test8x() {
+    static void testMyEnumValueOf8x()
+    {
+        System.out.print("     MyEnum.valueOf(String): ");
         for (int i = 0; i < 8; i++)
-            System.out.print(test() + " ");
+            System.out.print(testMyEnumValueOf() + " ");
         System.out.println();
+    }
+
+    static long testEnumSetNoneOf()
+    {
+        long t0 = System.nanoTime();
+        for (int i = 0; i < 300_000_000; i++)
+        {
+            Objects.requireNonNull(EnumSet.noneOf(MyEnum.class));
+        }
+        return System.nanoTime() - t0;
+    }
+
+    static void testEnumSetNoneOf8x()
+    {
+        System.out.print("      EnumSet.noneOf(Class): ");
+        for (int i = 0; i < 8; i++)
+            System.out.print(testEnumSetNoneOf() + " ");
+        System.out.println();
+
+        try
+        {
+            System.gc();
+            Thread.sleep(500L);
+            System.gc();
+            Thread.sleep(500L);
+            System.gc();
+            Thread.sleep(1500L);
+        }
+        catch (InterruptedException e) {}
     }
 
     public static void main(String[] args)
     {
-        test8x();
+        testEnumSetNoneOf8x();
+        testMyEnumValueOf8x();
+        testEnumSetNoneOf8x();
     }
 }

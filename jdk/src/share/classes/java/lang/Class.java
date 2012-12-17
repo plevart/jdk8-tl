@@ -2939,7 +2939,7 @@ public final
 
     // a structure with an array T[] of enum constants and
     // a Map<String, T> mapping constant names to constants.
-    static class EnumData<T> extends HashMap<String, T> {
+    static final class EnumData<T> extends HashMap<String, T> {
         final T[] enumConstants;
         EnumData(T[] enumConstants)
         {
@@ -2966,11 +2966,11 @@ public final
     @SuppressWarnings("unchecked")
     T[] getEnumConstantsShared() {
         Object enumData = this.enumData;
-        if (enumData instanceof Enum[]) {
-            return (T[])enumData;
-        }
-        else if (enumData != null) {
+        if (enumData instanceof EnumData) {
             return ((EnumData<T>) enumData).enumConstants;
+        }
+        else if (enumData instanceof Enum[]) {
+            return (T[])enumData;
         }
         else {
             T[] temporaryConstants = getEnumConstants0();
@@ -2994,7 +2994,7 @@ public final
         if (enumData instanceof EnumData) {
             return (EnumData<T>) enumData;
         }
-        else if (enumData != null) {
+        else if (enumData instanceof Enum[]) {
             EnumData<T> tempEnumData = new EnumData<T>((T[])enumData);
             this.enumData = tempEnumData;
             return tempEnumData;

@@ -1,0 +1,19 @@
+enum MyEnum { ONE, TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT, NINE, TEN }
+EnumSet.noneOf(MyEnum.class): 300_000_000 loops
+MyEnum.valueOf(String): 30_000_000 loops * 10 calls for different names
+
+** Original JDK8 code
+
+Executing: /home/peter/Apps64/jdk1.8.0-jdk8-tl/bin/java -Xmx4G -cp ../out/production/test test.EnumTest reference
+
+      EnumSet.noneOf(Class): 351610312 340302968 339893333 339774384 339750612 339558414 339547022 339621595
+     MyEnum.valueOf(String): 935153830 897188742 887541353 960839820 886119463 885818334 885827093 885752461
+      EnumSet.noneOf(Class): 339552678 339469528 339513757 339451341 339512154 339511634 339664326 339793144
+
+** patched java.lang.Class
+
+Executing: /home/peter/Apps64/jdk1.8.0-jdk8-tl/bin/java -Xmx4G -cp ../out/production/test -Xbootclasspath/p:../out/production/jdk test.EnumTest
+
+      EnumSet.noneOf(Class): 351724931 339286591 305082929 305042885 305058303 305044144 305073463 305049604
+     MyEnum.valueOf(String): 955032718 908534137 891406394 891506147 891414312 893652469 891412757 891409294
+      EnumSet.noneOf(Class): 414044087 406904161 406788898 406839824 406765274 406815728 407002576 406779162
