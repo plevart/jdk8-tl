@@ -2937,36 +2937,49 @@ public final
         return (values != null) ? values.clone() : null;
     }
 
+    // a structure with an array T[] of enum constants and
+    // a Map<String, T> mapping constant names to constants.
+    static class EnumData<T> extends HashMap<String, T> {
+        final T[] enumConstants;
+        EnumData(T[] enumConstants)
+        {
+            super(2 * enumConstants.length);
+            this.enumConstants = enumConstants;
+            for (T constant : enumConstants)
+                put(((Enum<?>) constant).name(), constant);
+        }
+    }
+
+    // a field holding one of:
+    //   null        - not initialized yet
+    //   T[]         - array of enum constants
+    //   EnumData<T> - EnumData instance containing array of enum constants
+    //                 and a Map of constant name -> constant.
+    private volatile transient Object enumData;
+
     /**
      * Returns the elements of this enum class or null if this
      * Class object does not represent an enum type;
      * identical to getEnumConstants except that the result is
      * uncloned, cached, and shared by all callers.
      */
+    @SuppressWarnings("unchecked")
     T[] getEnumConstantsShared() {
-        if (enumConstants == null) {
-            if (!isEnum()) return null;
-            try {
-                final Method values = getMethod("values");
-                java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction<Void>() {
-                        public Void run() {
-                                values.setAccessible(true);
-                                return null;
-                            }
-                        });
-                @SuppressWarnings("unchecked")
-                T[] temporaryConstants = (T[])values.invoke(null);
-                enumConstants = temporaryConstants;
-            }
-            // These can happen when users concoct enum-like classes
-            // that don't comply with the enum spec.
-            catch (InvocationTargetException | NoSuchMethodException |
-                   IllegalAccessException ex) { return null; }
+        Object enumData = this.enumData;
+        if (enumData instanceof Enum[]) {
+            return (T[])enumData;
         }
-        return enumConstants;
+        else if (enumData != null) {
+            return ((EnumData<T>) enumData).enumConstants;
+        }
+        else {
+            T[] temporaryConstants = getEnumConstants0();
+            if (temporaryConstants != null) {
+                this.enumData = temporaryConstants;
+            }
+            return temporaryConstants;
+        }
     }
-    private volatile transient T[] enumConstants = null;
 
     /**
      * Returns a map from simple name to enum constant.  This package-private
@@ -2975,20 +2988,47 @@ public final
      * efficiently.  Note that the map is returned by this method is
      * created lazily on first use.  Typically it won't ever get created.
      */
+    @SuppressWarnings("unchecked")
     Map<String, T> enumConstantDirectory() {
-        if (enumConstantDirectory == null) {
-            T[] universe = getEnumConstantsShared();
-            if (universe == null)
+        Object enumData = this.enumData;
+        if (enumData instanceof EnumData) {
+            return (EnumData<T>) enumData;
+        }
+        else if (enumData != null) {
+            EnumData<T> tempEnumData = new EnumData<T>((T[])enumData);
+            this.enumData = tempEnumData;
+            return tempEnumData;
+        }
+        else {
+            T[] temporaryConstants = getEnumConstants0();
+            if (temporaryConstants == null)
                 throw new IllegalArgumentException(
                     getName() + " is not an enum type");
-            Map<String, T> m = new HashMap<>(2 * universe.length);
-            for (T constant : universe)
-                m.put(((Enum<?>)constant).name(), constant);
-            enumConstantDirectory = m;
+            EnumData<T> tempEnumData = new EnumData<T>(temporaryConstants);
+            this.enumData = tempEnumData;
+            return tempEnumData;
         }
-        return enumConstantDirectory;
     }
-    private volatile transient Map<String, T> enumConstantDirectory = null;
+
+    @SuppressWarnings("unchecked")
+    private T[] getEnumConstants0() {
+        if (!isEnum()) return null;
+        try {
+            final Method values = getMethod("values");
+            java.security.AccessController.doPrivileged(
+                new java.security.PrivilegedAction<Void>() {
+                    public Void run() {
+                        values.setAccessible(true);
+                        return null;
+                    }
+                });
+            return (T[])values.invoke(null);
+        }
+        // These can happen when users concoct enum-like classes
+        // that don't comply with the enum spec.
+        catch (InvocationTargetException | NoSuchMethodException |
+            IllegalAccessException ex) { return null; }
+    }
 
     /**
      * Casts an object to the class or interface represented
