@@ -2973,7 +2973,7 @@ public final
             return (T[])enumData;
         }
         else {
-            T[] temporaryConstants = getEnumConstants0();
+            T[] temporaryConstants = getEnumConstantsShared0();
             if (temporaryConstants != null) {
                 this.enumData = temporaryConstants;
             }
@@ -3000,7 +3000,7 @@ public final
             return tempEnumData;
         }
         else {
-            T[] temporaryConstants = getEnumConstants0();
+            T[] temporaryConstants = getEnumConstantsShared0();
             if (temporaryConstants == null)
                 throw new IllegalArgumentException(
                     getName() + " is not an enum type");
@@ -3011,7 +3011,7 @@ public final
     }
 
     @SuppressWarnings("unchecked")
-    private T[] getEnumConstants0() {
+    private T[] getEnumConstantsShared0() {
         if (!isEnum()) return null;
         try {
             final Method values = getMethod("values");
