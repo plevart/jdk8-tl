@@ -2939,23 +2939,26 @@ public final
 
     // a structure with an array T[] of enum constants and
     // a Map<String, T> mapping constant names to constants.
-    static final class EnumData<T> extends HashMap<String, T> {
+    static final class EnumData<T> {
         final T[] enumConstants;
-        EnumData(T[] enumConstants)
-        {
-            super(2 * enumConstants.length);
+        final Map<String, T> enumConstantDirectory;
+
+        EnumData(T[] enumConstants) {
             this.enumConstants = enumConstants;
-            for (T constant : enumConstants)
-                put(((Enum<?>) constant).name(), constant);
+            enumConstantDirectory = null;
+        }
+
+        EnumData(T[] enumConstants, boolean dummy) {
+            this.enumConstants = enumConstants;
+            enumConstantDirectory = new HashMap<>(2 * enumConstants.length);
+            for (T constant : enumConstants) {
+                enumConstantDirectory.put(((Enum) constant).name(), constant);
+            }
         }
     }
 
-    // a field holding one of:
-    //   null        - not initialized yet
-    //   T[]         - array of enum constants
-    //   EnumData<T> - EnumData instance containing array of enum constants
-    //                 and a Map of constant name -> constant.
-    private volatile transient Object enumData;
+    // publication of immutable object to other threads via data-race
+    private transient EnumData<T> enumData;
 
     /**
      * Returns the elements of this enum class or null if this
@@ -2965,20 +2968,15 @@ public final
      */
     @SuppressWarnings("unchecked")
     T[] getEnumConstantsShared() {
-        Object enumData = this.enumData;
-        if (enumData instanceof EnumData) {
-            return ((EnumData<T>) enumData).enumConstants;
+        EnumData<T> enumData = this.enumData;
+        if (enumData != null) {
+            return enumData.enumConstants;
         }
-        else if (enumData instanceof Enum[]) {
-            return (T[])enumData;
+        T[] temporaryConstants = getEnumConstants0();
+        if (temporaryConstants != null) {
+            this.enumData = new EnumData<>(temporaryConstants);
         }
-        else {
-            T[] temporaryConstants = getEnumConstantsShared0();
-            if (temporaryConstants != null) {
-                this.enumData = temporaryConstants;
-            }
-            return temporaryConstants;
-        }
+        return temporaryConstants;
     }
 
     /**
@@ -2990,28 +2988,24 @@ public final
      */
     @SuppressWarnings("unchecked")
     Map<String, T> enumConstantDirectory() {
-        Object enumData = this.enumData;
-        if (enumData instanceof EnumData) {
-            return (EnumData<T>) enumData;
-        }
-        else if (enumData instanceof Enum[]) {
-            EnumData<T> tempEnumData = new EnumData<T>((T[])enumData);
-            this.enumData = tempEnumData;
-            return tempEnumData;
+        EnumData<T> enumData = this.enumData;
+        if (enumData != null) {
+            if (enumData.enumConstantDirectory == null) {
+                this.enumData = enumData = new EnumData<>(enumData.enumConstants, true);
+            }
         }
         else {
-            T[] temporaryConstants = getEnumConstantsShared0();
-            if (temporaryConstants == null)
-                throw new IllegalArgumentException(
-                    getName() + " is not an enum type");
-            EnumData<T> tempEnumData = new EnumData<T>(temporaryConstants);
-            this.enumData = tempEnumData;
-            return tempEnumData;
+            T[] temporaryConstants = getEnumConstants0();
+            if (temporaryConstants == null) {
+                throw new IllegalArgumentException(getName() + " is not an enum type");
+            }
+            this.enumData = enumData = new EnumData<>(temporaryConstants, true);
         }
+        return enumData.enumConstantDirectory;
     }
 
     @SuppressWarnings("unchecked")
-    private T[] getEnumConstantsShared0() {
+    private T[] getEnumConstants0() {
         if (!isEnum()) return null;
         try {
             final Method values = getMethod("values");
