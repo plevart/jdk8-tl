@@ -43,6 +43,7 @@ import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -2211,8 +2212,11 @@ public final
      * Reflection support.
      */
 
-    // Caches for certain reflective results
-    private static boolean useCaches = true;
+    // Current usage of ReflectionData for caching:
+    // 0 - uninitialized (but do use caches in the meanwhile)
+    // 1 - initialized (do use caches)
+    // 2 - initialized (don't use caches)
+    private static byte useCaches;
 
     // reflection data that might get invalid when JVM TI RedefineClasses() is called
     static class ReflectionData<T> {
@@ -2231,29 +2235,6 @@ public final
         ReflectionData(int redefinedCount) {
             this.redefinedCount = redefinedCount;
         }
-
-        // initialize Unsafe machinery here, since we need to call Class.class instance method
-        // and would like to avoid calling it in the static initializer of the Class class...
-        private static final Unsafe unsafe;
-        // offset of Class.reflectionData instance field
-        private static final long reflectionDataOffset;
-
-        static {
-            unsafe = Unsafe.getUnsafe();
-            // bypass caches
-            Field reflectionDataField = searchFields(Class.class.getDeclaredFields0(false),
-                                                     "reflectionData");
-            if (reflectionDataField == null) {
-                throw new Error("No reflectionData field found in java.lang.Class");
-            }
-            reflectionDataOffset = unsafe.objectFieldOffset(reflectionDataField);
-        }
-
-        static <T> boolean compareAndSwap(Class<?> clazz,
-                                          SoftReference<ReflectionData<T>> oldData,
-                                          SoftReference<ReflectionData<T>> newData) {
-            return unsafe.compareAndSwapObject(clazz, reflectionDataOffset, oldData, newData);
-        }
     }
     
     private volatile transient SoftReference<ReflectionData<T>> reflectionData;
@@ -2262,42 +2243,72 @@ public final
     // that redefines this class or a superclass.
     private volatile transient int classRedefinedCount = 0;
 
-    // Lazily create and cache ReflectionData
+    // Lazily create and cache ReflectionData.
     private ReflectionData<T> reflectionData() {
-        SoftReference<ReflectionData<T>> reflectionData = this.reflectionData;
         int classRedefinedCount = this.classRedefinedCount;
+        SoftReference<ReflectionData<T>> reflectionData;
         ReflectionData<T> rd;
-        if (useCaches &&
-            reflectionData != null &&
+        if (useCaches == 1 &&
+            (reflectionData = this.reflectionData) != null &&
             (rd = reflectionData.get()) != null &&
-            rd.redefinedCount == classRedefinedCount) {
+            rd.redefinedCount == classRedefinedCount)
             return rd;
-        }
-        // else no SoftReference or cleared SoftReference or stale ReflectionData
-        // -> create and replace new instance
-        return newReflectionData(reflectionData, classRedefinedCount);
+        // Else no SoftReference or cleared SoftReference or stale ReflectionData
+        // -> create and replace new instance.
+        // If there is a race that installs "older" ReflectionData over "newer" it will be
+        // remedied at next call to reflectionData().
+        return newReflectionData(classRedefinedCount);
     }
 
-    private ReflectionData<T> newReflectionData(SoftReference<ReflectionData<T>> oldReflectionData,
-                                                int classRedefinedCount) {
-        if (!useCaches) return null;
+    private ReflectionData<T> newReflectionData(int classRedefinedCount) {
 
-        while (true)
-        {
-            ReflectionData<T> rd = new ReflectionData<T>(classRedefinedCount);
-            // try to CAS it...
-            if (ReflectionData.compareAndSwap(this, oldReflectionData, new SoftReference<>(rd))) {
-                return rd;
+        if (useCaches == 0)
+            // try to initialize
+            tryInit();
+
+        if (useCaches == 2)
+            // don't use caches
+            return null;
+
+        // else do use caches
+        ReflectionData<T> rd = new ReflectionData<T>(classRedefinedCount);
+        reflectionData = new SoftReference<>(rd);
+        return rd;
+    }
+
+    // To be able to query system properties as soon as they're available
+    private void tryInit() {
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            public Void run() {
+                // Tests to ensure the system properties table is fully
+                // initialized. This is needed because reflection code is
+                // called very early in the initialization process (before
+                // command-line arguments have been parsed and therefore
+                // these user-settable properties installed.) We assume that
+                // if System.out is non-null then the System class has been
+                // fully initialized and that the bulk of the startup code
+                // has been run.
+
+                if (System.out == null) {
+                    // java.lang.System not yet fully initialized
+                    return null;
+                }
+
+                // Doesn't use Boolean.getBoolean to avoid class init.
+                String val =
+                    System.getProperty("sun.reflect.noCaches");
+                if (val != null && val.equals("true")) {
+                    // don't use caches
+                    useCaches = 2;
+                }
+                else {
+                    // do use caches
+                    useCaches = 1;
+                }
+
+                return null;
             }
-            // else retry
-            oldReflectionData = this.reflectionData;
-            classRedefinedCount = this.classRedefinedCount;
-            if (oldReflectionData != null &&
-                (rd = oldReflectionData.get()) != null &&
-                rd.redefinedCount == classRedefinedCount) {
-                return rd;
-            }
-        }
+        });
     }
 
     // Generic signature handling
@@ -2338,15 +2349,18 @@ public final
     // be propagated to the outside world, but must instead be copied
     // via ReflectionFactory.copyField.
     private Field[] privateGetDeclaredFields(boolean publicOnly) {
-        checkInitted();
-        Field[] res;
         ReflectionData<T> rd = reflectionData();
         if (rd != null) {
-            res = publicOnly ? rd.declaredPublicFields : rd.declaredFields;
+            Field[] res = publicOnly ? rd.declaredPublicFields : rd.declaredFields;
             if (res != null) return res;
         }
+        return privateGetDeclaredFields(publicOnly, rd);
+    }
+    // slow path variant
+    private Field[] privateGetDeclaredFields(boolean publicOnly, ReflectionData<T> rd) {
         // No cached value available; request value from VM
-        res = Reflection.filterFields(this, getDeclaredFields0(publicOnly));
+        Field[] res = Reflection.filterFields(this, getDeclaredFields0(publicOnly));
+        Arrays.sort(res, BY_NAME_HASH_CODE);
         if (rd != null) {
             if (publicOnly) {
                 rd.declaredPublicFields = res;
@@ -2361,14 +2375,15 @@ public final
     // be propagated to the outside world, but must instead be copied
     // via ReflectionFactory.copyField.
     private Field[] privateGetPublicFields(Set<Class<?>> traversedInterfaces) {
-        checkInitted();
-        Field[] res;
         ReflectionData<T> rd = reflectionData();
         if (rd != null) {
-            res = rd.publicFields;
+            Field[] res = rd.publicFields;
             if (res != null) return res;
         }
-
+        return privateGetPublicFields(traversedInterfaces, rd);
+    }
+    // slow path variant
+    private Field[] privateGetPublicFields(Set<Class<?>> traversedInterfaces, ReflectionData<T> rd) {
         // No cached value available; compute value recursively.
         // Traverse in correct order for getField().
         List<Field> fields = new ArrayList<>();
@@ -2377,7 +2392,7 @@ public final
         }
 
         // Local fields
-        Field[] tmp = privateGetDeclaredFields(true);
+        Field[] tmp = privateGetDeclaredFields(true, rd);
         addAll(fields, tmp);
 
         // Direct superinterfaces, recursively
@@ -2396,7 +2411,7 @@ public final
             }
         }
 
-        res = new Field[fields.size()];
+        Field[] res = new Field[fields.size()];
         fields.toArray(res);
         if (rd != null) {
             rd.publicFields = res;
@@ -2421,7 +2436,6 @@ public final
     // objects must NOT be propagated to the outside world, but must
     // instead be copied via ReflectionFactory.copyConstructor.
     private Constructor<T>[] privateGetDeclaredConstructors(boolean publicOnly) {
-        checkInitted();
         Constructor<T>[] res;
         ReflectionData<T> rd = reflectionData();
         if (rd != null) {
@@ -2456,15 +2470,18 @@ public final
     // be propagated to the outside world, but must instead be copied
     // via ReflectionFactory.copyMethod.
     private Method[] privateGetDeclaredMethods(boolean publicOnly) {
-        checkInitted();
-        Method[] res;
         ReflectionData<T> rd = reflectionData();
         if (rd != null) {
-            res = publicOnly ? rd.declaredPublicMethods : rd.declaredMethods;
+            Method[] res = publicOnly ? rd.declaredPublicMethods : rd.declaredMethods;
             if (res != null) return res;
         }
+        return privateGetDeclaredMethods(publicOnly, rd);
+    }
+    // slow path variant
+    private Method[] privateGetDeclaredMethods(boolean publicOnly, ReflectionData<T> rd) {
         // No cached value available; request value from VM
-        res = Reflection.filterMethods(this, getDeclaredMethods0(publicOnly));
+        Method[] res = Reflection.filterMethods(this, getDeclaredMethods0(publicOnly));
+        Arrays.sort(res, BY_NAME_HASH_CODE);
         if (rd != null) {
             if (publicOnly) {
                 rd.declaredPublicMethods = res;
@@ -2570,19 +2587,20 @@ public final
     // be propagated to the outside world, but must instead be copied
     // via ReflectionFactory.copyMethod.
     private Method[] privateGetPublicMethods() {
-        checkInitted();
-        Method[] res;
         ReflectionData<T> rd = reflectionData();
         if (rd != null) {
-            res = rd.publicMethods;
+            Method[] res = rd.publicMethods;
             if (res != null) return res;
         }
-
+        return privateGetPublicMethods(rd);
+    }
+    // slow path variant
+    private Method[] privateGetPublicMethods(ReflectionData<T> rd) {
         // No cached value available; compute value recursively.
         // Start by fetching public declared methods
         MethodArray methods = new MethodArray();
         {
-            Method[] tmp = privateGetDeclaredMethods(true);
+            Method[] tmp = privateGetDeclaredMethods(true, rd);
             methods.addAll(tmp);
         }
         // Now recur over superclass and direct superinterfaces.
@@ -2621,7 +2639,7 @@ public final
         }
         methods.addAllIfNotPresent(inheritedMethods);
         methods.compactAndTrim();
-        res = methods.getArray();
+        Method[] res = methods.getArray();
         if (rd != null) {
             rd.publicMethods = res;
         }
@@ -2633,11 +2651,28 @@ public final
     // Helpers for fetchers of one field, method, or constructor
     //
 
+    private static final Comparator<Object> BY_NAME_HASH_CODE = new Comparator<Object>() {
+        @Override
+        public int compare(Object o1, Object o2)
+        {
+            int h1 = o1 instanceof Integer ? (int)o1 : ((Member) o1).getName().hashCode();
+            int h2 = o2 instanceof Integer ? (int)o2 : ((Member) o2).getName().hashCode();
+            return h1 < h2 ? -1 : (h1 > h2 ? 1 : 0);
+        }
+    };
+
     private static Field searchFields(Field[] fields, String name) {
         String internedName = name.intern();
-        for (int i = 0; i < fields.length; i++) {
-            if (fields[i].getName() == internedName) {
-                return getReflectionFactory().copyField(fields[i]);
+        int inhc = internedName.hashCode();
+        int i0 = Arrays.binarySearch(fields, inhc, BY_NAME_HASH_CODE);
+        if (i0 >= 0) {
+            String mname;
+            for (int i = i0;
+                 i < fields.length && inhc == (mname = fields[i].getName()).hashCode();
+                 i++) {
+                if (mname == internedName) {
+                    return getReflectionFactory().copyField(fields[i]);
+                }
             }
         }
         return null;
@@ -2682,15 +2717,21 @@ public final
     {
         Method res = null;
         String internedName = name.intern();
-        for (int i = 0; i < methods.length; i++) {
-            Method m = methods[i];
-            if (m.getName() == internedName
-                && arrayContentsEq(parameterTypes, m.getParameterTypes())
-                && (res == null
-                    || res.getReturnType().isAssignableFrom(m.getReturnType())))
-                res = m;
+        int inhc = internedName.hashCode();
+        int i0 = Arrays.binarySearch(methods, inhc, BY_NAME_HASH_CODE);
+        if (i0 >= 0) {
+            Method m;
+            String mname;
+            for (int i = i0;
+                 i < methods.length && inhc == (mname = (m = methods[i]).getName()).hashCode();
+                 i++) {
+                if (mname == internedName
+                    && arrayContentsEq(parameterTypes, m.getParameterTypes())
+                    && (res == null
+                        || res.getReturnType().isAssignableFrom(m.getReturnType())))
+                    res = m;
+            }
         }
-
         return (res == null ? res : getReflectionFactory().copyMethod(res));
     }
 
@@ -2911,39 +2952,6 @@ public final
         return reflectionFactory;
     }
     private static ReflectionFactory reflectionFactory;
-
-    // To be able to query system properties as soon as they're available
-    private static boolean initted = false;
-    private static void checkInitted() {
-        if (initted) return;
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                public Void run() {
-                    // Tests to ensure the system properties table is fully
-                    // initialized. This is needed because reflection code is
-                    // called very early in the initialization process (before
-                    // command-line arguments have been parsed and therefore
-                    // these user-settable properties installed.) We assume that
-                    // if System.out is non-null then the System class has been
-                    // fully initialized and that the bulk of the startup code
-                    // has been run.
-
-                    if (System.out == null) {
-                        // java.lang.System not yet fully initialized
-                        return null;
-                    }
-
-                    // Doesn't use Boolean.getBoolean to avoid class init.
-                    String val =
-                        System.getProperty("sun.reflect.noCaches");
-                    if (val != null && val.equals("true")) {
-                        useCaches = false;
-                    }
-
-                    initted = true;
-                    return null;
-                }
-            });
-    }
 
     /**
      * Returns the elements of this enum class or null if this
