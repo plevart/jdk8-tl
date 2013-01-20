@@ -51,33 +51,33 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
 
     public Object invoke(Object proxy, Method method, Object[] args) {
         String member = method.getName();
-        Class<?>[] paramTypes = method.getParameterTypes();
 
-        // Handle Object and Annotation methods
-        if (member.equals("equals") && paramTypes.length == 1 &&
-            paramTypes[0] == Object.class)
-            return equalsImpl(args[0]);
-        assert paramTypes.length == 0;
-        if (member.equals("toString"))
-            return toStringImpl();
-        if (member.equals("hashCode"))
-            return hashCodeImpl();
-        if (member.equals("annotationType"))
-            return type;
-
-        // Handle annotation member accessors
-        Object result = memberValues.get(member);
-
-        if (result == null)
-            throw new IncompleteAnnotationException(type, member);
-
-        if (result instanceof ExceptionProxy)
-            throw ((ExceptionProxy) result).generateException();
-
-        if (result.getClass().isArray() && Array.getLength(result) != 0)
-            result = cloneArray(result);
-
-        return result;
+        switch (member) {
+            case "annotationType":
+                assert args.length == 0;
+                return type;
+            case "hashCode":
+                assert args.length == 0;
+                return hashCodeImpl();
+            case "toString":
+                assert args.length == 0;
+                return toStringImpl();
+            case "equals":
+                if (args.length == 1 && method.getParameterTypes()[0] == Object.class)
+                    return equalsImpl(args[0]);
+                // else fall through...
+            default:
+                assert args.length == 0;
+                // Handle annotation member accessors
+                Object result = memberValues.get(member);
+                if (result == null)
+                    throw new IncompleteAnnotationException(type, member);
+                if (result instanceof ExceptionProxy)
+                    throw ((ExceptionProxy) result).generateException();
+                if (result.getClass().isArray() && Array.getLength(result) != 0)
+                    result = cloneArray(result);
+                return result;
+        }
     }
 
     /**
@@ -185,11 +185,11 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
 
         if (!type.isInstance(o))
             return false;
+        AnnotationInvocationHandler hisHandler = asOneOfUs(o);
         for (Method memberMethod : getMemberMethods()) {
             String member = memberMethod.getName();
             Object ourValue = memberValues.get(member);
             Object hisValue = null;
-            AnnotationInvocationHandler hisHandler = asOneOfUs(o);
             if (hisHandler != null) {
                 hisValue = hisHandler.memberValues.get(member);
             } else {
