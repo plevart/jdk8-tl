@@ -8,9 +8,20 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * Like {@link WeakHashMap} and {@link ConcurrentHashMap} at once.
+ * Like {@link WeakHashMap} and {@link ConcurrentHashMap} shaken, not stirred,
+ * with a drop of {@link IdentityHashMap} for better taste.<p>
+ * This Map implementation has the following characteristics:
+ * <ul>
+ * <li>weakly referenced keys (like {@link WeakHashMap})</li>
+ * <li>does not support null keys or values (like {@link ConcurrentHashMap})</li>
+ * <li>uses identity hashCode and identity comparison for keys (like {@link IdentityHashMap})</li>
+ * <li> iterators are not fail-fast (like {@link ConcurrentHashMap})</li>
+ * </ul>
+ * It is a {@link ConcurrentMap} implementation backed by the {@link ConcurrentHashMap} so it
+ * inherits the same scalability/concurrency characteristics. It uses a single background thread shared among all instances to
+ * expunge stale weak references, so no outside activity is needed for stale entries to be collected.
  */
-class WeakConcurrentHashMap<K, V> implements ConcurrentMap<K, V> {
+public class WeakConcurrentHashMap<K, V> implements ConcurrentMap<K, V> {
 
     private interface Key<K> {
         K get();
@@ -66,8 +77,7 @@ class WeakConcurrentHashMap<K, V> implements ConcurrentMap<K, V> {
             if (key == null) {
                 // already cleared -> only equal to itself
                 return this == obj;
-            }
-            else {
+            } else {
                 return obj instanceof Key && ((Key) obj).get() == key;
             }
         }
@@ -76,7 +86,7 @@ class WeakConcurrentHashMap<K, V> implements ConcurrentMap<K, V> {
         public void remove() {
             System.out.println(
                 "Removing WeakKey(" + Integer.toHexString(hashCode) +
-                    ") from WeakConcurrentHashMap(" + Integer.toHexString(System.identityHashCode(WeakConcurrentHashMap.this))
+                ") from WeakConcurrentHashMap(" + Integer.toHexString(System.identityHashCode(WeakConcurrentHashMap.this))
             );
             map.remove(this);
         }
@@ -115,8 +125,40 @@ class WeakConcurrentHashMap<K, V> implements ConcurrentMap<K, V> {
         purger.start();
     }
 
-    // the backing map
-    private final ConcurrentMap<Key<K>, V> map = new ConcurrentHashMap<>();
+    /**
+     * The backing map
+     */
+    private final ConcurrentMap<Key<K>, V> map;
+
+    public WeakConcurrentHashMap(int initialCapacity, float loadFactor, int concurrencyLevel) {
+        map = new ConcurrentHashMap<>(initialCapacity, loadFactor, concurrencyLevel);
+    }
+
+    public WeakConcurrentHashMap(int initialCapacity, float loadFactor) {
+        map = new ConcurrentHashMap<>(initialCapacity, loadFactor);
+    }
+
+    public WeakConcurrentHashMap(int initialCapacity) {
+        map = new ConcurrentHashMap<>(initialCapacity);
+    }
+
+    public WeakConcurrentHashMap() {
+        map = new ConcurrentHashMap<>();
+    }
+
+    /**
+     * These are copied from {@link ConcurrentHashMap} where they are package-private
+     */
+    private static final int DEFAULT_INITIAL_CAPACITY = 16;
+    private static final float DEFAULT_LOAD_FACTOR = 0.75f;
+    private static final int DEFAULT_CONCURRENCY_LEVEL = 16;
+
+    public WeakConcurrentHashMap(Map<? extends K, ? extends V> m) {
+        this(Math.max((int) (m.size() / DEFAULT_LOAD_FACTOR) + 1,
+            DEFAULT_INITIAL_CAPACITY),
+            DEFAULT_LOAD_FACTOR, DEFAULT_CONCURRENCY_LEVEL);
+        putAll(m);
+    }
 
     @Override
     public V putIfAbsent(K key, V value) {
@@ -209,8 +251,7 @@ class WeakConcurrentHashMap<K, V> implements ConcurrentMap<K, V> {
                                 K k = next;
                                 next = null;
                                 return k;
-                            }
-                            else {
+                            } else {
                                 throw new NoSuchElementException();
                             }
                         }
@@ -274,8 +315,7 @@ class WeakConcurrentHashMap<K, V> implements ConcurrentMap<K, V> {
                                 V v = next;
                                 next = null;
                                 return v;
-                            }
-                            else {
+                            } else {
                                 throw new NoSuchElementException();
                             }
                         }
@@ -340,8 +380,7 @@ class WeakConcurrentHashMap<K, V> implements ConcurrentMap<K, V> {
                                 Entry<K, V> e = next;
                                 next = null;
                                 return e;
-                            }
-                            else {
+                            } else {
                                 throw new NoSuchElementException();
                             }
                         }
@@ -368,18 +407,18 @@ class WeakConcurrentHashMap<K, V> implements ConcurrentMap<K, V> {
                     Map.Entry<?, ?> entry;
                     V value;
                     return o instanceof Map.Entry &&
-                        (value = get((entry = (Map.Entry<?, ?>) o).getKey())) != null &&
-                        value.equals(entry.getValue());
+                           (value = get((entry = (Map.Entry<?, ?>) o).getKey())) != null &&
+                           value.equals(entry.getValue());
                 }
 
                 @Override
                 public boolean remove(Object o) {
                     Map.Entry<K, V> entry;
                     return o instanceof Map.Entry &&
-                        WeakConcurrentHashMap.this.remove(
-                            (entry = (Map.Entry<K, V>) o).getKey(),
-                            entry.getValue()
-                        );
+                           WeakConcurrentHashMap.this.remove(
+                               (entry = (Map.Entry<K, V>) o).getKey(),
+                               entry.getValue()
+                           );
                 }
             };
 
