@@ -17,6 +17,9 @@ import java.util.concurrent.ConcurrentMap;
  * This is a {@link ConcurrentMap} implementation backed by the {@link ConcurrentHashMap} so it
  * inherits the same scalability/concurrency characteristics. It uses a single background thread shared among all instances to
  * expunge stale weak/soft references, so no outside activity is needed for stale entries to be collected.
+ *
+ * @see WeakConcurrentHashMap
+ * @see IdentityWeakConcurrentHashMap
  */
 public abstract class ReferenceConcurrentHashMap<K, V> implements ConcurrentMap<K, V> {
 
