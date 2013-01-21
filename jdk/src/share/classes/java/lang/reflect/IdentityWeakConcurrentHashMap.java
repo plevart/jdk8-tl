@@ -5,27 +5,27 @@ import java.util.Map;
 
 /**
  * A concrete {@link ReferenceConcurrentHashMap} implementation with weak keys
- * using hashCode() / equals() comparison for keys.
+ * using identity hashCode / identity comparison for keys.
  */
-public class WeakConcurrentHashMap<K, V> extends ReferenceConcurrentHashMap<K, V> {
+public class IdentityWeakConcurrentHashMap<K, V> extends ReferenceConcurrentHashMap<K, V> {
 
-    public WeakConcurrentHashMap(int initialCapacity, float loadFactor, int concurrencyLevel) {
+    public IdentityWeakConcurrentHashMap(int initialCapacity, float loadFactor, int concurrencyLevel) {
         super(initialCapacity, loadFactor, concurrencyLevel);
     }
 
-    public WeakConcurrentHashMap(int initialCapacity, float loadFactor) {
+    public IdentityWeakConcurrentHashMap(int initialCapacity, float loadFactor) {
         super(initialCapacity, loadFactor);
     }
 
-    public WeakConcurrentHashMap(int initialCapacity) {
+    public IdentityWeakConcurrentHashMap(int initialCapacity) {
         super(initialCapacity);
     }
 
-    public WeakConcurrentHashMap() {
+    public IdentityWeakConcurrentHashMap() {
         super();
     }
 
-    public WeakConcurrentHashMap(Map<? extends K, ? extends V> m) {
+    public IdentityWeakConcurrentHashMap(Map<? extends K, ? extends V> m) {
         super(m);
     }
 
@@ -44,12 +44,12 @@ public class WeakConcurrentHashMap<K, V> extends ReferenceConcurrentHashMap<K, V
 
         @Override
         public int hashCode() {
-            return key.hashCode();
+            return System.identityHashCode(key);
         }
 
         @Override
         public boolean equals(Object obj) {
-            return obj instanceof Key && key.equals(((Key) obj).get());
+            return obj instanceof Key && ((Key) obj).get() == key;
         }
 
         @Override
@@ -63,7 +63,8 @@ public class WeakConcurrentHashMap<K, V> extends ReferenceConcurrentHashMap<K, V
 
         WeakKey(K key) {
             super(key, refQueue);
-            hashCode = key.hashCode();
+            if (key == null) throw new NullPointerException();
+            hashCode = System.identityHashCode(key);
         }
 
         @Override
@@ -78,7 +79,7 @@ public class WeakConcurrentHashMap<K, V> extends ReferenceConcurrentHashMap<K, V
                 // already cleared -> only equal to itself
                 return this == obj;
             } else {
-                return obj instanceof Key && key.equals(((Key) obj).get());
+                return obj instanceof Key && ((Key) obj).get() == key;
             }
         }
 
@@ -86,7 +87,7 @@ public class WeakConcurrentHashMap<K, V> extends ReferenceConcurrentHashMap<K, V
         public void remove() {
             System.out.println(
                 "Removing WeakKey(" + Integer.toHexString(hashCode) +
-                ") from WeakConcurrentHashMap(" + Integer.toHexString(System.identityHashCode(WeakConcurrentHashMap.this))
+                ") from IdentityWeakConcurrentHashMap(" + Integer.toHexString(System.identityHashCode(IdentityWeakConcurrentHashMap.this))
             );
             map.remove(this);
         }
