@@ -11,8 +11,8 @@ import java.util.concurrent.ConcurrentMap;
  * <ul>
  * <li>weakly/softly referenced keys (like {@link WeakHashMap})</li>
  * <li>does not support null keys or values (like {@link ConcurrentHashMap})</li>
- * <li>the choice of using identity hashCode / comparison or hashCode()/equals() methods for keys</li>
- * <li> iterators are not fail-fast (like {@link ConcurrentHashMap})</li>
+ * <li>using identity hashCode / identity comparison or hashCode()/equals() methods for hashing/comparing keys</li>
+ * <li>iterators are not fail-fast (like {@link ConcurrentHashMap})</li>
  * </ul>
  * This is a {@link ConcurrentMap} implementation backed by the {@link ConcurrentHashMap} so it
  * inherits the same scalability/concurrency characteristics. It uses a single background thread shared among all instances to
