@@ -49,7 +49,7 @@ public class WeakConcurrentHashMap<K, V> extends ReferenceConcurrentHashMap<K, V
 
         @Override
         public boolean equals(Object obj) {
-            return obj instanceof Key && key.equals(((Key) obj).get());
+            return this == obj || obj instanceof Key && key.equals(((Key) obj).get());
         }
 
         @Override
@@ -78,7 +78,7 @@ public class WeakConcurrentHashMap<K, V> extends ReferenceConcurrentHashMap<K, V
                 // already cleared -> only equal to itself
                 return this == obj;
             } else {
-                return obj instanceof Key && key.equals(((Key) obj).get());
+                return this == obj || obj instanceof Key && key.equals(((Key) obj).get());
             }
         }
 
