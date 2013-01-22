@@ -1,4 +1,4 @@
-package java.lang.reflect;
+package java.util.concurrent;
 
 import java.lang.ref.WeakReference;
 import java.util.Map;
@@ -6,6 +6,8 @@ import java.util.Map;
 /**
  * A concrete {@link ReferenceConcurrentHashMap} implementation with weak keys
  * using identity hashCode / identity comparison for keys.
+ *
+ * @author peter.levart@gmail.com
  */
 public class IdentityWeakConcurrentHashMap<K, V> extends ReferenceConcurrentHashMap<K, V> {
 
@@ -54,7 +56,7 @@ public class IdentityWeakConcurrentHashMap<K, V> extends ReferenceConcurrentHash
 
         @Override
         public void remove() {
-            throw new AssertionError("Should not be called");
+            throw new UnsupportedOperationException();
         }
     }
 
@@ -85,10 +87,6 @@ public class IdentityWeakConcurrentHashMap<K, V> extends ReferenceConcurrentHash
 
         @Override
         public void remove() {
-            System.out.println(
-                "Removing WeakKey(" + Integer.toHexString(hashCode) +
-                ") from IdentityWeakConcurrentHashMap(" + Integer.toHexString(System.identityHashCode(IdentityWeakConcurrentHashMap.this))
-            );
             map.remove(this);
         }
     }

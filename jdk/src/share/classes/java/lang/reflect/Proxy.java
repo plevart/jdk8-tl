@@ -35,6 +35,7 @@ import java.util.Set;
 import java.util.List;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.WeakConcurrentHashMap;
 
 import sun.misc.ProxyGenerator;
 

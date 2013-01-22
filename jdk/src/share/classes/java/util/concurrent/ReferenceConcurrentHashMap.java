@@ -1,23 +1,23 @@
-package java.lang.reflect;
+package java.util.concurrent;
 
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * A base for {@link ConcurrentMap} implementations with the following characteristics:
  * <ul>
- * <li>weakly/softly referenced keys (like {@link WeakHashMap})</li>
+ * <li>choice of weakly/softly referenced keys (like {@link WeakHashMap})</li>
  * <li>does not support null keys or values (like {@link ConcurrentHashMap})</li>
- * <li>using identity hashCode / identity comparison or hashCode()/equals() methods for hashing/comparing keys</li>
+ * <li>choice of using identity hashCode / identity comparison or hashCode()/equals() methods for hashing/comparing keys</li>
  * <li>iterators are not fail-fast (like {@link ConcurrentHashMap})</li>
  * </ul>
  * This is a {@link ConcurrentMap} implementation backed by the {@link ConcurrentHashMap} so it
- * inherits the same scalability/concurrency characteristics. It uses a single background thread shared among all instances to
- * expunge stale weak/soft references, so no outside activity is needed for stale entries to be collected.
+ * inherits the same performance characteristics. It uses a single background thread shared among
+ * all instances to expunge stale weak/soft references. No outside activity is needed for stale entries to
+ * be collected.
  *
+ * @author peter.levart@gmail.com
  * @see WeakConcurrentHashMap
  * @see IdentityWeakConcurrentHashMap
  */
@@ -60,7 +60,7 @@ public abstract class ReferenceConcurrentHashMap<K, V> implements ConcurrentMap<
             tg = tgn, tgn = tg.getParent()
             )
             ;
-        Thread expungeThread = new ExpungeThread(tg, "WeakConcurrentHashMap Expunge Thread");
+        Thread expungeThread = new ExpungeThread(tg, "ReferenceConcurrentHashMap Expunge Thread");
         expungeThread.setDaemon(true);
         expungeThread.start();
     }
@@ -86,25 +86,18 @@ public abstract class ReferenceConcurrentHashMap<K, V> implements ConcurrentMap<
         map = new ConcurrentHashMap<>();
     }
 
-    /**
-     * These are copied from {@link ConcurrentHashMap} where they are package-private
-     */
-    private static final int DEFAULT_INITIAL_CAPACITY = 16;
-    private static final float DEFAULT_LOAD_FACTOR = 0.75f;
-    private static final int DEFAULT_CONCURRENCY_LEVEL = 16;
-
     public ReferenceConcurrentHashMap(Map<? extends K, ? extends V> m) {
         this(
             Math.max(
-                (int) (m.size() / DEFAULT_LOAD_FACTOR) + 1,
-                DEFAULT_INITIAL_CAPACITY
+                (int) (m.size() / ConcurrentHashMap.DEFAULT_LOAD_FACTOR) + 1,
+                ConcurrentHashMap.DEFAULT_INITIAL_CAPACITY
             ),
-            DEFAULT_LOAD_FACTOR, DEFAULT_CONCURRENCY_LEVEL
+            ConcurrentHashMap.DEFAULT_LOAD_FACTOR, ConcurrentHashMap.DEFAULT_CONCURRENCY_LEVEL
         );
         putAll(m);
     }
 
-    // protected abstract methods/interfaces that are implemented in subclasses
+    // protected abstract methods/interfaces that are to be implemented in subclasses
 
     /**
      * An interface implemented by wrapper keys.
@@ -118,7 +111,7 @@ public abstract class ReferenceConcurrentHashMap<K, V> implements ConcurrentMap<
         K get();
 
         /**
-         * Optional operation. If class implementing this interface extend {@link Reference} and is constructed using
+         * Optional operation. If class implementing this interface extends {@link Reference} and is constructed using
          * {@link #refQueue} as a reference queue, then this method will be called by a background thread after this
          * reference is enqueue-ed. The purpose of this method is to remove the corresponding entry from the {@link #map}.
          */
@@ -129,7 +122,8 @@ public abstract class ReferenceConcurrentHashMap<K, V> implements ConcurrentMap<
      * @param key  A non-null key to wrap
      * @param <KK> the type of key
      * @return A wrapper key suitable for performing look-ups into the backing {@link #map}.
-     *         Wrapper keys returned from this method will never end up being held in the backing map.
+     *         Wrapper keys returned from this method will never be retained by the backing map, so they don't need to
+     *         weekly/softly reference the wrapped key.
      * @see #wrapForPut
      */
     protected abstract <KK> Key<KK> wrapForLookup(KK key);
@@ -138,8 +132,8 @@ public abstract class ReferenceConcurrentHashMap<K, V> implements ConcurrentMap<
      * @param key A non-null key to wrap
      * @return A wrapper key suitable for performing put operations.
      *         Wrapper keys returned from this method will eventually be retained by the backing {@link #map} so
-     *         they are expected to be a subclass of {@link Reference} and be constructed with a {@link #refQueue}
-     *         reference queue.
+     *         they are expected to be a subclass of [Weak|Soft]{@link Reference} and be constructed with
+     *         a {@link #refQueue} reference queue.
      * @see #wrapForLookup
      */
     protected abstract Key<K> wrapForPut(K key);
