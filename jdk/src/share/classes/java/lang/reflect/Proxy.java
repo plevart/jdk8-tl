@@ -27,15 +27,12 @@ package java.lang.reflect;
 
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.List;
-import java.util.WeakHashMap;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.WeakConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import sun.misc.ProxyGenerator;
 
@@ -244,8 +241,15 @@ public class Proxy implements java.io.Serializable {
     private static Object nextUniqueNumberLock = new Object();
 
     /** set of all generated proxy classes, for isProxyClass implementation */
-    private static ConcurrentMap<Class<?>, Boolean> proxyClasses =
-        new WeakConcurrentHashMap<>();
+    private static Map<Class<?>, Void> proxyClasses =
+        Collections.synchronizedMap(new WeakHashMap<Class<?>, Void>());
+
+    private static final ClassValue<Boolean> isProxyClass = new ClassValue<Boolean>() {
+        @Override
+        protected Boolean computeValue(Class<?> cl) {
+            return proxyClasses.containsKey(cl);
+        }
+    };
 
     /**
      * the invocation handler for this proxy instance.
@@ -537,7 +541,7 @@ public class Proxy implements java.io.Serializable {
                 }
             }
             // add to set of all generated proxy classes, for isProxyClass
-            proxyClasses.put(proxyClass, true);
+            proxyClasses.put(proxyClass, null);
 
         } finally {
             /*
@@ -631,11 +635,14 @@ public class Proxy implements java.io.Serializable {
      * @throws  NullPointerException if {@code cl} is {@code null}
      */
     public static boolean isProxyClass(Class<?> cl) {
-        if (cl == null) {
-            throw new NullPointerException();
-        }
-
-        return proxyClasses.containsKey(cl);
+//        if (cl == null) {
+//            throw new NullPointerException();
+//        }
+//
+        boolean isPc = isProxyClass.get(cl);
+        if (!isPc)
+            isProxyClass.remove(cl);
+        return isPc;
     }
 
     /**

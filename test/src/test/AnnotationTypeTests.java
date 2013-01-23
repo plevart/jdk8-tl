@@ -1,5 +1,7 @@
 package test;
 
+import si.pele.microbench.TestRunner;
+
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -16,7 +18,8 @@ import static test.AnnotationTypeTests.*;
 @Ann5()
 @Ann6()
 @Ann7()
-public class AnnotationTypeTests extends TestRunner {
+public class AnnotationTypeTests extends TestRunner
+{
 
     @Retention(RetentionPolicy.RUNTIME)
     public @interface Ann0 {
@@ -138,9 +141,9 @@ public class AnnotationTypeTests extends TestRunner {
 
     public static void main(String[] args) throws InterruptedException {
         int cpus = Runtime.getRuntime().availableProcessors();
-        doTest(Ann_annotationType.class, 5000L, 1, cpus, 1);
-        doTest(Ann_value.class, 5000L, 1, cpus, 1);
-        doTest(Ann_hashCode.class, 5000L, 1, cpus, 1);
+//        doTest(Ann_annotationType.class, 5000L, 1, cpus, 1);
+//        doTest(Ann_value.class, 5000L, 1, cpus, 1);
+//        doTest(Ann_hashCode.class, 5000L, 1, cpus, 1);
         doTest(Ann_equals.class, 5000L, 1, cpus, 1);
     }
 }
