@@ -28,11 +28,6 @@ package java.lang.reflect;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.WeakConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import sun.misc.ProxyGenerator;
 
@@ -240,16 +235,25 @@ public class Proxy implements java.io.Serializable {
     private static long nextUniqueNumber = 0;
     private static Object nextUniqueNumberLock = new Object();
 
-    /** set of all generated proxy classes, for isProxyClass implementation */
-    private static Map<Class<?>, Void> proxyClasses =
-        Collections.synchronizedMap(new WeakHashMap<Class<?>, Void>());
+    /** thread-local holding the initialization value for isProxyClass ClassValue */
+    private static final ThreadLocal<Boolean> isProxyClassInitializationValue =
+        new ThreadLocal<Boolean>() {
+            @Override
+            protected Boolean initialValue() {
+                // might only be called for a rare occasion where isProxyClass
+                // is called for a custom Proxy subclass that is not a proxy class
+                return Boolean.FALSE;
+            }
+        };
 
-    private static final ClassValue<Boolean> isProxyClass = new ClassValue<Boolean>() {
-        @Override
-        protected Boolean computeValue(Class<?> cl) {
-            return proxyClasses.containsKey(cl);
-        }
-    };
+    /** per-class cache for isProxyClass implementation */
+    private static final ClassValue<Boolean> isProxyClass =
+        new ClassValue<Boolean>() {
+            @Override
+            protected Boolean computeValue(Class<?> cl) {
+                return isProxyClassInitializationValue.get();
+            }
+        };
 
     /**
      * the invocation handler for this proxy instance.
@@ -540,8 +544,16 @@ public class Proxy implements java.io.Serializable {
                     throw new IllegalArgumentException(e.toString());
                 }
             }
-            // add to set of all generated proxy classes, for isProxyClass
-            proxyClasses.put(proxyClass, null);
+            // establish the thread-local context with true value
+            isProxyClassInitializationValue.set(Boolean.TRUE);
+            try {
+                // initialize the isProxyClass ClassValue for proxyClass
+                isProxyClass.get(proxyClass);
+            }
+            finally {
+                // thread-local context not needed any more
+                isProxyClassInitializationValue.remove();
+            }
 
         } finally {
             /*
@@ -635,14 +647,10 @@ public class Proxy implements java.io.Serializable {
      * @throws  NullPointerException if {@code cl} is {@code null}
      */
     public static boolean isProxyClass(Class<?> cl) {
-//        if (cl == null) {
-//            throw new NullPointerException();
-//        }
-//
-        boolean isPc = isProxyClass.get(cl);
-        if (!isPc)
-            isProxyClass.remove(cl);
-        return isPc;
+        if (!Proxy.class.isAssignableFrom(cl))
+            return false;
+
+        return isProxyClass.get(cl);
     }
 
     /**
