@@ -1,102 +1,34 @@
-Original AnnotationInvocationHandler:
+Original JDK8 j.l.r.Proxy:
+
+Run duration: 5000 ms, #of logical CPUS: 8
 
 Warm up:
-            Ann_annotationType:   1 threads, Tavg =     67.63 ns/op (σ =   0.00 ns/op)
-            Ann_annotationType:   1 threads, Tavg =     66.82 ns/op (σ =   0.00 ns/op)
+                    Ann_equals:   1 threads, Tavg =    339.43 ns/op (σ =   0.00 ns/op)
+                    Ann_equals:   1 threads, Tavg =    340.42 ns/op (σ =   0.00 ns/op)
 Measure:
-            Ann_annotationType:   1 threads, Tavg =     66.70 ns/op (σ =   0.00 ns/op)
-            Ann_annotationType:   2 threads, Tavg =     66.60 ns/op (σ =   0.12 ns/op)
-            Ann_annotationType:   3 threads, Tavg =     66.92 ns/op (σ =   0.01 ns/op)
-            Ann_annotationType:   4 threads, Tavg =     68.41 ns/op (σ =   0.19 ns/op)
-            Ann_annotationType:   5 threads, Tavg =     87.09 ns/op (σ =   3.86 ns/op)
-            Ann_annotationType:   6 threads, Tavg =    106.65 ns/op (σ =   5.05 ns/op)
-            Ann_annotationType:   7 threads, Tavg =    127.41 ns/op (σ =   6.00 ns/op)
-            Ann_annotationType:   8 threads, Tavg =    151.01 ns/op (σ =   1.06 ns/op)
-Warm up:
-                     Ann_value:   1 threads, Tavg =    131.16 ns/op (σ =   0.00 ns/op)
-                     Ann_value:   1 threads, Tavg =    131.27 ns/op (σ =   0.00 ns/op)
-Measure:
-                     Ann_value:   1 threads, Tavg =    130.46 ns/op (σ =   0.00 ns/op)
-                     Ann_value:   2 threads, Tavg =    130.48 ns/op (σ =   0.02 ns/op)
-                     Ann_value:   3 threads, Tavg =    131.59 ns/op (σ =   0.78 ns/op)
-                     Ann_value:   4 threads, Tavg =    134.07 ns/op (σ =   1.13 ns/op)
-                     Ann_value:   5 threads, Tavg =    164.33 ns/op (σ =   7.21 ns/op)
-                     Ann_value:   6 threads, Tavg =    193.32 ns/op (σ =  13.68 ns/op)
-                     Ann_value:   7 threads, Tavg =    225.18 ns/op (σ =  13.25 ns/op)
-                     Ann_value:   8 threads, Tavg =    261.56 ns/op (σ =   1.97 ns/op)
-Warm up:
-                  Ann_hashCode:   1 threads, Tavg =    213.56 ns/op (σ =   0.00 ns/op)
-                  Ann_hashCode:   1 threads, Tavg =    212.48 ns/op (σ =   0.00 ns/op)
-Measure:
-                  Ann_hashCode:   1 threads, Tavg =    211.88 ns/op (σ =   0.00 ns/op)
-                  Ann_hashCode:   2 threads, Tavg =    212.87 ns/op (σ =   0.18 ns/op)
-                  Ann_hashCode:   3 threads, Tavg =    216.43 ns/op (σ =   0.75 ns/op)
-                  Ann_hashCode:   4 threads, Tavg =    227.19 ns/op (σ =   0.14 ns/op)
-                  Ann_hashCode:   5 threads, Tavg =    278.85 ns/op (σ =  10.80 ns/op)
-                  Ann_hashCode:   6 threads, Tavg =    331.98 ns/op (σ =  20.07 ns/op)
-                  Ann_hashCode:   7 threads, Tavg =    386.48 ns/op (σ =   9.08 ns/op)
-                  Ann_hashCode:   8 threads, Tavg =    443.54 ns/op (σ =   2.93 ns/op)
-Warm up:
-                    Ann_equals:   1 threads, Tavg =    314.17 ns/op (σ =   0.00 ns/op)
-                    Ann_equals:   1 threads, Tavg =    315.31 ns/op (σ =   0.00 ns/op)
-Measure:
-                    Ann_equals:   1 threads, Tavg =    320.53 ns/op (σ =   0.00 ns/op)
-                    Ann_equals:   2 threads, Tavg =    806.84 ns/op (σ =   3.96 ns/op)
-                    Ann_equals:   3 threads, Tavg =  1,740.08 ns/op (σ =  12.43 ns/op)
-                    Ann_equals:   4 threads, Tavg =  2,559.36 ns/op (σ =  30.92 ns/op)
-                    Ann_equals:   5 threads, Tavg =  7,432.73 ns/op (σ =  89.14 ns/op)
-                    Ann_equals:   6 threads, Tavg = 10,471.47 ns/op (σ =  55.91 ns/op)
-                    Ann_equals:   7 threads, Tavg =  6,929.35 ns/op (σ = 153.14 ns/op)
-                    Ann_equals:   8 threads, Tavg = 12,139.66 ns/op (σ = 129.36 ns/op)
+                    Ann_equals:   1 threads, Tavg =    339.89 ns/op (σ =   0.00 ns/op)
+                    Ann_equals:   2 threads, Tavg =    797.57 ns/op (σ =   0.09 ns/op)
+                    Ann_equals:   3 threads, Tavg =  1,770.39 ns/op (σ =  27.62 ns/op)
+                    Ann_equals:   4 threads, Tavg =  2,506.18 ns/op (σ =   7.77 ns/op)
+                    Ann_equals:   5 threads, Tavg =  6,075.57 ns/op (σ =  90.90 ns/op)
+                    Ann_equals:   6 threads, Tavg =  9,406.77 ns/op (σ =  31.19 ns/op)
+                    Ann_equals:   7 threads, Tavg = 11,878.29 ns/op (σ =  75.55 ns/op)
+                    Ann_equals:   8 threads, Tavg = 13,547.24 ns/op (σ = 194.32 ns/op)
 
 
-Patched AnnotationInvocationHandler:
+Patched j.l.r.Proxy:
+
+Run duration: 5000 ms, #of logical CPUS: 8
 
 Warm up:
-            Ann_annotationType:   1 threads, Tavg =     50.20 ns/op (σ =   0.00 ns/op)
-            Ann_annotationType:   1 threads, Tavg =     50.64 ns/op (σ =   0.00 ns/op)
+                    Ann_equals:   1 threads, Tavg =    238.68 ns/op (σ =   0.00 ns/op)
+                    Ann_equals:   1 threads, Tavg =    237.88 ns/op (σ =   0.00 ns/op)
 Measure:
-            Ann_annotationType:   1 threads, Tavg =     50.62 ns/op (σ =   0.00 ns/op)
-            Ann_annotationType:   2 threads, Tavg =     50.64 ns/op (σ =   0.02 ns/op)
-            Ann_annotationType:   3 threads, Tavg =     50.69 ns/op (σ =   0.04 ns/op)
-            Ann_annotationType:   4 threads, Tavg =     50.82 ns/op (σ =   0.13 ns/op)
-            Ann_annotationType:   5 threads, Tavg =     62.34 ns/op (σ =  22.29 ns/op)
-            Ann_annotationType:   6 threads, Tavg =     74.74 ns/op (σ =  18.80 ns/op)
-            Ann_annotationType:   7 threads, Tavg =     85.03 ns/op (σ =  12.65 ns/op)
-            Ann_annotationType:   8 threads, Tavg =     97.08 ns/op (σ =   2.55 ns/op)
-Warm up:
-                     Ann_value:   1 threads, Tavg =     85.15 ns/op (σ =   0.00 ns/op)
-                     Ann_value:   1 threads, Tavg =     84.43 ns/op (σ =   0.00 ns/op)
-Measure:
-                     Ann_value:   1 threads, Tavg =     84.42 ns/op (σ =   0.00 ns/op)
-                     Ann_value:   2 threads, Tavg =     84.51 ns/op (σ =   0.00 ns/op)
-                     Ann_value:   3 threads, Tavg =     84.95 ns/op (σ =   0.50 ns/op)
-                     Ann_value:   4 threads, Tavg =     84.73 ns/op (σ =   0.26 ns/op)
-                     Ann_value:   5 threads, Tavg =    103.44 ns/op (σ =  35.37 ns/op)
-                     Ann_value:   6 threads, Tavg =    121.48 ns/op (σ =  24.87 ns/op)
-                     Ann_value:   7 threads, Tavg =    139.02 ns/op (σ =  25.37 ns/op)
-                     Ann_value:   8 threads, Tavg =    155.06 ns/op (σ =   0.96 ns/op)
-Warm up:
-                  Ann_hashCode:   1 threads, Tavg =    163.42 ns/op (σ =   0.00 ns/op)
-                  Ann_hashCode:   1 threads, Tavg =    162.71 ns/op (σ =   0.00 ns/op)
-Measure:
-                  Ann_hashCode:   1 threads, Tavg =    161.63 ns/op (σ =   0.00 ns/op)
-                  Ann_hashCode:   2 threads, Tavg =    163.79 ns/op (σ =   0.04 ns/op)
-                  Ann_hashCode:   3 threads, Tavg =    167.17 ns/op (σ =   1.00 ns/op)
-                  Ann_hashCode:   4 threads, Tavg =    201.04 ns/op (σ =  11.46 ns/op)
-                  Ann_hashCode:   5 threads, Tavg =    234.32 ns/op (σ =  17.79 ns/op)
-                  Ann_hashCode:   6 threads, Tavg =    255.11 ns/op (σ =  13.22 ns/op)
-                  Ann_hashCode:   7 threads, Tavg =    307.14 ns/op (σ =  12.83 ns/op)
-                  Ann_hashCode:   8 threads, Tavg =    344.62 ns/op (σ =   1.39 ns/op)
-Warm up:
-                    Ann_equals:   1 threads, Tavg =    361.57 ns/op (σ =   0.00 ns/op)
-                    Ann_equals:   1 threads, Tavg =    360.33 ns/op (σ =   0.00 ns/op)
-Measure:
-                    Ann_equals:   1 threads, Tavg =    358.39 ns/op (σ =   0.00 ns/op)
-                    Ann_equals:   2 threads, Tavg =    358.10 ns/op (σ =   0.08 ns/op)
-                    Ann_equals:   3 threads, Tavg =    361.32 ns/op (σ =   0.38 ns/op)
-                    Ann_equals:   4 threads, Tavg =    377.58 ns/op (σ =   6.02 ns/op)
-                    Ann_equals:   5 threads, Tavg =    470.39 ns/op (σ =  24.77 ns/op)
-                    Ann_equals:   6 threads, Tavg =    507.23 ns/op (σ =  21.93 ns/op)
-                    Ann_equals:   7 threads, Tavg =    573.40 ns/op (σ =  23.20 ns/op)
-                    Ann_equals:   8 threads, Tavg =    650.96 ns/op (σ =   1.59 ns/op)
+                    Ann_equals:   1 threads, Tavg =    239.35 ns/op (σ =   0.00 ns/op)
+                    Ann_equals:   2 threads, Tavg =    237.55 ns/op (σ =   0.01 ns/op)
+                    Ann_equals:   3 threads, Tavg =    240.24 ns/op (σ =   0.69 ns/op)
+                    Ann_equals:   4 threads, Tavg =    242.74 ns/op (σ =   0.70 ns/op)
+                    Ann_equals:   5 threads, Tavg =    288.10 ns/op (σ =  10.12 ns/op)
+                    Ann_equals:   6 threads, Tavg =    325.39 ns/op (σ =   9.82 ns/op)
+                    Ann_equals:   7 threads, Tavg =    363.00 ns/op (σ =  11.29 ns/op)
+                    Ann_equals:   8 threads, Tavg =    405.81 ns/op (σ =   1.69 ns/op)
