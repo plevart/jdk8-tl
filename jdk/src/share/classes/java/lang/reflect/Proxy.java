@@ -27,8 +27,13 @@ package java.lang.reflect;
 
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
-import java.util.*;
-
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.List;
+import java.util.WeakHashMap;
 import sun.misc.ProxyGenerator;
 
 /**
@@ -648,10 +653,7 @@ public class Proxy implements java.io.Serializable {
      * @throws  NullPointerException if {@code cl} is {@code null}
      */
     public static boolean isProxyClass(Class<?> cl) {
-        if (!Proxy.class.isAssignableFrom(cl))
-            return false;
-
-        return isProxyClass.get(cl);
+        return Proxy.class.isAssignableFrom(cl) && isProxyClass.get(cl);
     }
 
     /**
