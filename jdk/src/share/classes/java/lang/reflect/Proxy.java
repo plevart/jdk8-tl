@@ -548,7 +548,8 @@ public class Proxy implements java.io.Serializable {
             isProxyClassInitializationValue.set(Boolean.TRUE);
             try {
                 // initialize the isProxyClass ClassValue for proxyClass
-                isProxyClass.get(proxyClass);
+                if (!isProxyClass.get(proxyClass))
+                    throw new AssertionError("Internal inconsistency");
             }
             finally {
                 // thread-local context not needed any more
