@@ -44,6 +44,7 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.Stack;
 import java.util.Map;
@@ -51,6 +52,9 @@ import java.util.Vector;
 import java.util.Hashtable;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.function.Supplier;
+
 import sun.misc.ClassFileTransformer;
 import sun.misc.CompoundEnumeration;
 import sun.misc.Resource;
@@ -2203,6 +2207,12 @@ public abstract class ClassLoader {
 
     // Retrieves the assertion directives from the VM.
     private static native AssertionStatusDirectives retrieveDirectives();
+
+
+    // -- Caches maintained by java.lang.reflect.Proxy --
+
+    private final ConcurrentMap<List<String>, Supplier<Class<?>>> proxyClassCache = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Class<?>, Boolean> proxyClassStatusCache = new ConcurrentHashMap<>();
 }
 
 

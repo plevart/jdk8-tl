@@ -34,6 +34,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
 import sun.misc.ProxyGenerator;
+import sun.misc.Unsafe;
 
 /**
  * {@code Proxy} provides static methods for creating dynamic proxy
@@ -229,17 +230,7 @@ public class Proxy implements java.io.Serializable {
         { InvocationHandler.class };
 
     /** next number to use for generation of unique proxy class names */
-    private static final AtomicLong nextUniqueNumber = new AtomicLong();
-
-    private static ConcurrentMap<List<String>, Supplier<Class<?>>> getProxyClassCache(ClassLoader cl) {
-        // TODO
-        return null;
-    }
-
-    private static ConcurrentMap<Class<?>, Boolean> getProxyClassStatusCache(ClassLoader cl) {
-        // TODO
-        return null;
-    }
+    private final static AtomicLong nextUniqueNumber = new AtomicLong();
 
     /**
      * the invocation handler for this proxy instance.
@@ -660,4 +651,39 @@ public class Proxy implements java.io.Serializable {
 
     private static native Class<?> defineClass0(ClassLoader loader, String name,
                                                 byte[] b, int off, int len);
+
+    //
+    // Unsafe machinery for accessing proxy class and proxy class status caches in j.l.ClassLoader
+
+    private static final Unsafe unsafe = Unsafe.getUnsafe();
+    private static final long proxyClassCacheOffset, proxyClassStatusCacheOffset;
+    static {
+        try {
+            Field f = ClassLoader.class.getDeclaredField("proxyClassCache");
+            f.setAccessible(true);
+            proxyClassCacheOffset = unsafe.objectFieldOffset(f);
+        }
+        catch (NoSuchFieldException e) {
+            throw new Error("Can't find field 'proxyClassCache' in java.lang.ClassLoader", e);
+        }
+
+        try {
+            Field f = ClassLoader.class.getDeclaredField("proxyClassStatusCache");
+            f.setAccessible(true);
+            proxyClassStatusCacheOffset = unsafe.objectFieldOffset(f);
+        }
+        catch (NoSuchFieldException e) {
+            throw new Error("Can't find field 'proxyClassStatusCache' in java.lang.ClassLoader", e);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static ConcurrentMap<List<String>, Supplier<Class<?>>> getProxyClassCache(ClassLoader cl) {
+        return (ConcurrentMap<List<String>, Supplier<Class<?>>>) unsafe.getObject(cl, proxyClassCacheOffset);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static ConcurrentMap<Class<?>, Boolean> getProxyClassStatusCache(ClassLoader cl) {
+        return (ConcurrentMap<Class<?>, Boolean>) unsafe.getObject(cl, proxyClassStatusCacheOffset);
+    }
 }
