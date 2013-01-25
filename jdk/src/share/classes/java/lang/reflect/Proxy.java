@@ -679,11 +679,13 @@ public class Proxy implements java.io.Serializable {
 
     @SuppressWarnings("unchecked")
     private static ConcurrentMap<List<String>, Supplier<Class<?>>> getProxyClassCache(ClassLoader cl) {
+        if (cl == null) cl = ClassLoader.getSystemClassLoader();
         return (ConcurrentMap<List<String>, Supplier<Class<?>>>) unsafe.getObject(cl, proxyClassCacheOffset);
     }
 
     @SuppressWarnings("unchecked")
     private static ConcurrentMap<Class<?>, Boolean> getProxyClassStatusCache(ClassLoader cl) {
+        if (cl == null) cl = ClassLoader.getSystemClassLoader();
         return (ConcurrentMap<Class<?>, Boolean>) unsafe.getObject(cl, proxyClassStatusCacheOffset);
     }
 }

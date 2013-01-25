@@ -3,17 +3,17 @@
 Run duration: 5000 ms, #of logical CPUS: 8 (1s*4c*2t, i7-2600K, Linux)
 
 Warm up:
-                    Ann_equals:   1 threads, Tavg =    339.43 ns/op (σ =   0.00 ns/op)
-                    Ann_equals:   1 threads, Tavg =    340.42 ns/op (σ =   0.00 ns/op)
+                    Ann_equals:   1 threads, Tavg =    333.30 ns/op (σ =   0.00 ns/op)
+                    Ann_equals:   1 threads, Tavg =    331.35 ns/op (σ =   0.00 ns/op)
 Measure:
-                    Ann_equals:   1 threads, Tavg =    339.89 ns/op (σ =   0.00 ns/op)
-                    Ann_equals:   2 threads, Tavg =    797.57 ns/op (σ =   0.09 ns/op)
-                    Ann_equals:   3 threads, Tavg =  1,770.39 ns/op (σ =  27.62 ns/op)
-                    Ann_equals:   4 threads, Tavg =  2,506.18 ns/op (σ =   7.77 ns/op) - threads==cores
-                    Ann_equals:   5 threads, Tavg =  6,075.57 ns/op (σ =  90.90 ns/op)
-                    Ann_equals:   6 threads, Tavg =  9,406.77 ns/op (σ =  31.19 ns/op)
-                    Ann_equals:   7 threads, Tavg = 11,878.29 ns/op (σ =  75.55 ns/op)
-                    Ann_equals:   8 threads, Tavg = 13,547.24 ns/op (σ = 194.32 ns/op)
+                    Ann_equals:   1 threads, Tavg =    330.80 ns/op (σ =   0.00 ns/op)
+                    Ann_equals:   2 threads, Tavg =    834.54 ns/op (σ =   1.52 ns/op)
+                    Ann_equals:   3 threads, Tavg =  1,738.72 ns/op (σ =  39.40 ns/op)
+                    Ann_equals:   4 threads, Tavg =  2,636.24 ns/op (σ =  78.37 ns/op) - threads==cores
+                    Ann_equals:   5 threads, Tavg =  7,795.20 ns/op (σ =  82.72 ns/op)
+                    Ann_equals:   6 threads, Tavg = 10,560.81 ns/op (σ =  36.77 ns/op)
+                    Ann_equals:   7 threads, Tavg = 12,112.21 ns/op (σ =  72.60 ns/op)
+                    Ann_equals:   8 threads, Tavg = 14,298.44 ns/op (σ =  84.62 ns/op)
 
 
 *** Patched j.l.r.Proxy:
@@ -21,17 +21,17 @@ Measure:
 Run duration: 5000 ms, #of logical CPUS: 8 (1s*4c*2t, i7-2600K, Linux)
 
 Warm up:
-                    Ann_equals:   1 threads, Tavg =    238.68 ns/op (σ =   0.00 ns/op)
-                    Ann_equals:   1 threads, Tavg =    237.88 ns/op (σ =   0.00 ns/op)
+                    Ann_equals:   1 threads, Tavg =    498.62 ns/op (σ =   0.00 ns/op)
+                    Ann_equals:   1 threads, Tavg =    500.59 ns/op (σ =   0.00 ns/op)
 Measure:
-                    Ann_equals:   1 threads, Tavg =    239.35 ns/op (σ =   0.00 ns/op)
-                    Ann_equals:   2 threads, Tavg =    237.55 ns/op (σ =   0.01 ns/op)
-                    Ann_equals:   3 threads, Tavg =    240.24 ns/op (σ =   0.69 ns/op)
-                    Ann_equals:   4 threads, Tavg =    242.74 ns/op (σ =   0.70 ns/op) - threads==cores
-                    Ann_equals:   5 threads, Tavg =    288.10 ns/op (σ =  10.12 ns/op)
-                    Ann_equals:   6 threads, Tavg =    325.39 ns/op (σ =   9.82 ns/op)
-                    Ann_equals:   7 threads, Tavg =    363.00 ns/op (σ =  11.29 ns/op)
-                    Ann_equals:   8 threads, Tavg =    405.81 ns/op (σ =   1.69 ns/op)
+                    Ann_equals:   1 threads, Tavg =    502.69 ns/op (σ =   0.00 ns/op)
+                    Ann_equals:   2 threads, Tavg =    497.95 ns/op (σ =   2.75 ns/op)
+                    Ann_equals:   3 threads, Tavg =    496.86 ns/op (σ =   3.94 ns/op)
+                    Ann_equals:   4 threads, Tavg =    504.53 ns/op (σ =   3.78 ns/op) - threads==cores
+                    Ann_equals:   5 threads, Tavg =    598.95 ns/op (σ =  10.87 ns/op)
+                    Ann_equals:   6 threads, Tavg =    692.79 ns/op (σ =  25.70 ns/op)
+                    Ann_equals:   7 threads, Tavg =    838.24 ns/op (σ =  20.16 ns/op)
+                    Ann_equals:   8 threads, Tavg =    896.51 ns/op (σ =  36.08 ns/op)
 
 
 *** Original JDK8 j.l.r.Proxy:
