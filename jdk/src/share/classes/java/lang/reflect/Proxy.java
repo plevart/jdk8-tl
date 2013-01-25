@@ -25,15 +25,14 @@
 
 package java.lang.reflect;
 
-import java.lang.ref.Reference;
-import java.lang.ref.WeakReference;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.List;
-import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
+
 import sun.misc.ProxyGenerator;
 
 /**
@@ -229,36 +228,18 @@ public class Proxy implements java.io.Serializable {
     private final static Class[] constructorParams =
         { InvocationHandler.class };
 
-    /** maps a class loader to the proxy class cache for that loader */
-    private static Map<ClassLoader, Map<List<String>, Object>> loaderToCache
-        = new WeakHashMap<>();
-
-    /** marks that a particular proxy class is currently being generated */
-    private static Object pendingGenerationMarker = new Object();
-
     /** next number to use for generation of unique proxy class names */
-    private static long nextUniqueNumber = 0;
-    private static Object nextUniqueNumberLock = new Object();
+    private static final AtomicLong nextUniqueNumber = new AtomicLong();
 
-    /** thread-local holding the initialization value for isProxyClass ClassValue */
-    private static final ThreadLocal<Boolean> isProxyClassInitializationValue =
-        new ThreadLocal<Boolean>() {
-            @Override
-            protected Boolean initialValue() {
-                // might only be called for a rare occasion where isProxyClass
-                // is called for a custom Proxy subclass that is not a proxy class
-                return Boolean.FALSE;
-            }
-        };
+    private static ConcurrentMap<List<String>, Supplier<Class<?>>> getProxyClassCache(ClassLoader cl) {
+        // TODO
+        return null;
+    }
 
-    /** per-class cache for isProxyClass implementation */
-    private static final ClassValue<Boolean> isProxyClass =
-        new ClassValue<Boolean>() {
-            @Override
-            protected Boolean computeValue(Class<?> cl) {
-                return isProxyClassInitializationValue.get();
-            }
-        };
+    private static ConcurrentMap<Class<?>, Boolean> getProxyClassStatusCache(ClassLoader cl) {
+        // TODO
+        return null;
+    }
 
     /**
      * the invocation handler for this proxy instance.
@@ -365,13 +346,11 @@ public class Proxy implements java.io.Serializable {
             throw new IllegalArgumentException("interface limit exceeded");
         }
 
-        Class<?> proxyClass = null;
-
         /* collect interface names to use as key for proxy class cache */
         String[] interfaceNames = new String[interfaces.length];
 
         // for detecting duplicates
-        Set<Class<?>> interfaceSet = new HashSet<>();
+        Set<Class<?>> interfaceSet = new HashSet<>(interfaces.length * 2, 0.5f);
 
         for (int i = 0; i < interfaces.length; i++) {
             /*
@@ -401,11 +380,10 @@ public class Proxy implements java.io.Serializable {
             /*
              * Verify that this interface is not a duplicate.
              */
-            if (interfaceSet.contains(interfaceClass)) {
+            if (!interfaceSet.add(interfaceClass)) {
                 throw new IllegalArgumentException(
                     "repeated interface: " + interfaceClass.getName());
             }
-            interfaceSet.add(interfaceClass);
 
             interfaceNames[i] = interfaceName;
         }
@@ -422,112 +400,104 @@ public class Proxy implements java.io.Serializable {
         List<String> key = Arrays.asList(interfaceNames);
 
         /*
-         * Find or create the proxy class cache for the class loader.
+         * Get the proxy class cache for the class loader.
          */
-        Map<List<String>, Object> cache;
-        synchronized (loaderToCache) {
-            cache = loaderToCache.get(loader);
-            if (cache == null) {
-                cache = new HashMap<>();
-                loaderToCache.put(loader, cache);
-            }
-            /*
-             * This mapping will remain valid for the duration of this
-             * method, without further synchronization, because the mapping
-             * will only be removed if the class loader becomes unreachable.
-             */
-        }
+        ConcurrentMap<List<String>, Supplier<Class<?>>> cache = getProxyClassCache(loader);
 
         /*
          * Look up the list of interfaces in the proxy class cache using
-         * the key.  This lookup will result in one of three possible
-         * kinds of values:
-         *     null, if there is currently no proxy class for the list of
-         *         interfaces in the class loader,
-         *     the pendingGenerationMarker object, if a proxy class for the
-         *         list of interfaces is currently being generated,
-         *     or a weak reference to a Class object, if a proxy class for
-         *         the list of interfaces has already been generated.
+         * the key. This will get us a Supplier for the proxy class.
          */
-        synchronized (cache) {
-            /*
-             * Note that we need not worry about reaping the cache for
-             * entries with cleared weak references because if a proxy class
-             * has been garbage collected, its class loader will have been
-             * garbage collected as well, so the entire cache will be reaped
-             * from the loaderToCache map.
-             */
-            do {
-                Object value = cache.get(key);
-                if (value instanceof Reference) {
-                    proxyClass = (Class<?>) ((Reference) value).get();
-                }
-                if (proxyClass != null) {
-                    // proxy class already generated: return it
-                    return proxyClass;
-                } else if (value == pendingGenerationMarker) {
-                    // proxy class being generated: wait for it
-                    try {
-                        cache.wait();
-                    } catch (InterruptedException e) {
-                        /*
-                         * The class generation that we are waiting for should
-                         * take a small, bounded time, so we can safely ignore
-                         * thread interrupts here.
-                         */
-                    }
-                    continue;
-                } else {
-                    /*
-                     * No proxy class for this list of interfaces has been
-                     * generated or is being generated, so we will go and
-                     * generate it now.  Mark it as pending generation.
-                     */
-                    cache.put(key, pendingGenerationMarker);
-                    break;
-                }
-            } while (true);
+        Supplier<Class<?>> supplier = cache.get(key);
+
+        /*
+         * If supplier is not already cached, construct one and put it atomically into the cache.
+         */
+        if (supplier == null) {
+            supplier = new ProxyClassFactory(loader, interfaces, cache, key);
+            Supplier<Class<?>> oldSupplier = cache.putIfAbsent(key, supplier);
+            if (oldSupplier != null)
+                supplier = oldSupplier;
         }
 
-        try {
-            String proxyPkg = null;     // package to define proxy class in
+        /*
+         * Evaluate the supplier.
+         */
+        return supplier.get();
+    }
+
+    /**
+     * A Supplier that constructs and defines the proxy class.
+     * It replaces itself in the cache with the constant supplier upon success or
+     * removes itself from the cache upon failure.
+     */
+    static final class ProxyClassFactory implements Supplier<Class<?>> {
+        private final ClassLoader loader;
+        private final Class<?>[] interfaces;
+        private final ConcurrentMap<List<String>, Supplier<Class<?>>> cache;
+        private final List<String> key;
+
+        ProxyClassFactory(ClassLoader loader, Class<?>[] interfaces,
+                          ConcurrentMap<List<String>, Supplier<Class<?>>> cache,
+                          List<String> key) {
+            this.loader = loader;
+            this.interfaces = interfaces;
+            this.cache = cache;
+            this.key = key;
+        }
+
+        /*
+         * Synchronized get method so any concurrent threads will wait.
+         */
+        @Override
+        public synchronized Class<?> get() {
 
             /*
-             * Record the package of a non-public proxy interface so that the
-             * proxy class will be defined in the same package.  Verify that
-             * all non-public proxy interfaces are in the same package.
+             * Re-check that it's still us...
              */
-            for (int i = 0; i < interfaces.length; i++) {
-                int flags = interfaces[i].getModifiers();
-                if (!Modifier.isPublic(flags)) {
-                    String name = interfaces[i].getName();
-                    int n = name.lastIndexOf('.');
-                    String pkg = ((n == -1) ? "" : name.substring(0, n + 1));
-                    if (proxyPkg == null) {
-                        proxyPkg = pkg;
-                    } else if (!pkg.equals(proxyPkg)) {
-                        throw new IllegalArgumentException(
-                            "non-public interfaces from different packages");
+            Supplier<Class<?>> supplier = cache.get(key);
+            if (supplier != null && supplier != this) {
+                // already replaced with constant supplier
+                return supplier.get();
+            }
+            // else still us or removed because of failure...
+
+            boolean success = false;
+            try {
+                String proxyPkg = null;     // package to define proxy class in
+
+                /*
+                 * Record the package of a non-public proxy interface so that the
+                 * proxy class will be defined in the same package.  Verify that
+                 * all non-public proxy interfaces are in the same package.
+                 */
+                for (int i = 0; i < interfaces.length; i++) {
+                    int flags = interfaces[i].getModifiers();
+                    if (!Modifier.isPublic(flags)) {
+                        String name = interfaces[i].getName();
+                        int n = name.lastIndexOf('.');
+                        String pkg = ((n == -1) ? "" : name.substring(0, n + 1));
+                        if (proxyPkg == null) {
+                            proxyPkg = pkg;
+                        } else if (!pkg.equals(proxyPkg)) {
+                            throw new IllegalArgumentException(
+                                "non-public interfaces from different packages");
+                        }
                     }
                 }
-            }
 
-            if (proxyPkg == null) {     // if no non-public proxy interfaces,
-                proxyPkg = "";          // use the unnamed package
-            }
+                if (proxyPkg == null) {     // if no non-public proxy interfaces,
+                    proxyPkg = "";          // use the unnamed package
+                }
 
-            {
                 /*
                  * Choose a name for the proxy class to generate.
                  */
-                long num;
-                synchronized (nextUniqueNumberLock) {
-                    num = nextUniqueNumber++;
-                }
+                long num = nextUniqueNumber.getAndIncrement();
                 String proxyName = proxyPkg + proxyClassNamePrefix + num;
                 /*
                  * Verify that the class loader hasn't already
-                 * defined a class with the chosen name.
+                 * defined a class with the chosen name. TODO?
                  */
 
                 /*
@@ -535,6 +505,7 @@ public class Proxy implements java.io.Serializable {
                  */
                 byte[] proxyClassFile = ProxyGenerator.generateProxyClass(
                     proxyName, interfaces);
+                Class<?> proxyClass;
                 try {
                     proxyClass = defineClass0(loader, proxyName,
                         proxyClassFile, 0, proxyClassFile.length);
@@ -548,37 +519,46 @@ public class Proxy implements java.io.Serializable {
                      */
                     throw new IllegalArgumentException(e.toString());
                 }
-            }
-            // establish the thread-local context with true value
-            isProxyClassInitializationValue.set(Boolean.TRUE);
-            try {
-                // initialize the isProxyClass ClassValue for proxyClass
-                if (!isProxyClass.get(proxyClass))
-                    throw new AssertionError("Internal inconsistency");
+
+                /*
+                 * Mark the status of class to be a proxy class.
+                 */
+                getProxyClassStatusCache(loader).put(proxyClass, Boolean.TRUE);
+
+                /*
+                 * Replace us with a constant supplier upon success.
+                 */
+                cache.replace(key, this, new ProxyClassHolder(proxyClass));
+
+                success = true;
+                return proxyClass;
             }
             finally {
-                // thread-local context not needed any more
-                isProxyClassInitializationValue.remove();
-            }
-
-        } finally {
-            /*
-             * We must clean up the "pending generation" state of the proxy
-             * class cache entry somehow.  If a proxy class was successfully
-             * generated, store it in the cache (with a weak reference);
-             * otherwise, remove the reserved entry.  In all cases, notify
-             * all waiters on reserved entries in this cache.
-             */
-            synchronized (cache) {
-                if (proxyClass != null) {
-                    cache.put(key, new WeakReference<Class<?>>(proxyClass));
-                } else {
-                    cache.remove(key);
+                /*
+                 * Remove us from the supplier cache upon failure.
+                 */
+                if (!success) {
+                    cache.remove(key, this);
                 }
-                cache.notifyAll();
             }
         }
-        return proxyClass;
+    }
+
+    /**
+     * A supplier that holds already constructed proxy class.
+     * For fast-path retrieval.
+     */
+    static final class ProxyClassHolder implements Supplier<Class<?>> {
+        private final Class<?> proxyClass;
+
+        ProxyClassHolder(Class<?> proxyClass) {
+            this.proxyClass = proxyClass;
+        }
+
+        @Override
+        public Class<?> get() {
+            return proxyClass;
+        }
     }
 
     /**
@@ -653,7 +633,7 @@ public class Proxy implements java.io.Serializable {
      * @throws  NullPointerException if {@code cl} is {@code null}
      */
     public static boolean isProxyClass(Class<?> cl) {
-        return Proxy.class.isAssignableFrom(cl) && isProxyClass.get(cl);
+        return getProxyClassStatusCache(cl.getClassLoader()).containsKey(cl);
     }
 
     /**
