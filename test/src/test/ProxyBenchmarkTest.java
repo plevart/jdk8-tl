@@ -2,6 +2,7 @@ package test;
 
 import si.pele.microbench.TestRunner;
 
+import java.lang.annotation.Annotation;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Proxy;
@@ -59,14 +60,15 @@ public class ProxyBenchmarkTest extends TestRunner {
         String value() default "7";
     }
 
-    static final Ann0 ann0 = ProxyBenchmarkTest.class.getDeclaredAnnotation(Ann0.class);
-    static final Ann1 ann1 = ProxyBenchmarkTest.class.getDeclaredAnnotation(Ann1.class);
-    static final Ann2 ann2 = ProxyBenchmarkTest.class.getDeclaredAnnotation(Ann2.class);
-    static final Ann3 ann3 = ProxyBenchmarkTest.class.getDeclaredAnnotation(Ann3.class);
-    static final Ann4 ann4 = ProxyBenchmarkTest.class.getDeclaredAnnotation(Ann4.class);
-    static final Ann5 ann5 = ProxyBenchmarkTest.class.getDeclaredAnnotation(Ann5.class);
-    static final Ann6 ann6 = ProxyBenchmarkTest.class.getDeclaredAnnotation(Ann6.class);
-    static final Ann7 ann7 = ProxyBenchmarkTest.class.getDeclaredAnnotation(Ann7.class);
+    static final Annotation[] anns = ProxyBenchmarkTest.class.getDeclaredAnnotations();
+    static final Annotation ann0 = anns[0];
+    static final Annotation ann1 = anns[1];
+    static final Annotation ann2 = anns[2];
+    static final Annotation ann3 = anns[3];
+    static final Annotation ann4 = anns[4];
+    static final Annotation ann5 = anns[5];
+    static final Annotation ann6 = anns[6];
+    static final Annotation ann7 = anns[7];
 
     public static class Proxy_getProxyClass extends TestRunner.Test {
         private static final ClassLoader cl = Ann0.class.getClassLoader();
@@ -151,10 +153,10 @@ public class ProxyBenchmarkTest extends TestRunner {
     }
 
     public static void main(String[] args) throws InterruptedException {
-        int cpus = Runtime.getRuntime().availableProcessors();
-        doTest(Proxy_getProxyClass.class, 5000L, 1, cpus, 1);
-        doTest(Proxy_isProxyClassTrue.class, 5000L, 1, cpus, 1);
-        doTest(Proxy_isProxyClassFalse.class, 5000L, 1, cpus, 1);
-        doTest(Annotation_equals.class, 5000L, 1, cpus, 1);
+        int maxThreads = Math.max(4, Runtime.getRuntime().availableProcessors());
+        doTest(Proxy_getProxyClass.class, 5000L, 1, maxThreads, 1);
+        doTest(Proxy_isProxyClassTrue.class, 5000L, 1, maxThreads, 1);
+        doTest(Proxy_isProxyClassFalse.class, 5000L, 1, maxThreads, 1);
+        doTest(Annotation_equals.class, 5000L, 1, maxThreads, 1);
     }
 }
