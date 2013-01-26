@@ -2209,10 +2209,8 @@ public abstract class ClassLoader {
     private static native AssertionStatusDirectives retrieveDirectives();
 
 
-    // -- Caches maintained by java.lang.reflect.Proxy --
-
-    private final ConcurrentMap<List<String>, Supplier<Class<?>>> proxyClassCache = new ConcurrentHashMap<>();
-    private final ConcurrentMap<Class<?>, Boolean> proxyClassStatusCache = new ConcurrentHashMap<>();
+    // Cache maintained by java.lang.reflect.Proxy.
+    private final ConcurrentMap<Object, Supplier<Class<?>>> proxyClassCache = new ConcurrentHashMap<>();
 }
 
 

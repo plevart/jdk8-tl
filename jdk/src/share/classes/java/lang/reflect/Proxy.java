@@ -25,10 +25,8 @@
 
 package java.lang.reflect;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
@@ -222,15 +220,37 @@ public class Proxy implements java.io.Serializable {
 
     private static final long serialVersionUID = -2222568056686623797L;
 
-    /** prefix for all proxy class names */
-    private final static String proxyClassNamePrefix = "$Proxy";
-
     /** parameter types of a proxy class constructor */
     private final static Class[] constructorParams =
         { InvocationHandler.class };
 
-    /** next number to use for generation of unique proxy class names */
-    private final static AtomicLong nextUniqueNumber = new AtomicLong();
+    /** cache for proxy classes defined in bootstrap class loader */
+    private final static ConcurrentMap<Object, Supplier<Class<?>>>
+        bootstrapCLProxyClassCache = new ConcurrentHashMap<>();
+
+    /** thread local context for initialization of isProxyClass ClassValue */
+    final static ThreadLocal<Boolean> proxyClassInConstruction =
+        new ThreadLocal<Boolean>() {
+            /**
+             * Can only be invoked in a rare occasion where isProxyClass is
+             * evaluated for a subclass of j.l.r.Proxy that is not a proxy class.
+             */
+            @Override
+            protected Boolean initialValue() {
+                // can only happen for a rare occasion where called for a
+                // subclass of j.l.r.Proxy that is not a proxy class...
+                return Boolean.FALSE;
+            }
+        };
+
+    /** isProxyClass ClassValue */
+    final static ClassValue<Boolean> isProxyClass =
+        new ClassValue<Boolean>() {
+            @Override
+            protected Boolean computeValue(Class<?> type) {
+                return proxyClassInConstruction.get();
+            }
+        };
 
     /**
      * the invocation handler for this proxy instance.
@@ -341,7 +361,7 @@ public class Proxy implements java.io.Serializable {
         String[] interfaceNames = new String[interfaces.length];
 
         // for detecting duplicates
-        Set<Class<?>> interfaceSet = new HashSet<>(interfaces.length * 2, 0.5f);
+        Map<Class<?>, Boolean> interfaceSet = new IdentityHashMap<>(interfaces.length);
 
         for (int i = 0; i < interfaces.length; i++) {
             /*
@@ -371,7 +391,7 @@ public class Proxy implements java.io.Serializable {
             /*
              * Verify that this interface is not a duplicate.
              */
-            if (!interfaceSet.add(interfaceClass)) {
+            if (interfaceSet.put(interfaceClass, Boolean.TRUE) != null) {
                 throw new IllegalArgumentException(
                     "repeated interface: " + interfaceClass.getName());
             }
@@ -388,12 +408,12 @@ public class Proxy implements java.io.Serializable {
          * representation of a class makes for an implicit weak
          * reference to the class.
          */
-        List<String> key = Arrays.asList(interfaceNames);
+        Object key = new Key(interfaceNames);
 
         /*
          * Get the proxy class cache for the class loader.
          */
-        ConcurrentMap<List<String>, Supplier<Class<?>>> cache = getProxyClassCache(loader);
+        ConcurrentMap<Object, Supplier<Class<?>>> cache = getProxyClassCache(loader);
 
         /*
          * Look up the list of interfaces in the proxy class cache using
@@ -418,19 +438,54 @@ public class Proxy implements java.io.Serializable {
     }
 
     /**
-     * A Supplier that constructs and defines the proxy class.
+     * A key composed of an array of interned strings
+     */
+    private static final class Key {
+        private final String[] strings;
+
+        Key(String[] strings) {
+            this.strings = strings;
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = 0;
+            for (String s : strings) hash ^= System.identityHashCode(s);
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == null || obj.getClass() != Key.class) return false;
+            String[] otherStrings = ((Key) obj).strings;
+            if (strings.length != otherStrings.length) return false;
+            for (int i = 0; i < strings.length; i++)
+                if (strings[i] != otherStrings[i]) return false;
+            return true;
+        }
+    }
+
+    /**
+     * A Supplier that generates and defines the proxy class.
      * It replaces itself in the cache with the constant supplier upon success or
      * removes itself from the cache upon failure.
      */
-    static final class ProxyClassFactory implements Supplier<Class<?>> {
+    private static final class ProxyClassFactory implements Supplier<Class<?>> {
+
+        /** prefix for all proxy class names */
+        private static final String proxyClassNamePrefix = "$Proxy";
+
+        /** next number to use for generation of unique proxy class names */
+        private static final AtomicLong nextUniqueNumber = new AtomicLong();
+
         private final ClassLoader loader;
         private final Class<?>[] interfaces;
-        private final ConcurrentMap<List<String>, Supplier<Class<?>>> cache;
-        private final List<String> key;
+        private final ConcurrentMap<Object, Supplier<Class<?>>> cache;
+        private final Object key;
 
         ProxyClassFactory(ClassLoader loader, Class<?>[] interfaces,
-                          ConcurrentMap<List<String>, Supplier<Class<?>>> cache,
-                          List<String> key) {
+                          ConcurrentMap<Object, Supplier<Class<?>>> cache,
+                          Object key) {
             this.loader = loader;
             this.interfaces = interfaces;
             this.cache = cache;
@@ -438,7 +493,8 @@ public class Proxy implements java.io.Serializable {
         }
 
         /*
-         * Synchronized get method so any concurrent threads will wait.
+         * Synchronized get method so any concurrent requests for
+         * the same proxy class will be serialized.
          */
         @Override
         public synchronized Class<?> get() {
@@ -514,14 +570,21 @@ public class Proxy implements java.io.Serializable {
                 /*
                  * Mark the status of class to be a proxy class.
                  */
-                getProxyClassStatusCache(loader).put(proxyClass, Boolean.TRUE);
+                proxyClassInConstruction.set(Boolean.TRUE);
+                try {
+                    if (isProxyClass.get(proxyClass) != Boolean.TRUE)
+                        throw new AssertionError("Internal inconsistency");
+                }
+                finally {
+                    proxyClassInConstruction.remove();
+                }
 
                 /*
                  * Replace us with a constant supplier upon success.
                  */
                 cache.replace(key, this, new ProxyClassHolder(proxyClass));
-
                 success = true;
+
                 return proxyClass;
             }
             finally {
@@ -624,7 +687,7 @@ public class Proxy implements java.io.Serializable {
      * @throws  NullPointerException if {@code cl} is {@code null}
      */
     public static boolean isProxyClass(Class<?> cl) {
-        return getProxyClassStatusCache(cl.getClassLoader()).containsKey(cl);
+        return Proxy.class.isAssignableFrom(cl) && isProxyClass.get(cl);
     }
 
     /**
@@ -653,39 +716,27 @@ public class Proxy implements java.io.Serializable {
                                                 byte[] b, int off, int len);
 
     //
-    // Unsafe machinery for accessing proxy class and proxy class status caches in j.l.ClassLoader
+    // Unsafe machinery for accessing cache in j.l.ClassLoader
 
-    private static final Unsafe unsafe = Unsafe.getUnsafe();
-    private static final long proxyClassCacheOffset, proxyClassStatusCacheOffset;
+    private static final Unsafe unsafe;
+    private static final long proxyClassCacheOffset;
+
     static {
+        unsafe = Unsafe.getUnsafe();
         try {
-            Field f = ClassLoader.class.getDeclaredField("proxyClassCache");
-            f.setAccessible(true);
-            proxyClassCacheOffset = unsafe.objectFieldOffset(f);
+            proxyClassCacheOffset = unsafe.objectFieldOffset(
+                ClassLoader.class.getDeclaredField("proxyClassCache")
+            );
         }
         catch (NoSuchFieldException e) {
-            throw new Error("Can't find field 'proxyClassCache' in java.lang.ClassLoader", e);
-        }
-
-        try {
-            Field f = ClassLoader.class.getDeclaredField("proxyClassStatusCache");
-            f.setAccessible(true);
-            proxyClassStatusCacheOffset = unsafe.objectFieldOffset(f);
-        }
-        catch (NoSuchFieldException e) {
-            throw new Error("Can't find field 'proxyClassStatusCache' in java.lang.ClassLoader", e);
+            throw new Error(e);
         }
     }
 
     @SuppressWarnings("unchecked")
-    private static ConcurrentMap<List<String>, Supplier<Class<?>>> getProxyClassCache(ClassLoader cl) {
-        if (cl == null) cl = ClassLoader.getSystemClassLoader();
-        return (ConcurrentMap<List<String>, Supplier<Class<?>>>) unsafe.getObject(cl, proxyClassCacheOffset);
-    }
-
-    @SuppressWarnings("unchecked")
-    private static ConcurrentMap<Class<?>, Boolean> getProxyClassStatusCache(ClassLoader cl) {
-        if (cl == null) cl = ClassLoader.getSystemClassLoader();
-        return (ConcurrentMap<Class<?>, Boolean>) unsafe.getObject(cl, proxyClassStatusCacheOffset);
+    private static ConcurrentMap<Object, Supplier<Class<?>>> getProxyClassCache(ClassLoader cl) {
+        return cl == null
+            ? bootstrapCLProxyClassCache
+            : (ConcurrentMap<Object, Supplier<Class<?>>>) unsafe.getObject(cl, proxyClassCacheOffset);
     }
 }

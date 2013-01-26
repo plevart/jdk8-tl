@@ -60,12 +60,13 @@ public class ClassLayoutTest {
         }
     }
 
-    public static void main(String[] args) {
-        dump(Class.class, false);
-        dump(String.class, true);
+    static class A {}
 
-        Class<?> clazz = Proxy.getProxyClass(ClassLayoutTest.class.getClassLoader(), new Class[0]);
-        System.out.println(clazz);
-        System.out.println(Arrays.toString(clazz.getInterfaces()));
+    public static void main(String[] args) {
+//        dump(AbstractList.class, false);
+//        dump(Arrays.asList("a", "b").getClass(), false);
+//
+        String aName = A.class.getName();
+        System.out.println(aName == aName.intern());
     }
 }
