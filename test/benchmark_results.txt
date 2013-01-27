@@ -1,3 +1,5 @@
+*** NOTE these are OLD results for 1st revision of the patch. See core-libs-dev thread for latest revision!
+
 *** Original JDK8 j.l.r.Proxy:
 
 Run duration: 5000 ms, #of logical CPUS: 8 (1s*4c*2t, i7-2600K, Linux)
