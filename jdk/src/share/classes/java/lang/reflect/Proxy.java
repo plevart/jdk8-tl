@@ -357,8 +357,42 @@ public class Proxy implements java.io.Serializable {
 
         /* collect interface names to use as key for proxy class cache */
         String[] interfaceNames = new String[interfaces.length];
+        for (int i = 0; i < interfaces.length; i++) {
+            interfaceNames[i] = interfaces[i].getName();
+        }
 
-        // for detecting duplicates
+        /*
+         * Using string representations of the proxy interfaces as
+         * keys in the proxy class cache (instead of their Class
+         * objects) is sufficient because we require the proxy
+         * interfaces to be resolvable by name through the supplied
+         * class loader, and it has the advantage that using a string
+         * representation of a class makes for an implicit weak
+         * reference to the class.
+         */
+        Object key = new Key(interfaceNames);
+
+        /*
+         * Get the proxy class cache for the class loader.
+         */
+        ConcurrentMap<Object, Supplier<Class<?>>> cache = getProxyClassCache(loader);
+
+        /*
+         * Look up the list of interfaces in the proxy class cache using
+         * the key. This will get us a Supplier for the proxy class.
+         */
+        Supplier<Class<?>> supplier = cache.get(key);
+
+        /*
+         * Evaluate the supplier if already cached
+         */
+        if (supplier != null) {
+            return supplier.get();
+        }
+
+        /*
+         * Verify parameters only when fast-path fails...
+         */
         Map<Class<?>, Boolean> interfaceSet = new IdentityHashMap<>(interfaces.length);
 
         for (int i = 0; i < interfaces.length; i++) {
@@ -393,41 +427,15 @@ public class Proxy implements java.io.Serializable {
                 throw new IllegalArgumentException(
                     "repeated interface: " + interfaceClass.getName());
             }
-
-            interfaceNames[i] = interfaceName;
         }
 
         /*
-         * Using string representations of the proxy interfaces as
-         * keys in the proxy class cache (instead of their Class
-         * objects) is sufficient because we require the proxy
-         * interfaces to be resolvable by name through the supplied
-         * class loader, and it has the advantage that using a string
-         * representation of a class makes for an implicit weak
-         * reference to the class.
+         * Construct ProxyClassFactory and put it atomically into the cache.
          */
-        Object key = new Key(interfaceNames);
-
-        /*
-         * Get the proxy class cache for the class loader.
-         */
-        ConcurrentMap<Object, Supplier<Class<?>>> cache = getProxyClassCache(loader);
-
-        /*
-         * Look up the list of interfaces in the proxy class cache using
-         * the key. This will get us a Supplier for the proxy class.
-         */
-        Supplier<Class<?>> supplier = cache.get(key);
-
-        /*
-         * If supplier is not already cached, construct one and put it atomically into the cache.
-         */
-        if (supplier == null) {
-            supplier = new ProxyClassFactory(loader, interfaces, cache, key);
-            Supplier<Class<?>> oldSupplier = cache.putIfAbsent(key, supplier);
-            if (oldSupplier != null)
-                supplier = oldSupplier;
-        }
+        supplier = new ProxyClassFactory(loader, interfaces, cache, key);
+        Supplier<Class<?>> oldSupplier = cache.putIfAbsent(key, supplier);
+        if (oldSupplier != null)
+            supplier = oldSupplier;
 
         /*
          * Evaluate the supplier.
