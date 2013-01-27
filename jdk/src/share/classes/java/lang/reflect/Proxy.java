@@ -224,7 +224,7 @@ public class Proxy implements java.io.Serializable {
     private final static Class[] constructorParams =
         { InvocationHandler.class };
 
-    /** cache for proxy classes defined in bootstrap class loader */
+    /** cache for proxy classes defined by bootstrap class loader */
     private final static ConcurrentMap<Object, Supplier<Class<?>>>
         bootstrapCLProxyClassCache = new ConcurrentHashMap<>();
 
