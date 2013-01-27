@@ -232,13 +232,11 @@ public class Proxy implements java.io.Serializable {
     final static ThreadLocal<Boolean> proxyClassInConstruction =
         new ThreadLocal<Boolean>() {
             /**
-             * Can only be invoked in a rare occasion where isProxyClass is
+             * Will only be invoked in a rare occasion where isProxyClass is
              * evaluated for a subclass of j.l.r.Proxy that is not a proxy class.
              */
             @Override
             protected Boolean initialValue() {
-                // can only happen for a rare occasion where called for a
-                // subclass of j.l.r.Proxy that is not a proxy class...
                 return Boolean.FALSE;
             }
         };
