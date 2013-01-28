@@ -1,12 +1,12 @@
 package test;
 
 
+import si.pele.microbench.SizeOf;
+
 import javax.swing.*;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
 /**
  */
