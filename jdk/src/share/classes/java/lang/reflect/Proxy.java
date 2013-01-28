@@ -742,13 +742,14 @@ public class Proxy implements java.io.Serializable {
 
     @SuppressWarnings({"unchecked", "ConstantConditions"})
     private static ConcurrentMap<Object, Supplier<Class<?>>> getProxyClassCache(ClassLoader cl) {
-        if (cl == null) return bootstrapCLProxyClassCache;
+        if (cl == null)
+            return bootstrapCLProxyClassCache;
 
         Object cache = unsafe.getObjectVolatile(cl, proxyClassCacheOffset);
-
         if (cache == null) {
+            cache = new ConcurrentHashMap<>();
             // we shall set this only once...
-            if (!unsafe.compareAndSwapObject(cl, proxyClassCacheOffset, null, cache = new ConcurrentHashMap<>()))
+            if (!unsafe.compareAndSwapObject(cl, proxyClassCacheOffset, null, cache))
                 cache = unsafe.getObjectVolatile(cl, proxyClassCacheOffset);
         }
 
