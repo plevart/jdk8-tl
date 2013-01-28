@@ -739,10 +739,18 @@ public class Proxy implements java.io.Serializable {
         }
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "ConstantConditions"})
     private static ConcurrentMap<Object, Supplier<Class<?>>> getProxyClassCache(ClassLoader cl) {
-        return cl == null
-            ? bootstrapCLProxyClassCache
-            : (ConcurrentMap<Object, Supplier<Class<?>>>) unsafe.getObject(cl, proxyClassCacheOffset);
+        if (cl == null) return bootstrapCLProxyClassCache;
+
+        Object cache = unsafe.getObjectVolatile(cl, proxyClassCacheOffset);
+
+        if (cache == null) {
+            // we shall set this only once...
+            if (!unsafe.compareAndSwapObject(cl, proxyClassCacheOffset, null, cache = new ConcurrentHashMap<>()))
+                cache = unsafe.getObjectVolatile(cl, proxyClassCacheOffset);
+        }
+
+        return (ConcurrentMap<Object, Supplier<Class<?>>>) cache;
     }
 }

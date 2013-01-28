@@ -2210,7 +2210,7 @@ public abstract class ClassLoader {
 
 
     // Cache maintained by java.lang.reflect.Proxy.
-    private final ConcurrentMap<Object, Supplier<Class<?>>> proxyClassCache = new ConcurrentHashMap<>();
+    private volatile ConcurrentMap<Object, Supplier<Class<?>>> proxyClassCache;
 }
 
 
