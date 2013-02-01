@@ -25,15 +25,11 @@
 package java.lang;
 
 import java.io.*;
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Executable;
-import java.util.Map;
 import java.util.Properties;
 import java.util.PropertyPermission;
-import java.util.StringTokenizer;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.security.AllPermission;
 import java.nio.channels.Channel;
 import java.nio.channels.spi.SelectorProvider;
 import sun.nio.ch.Interruptible;

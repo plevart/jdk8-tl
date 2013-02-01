@@ -119,7 +119,7 @@ public class AnnotationParser {
             Annotation a = parseAnnotation(buf, constPool, container, false, selectAnnotationClasses);
             if (a != null) {
                 Class<? extends Annotation> klass = a.annotationType();
-                if (selectAnnotationClasses != null && contains(selectAnnotationClasses, klass) ||
+                if (selectAnnotationClasses != null ||
                     AnnotationType.getInstance(klass).retention() == RetentionPolicy.RUNTIME)
                     if (result.put(klass, a) != null)
                         throw new AnnotationFormatError(
