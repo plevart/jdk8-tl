@@ -80,12 +80,12 @@ public class AnnotationParser {
         byte[] rawAnnotations,
         ConstantPool constPool,
         Class<?> container,
-        Class<? extends Annotation>[] selectAnnotationTypes) {
+        Class<? extends Annotation>[] selectAnnotationClasses) {
         if (rawAnnotations == null)
             return Collections.emptyMap();
 
         try {
-            return parseAnnotations2(rawAnnotations, constPool, container, selectAnnotationTypes);
+            return parseAnnotations2(rawAnnotations, constPool, container, selectAnnotationClasses);
         } catch(BufferUnderflowException e) {
             throw new AnnotationFormatError("Unexpected end of annotations.");
         } catch(IllegalArgumentException e) {
@@ -98,16 +98,16 @@ public class AnnotationParser {
                 byte[] rawAnnotations,
                 ConstantPool constPool,
                 Class<?> container,
-                Class<? extends Annotation>[] selectAnnotationTypes) {
+                Class<? extends Annotation>[] selectAnnotationClasses) {
         Map<Class<? extends Annotation>, Annotation> result =
             new LinkedHashMap<Class<? extends Annotation>, Annotation>();
         ByteBuffer buf = ByteBuffer.wrap(rawAnnotations);
         int numAnnotations = buf.getShort() & 0xFFFF;
         for (int i = 0; i < numAnnotations; i++) {
-            Annotation a = parseAnnotation(buf, constPool, container, false, selectAnnotationTypes);
+            Annotation a = parseAnnotation(buf, constPool, container, false, selectAnnotationClasses);
             if (a != null) {
                 Class<? extends Annotation> klass = a.annotationType();
-                if (selectAnnotationTypes != null && contains(selectAnnotationTypes, klass) ||
+                if (selectAnnotationClasses != null && contains(selectAnnotationClasses, klass) ||
                     AnnotationType.getInstance(klass).retention() == RetentionPolicy.RUNTIME)
                     if (result.put(klass, a) != null)
                         throw new AnnotationFormatError(
@@ -211,7 +211,7 @@ public class AnnotationParser {
                                               ConstantPool constPool,
                                               Class<?> container,
                                               boolean exceptionOnMissingAnnotationClass,
-                                              Class<? extends Annotation>[] selectAnnotationTypes) {
+                                              Class<? extends Annotation>[] selectAnnotationClasses) {
         int typeIndex = buf.getShort() & 0xFFFF;
         Class<? extends Annotation> annotationClass = null;
         String sig = "[unknown]";
@@ -237,7 +237,7 @@ public class AnnotationParser {
             skipAnnotation(buf, false);
             return null;
         }
-        if (selectAnnotationTypes != null && !contains(selectAnnotationTypes, annotationClass)) {
+        if (selectAnnotationClasses != null && !contains(selectAnnotationClasses, annotationClass)) {
             skipAnnotation(buf, false);
             return null;
         }
