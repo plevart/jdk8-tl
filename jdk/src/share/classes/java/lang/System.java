@@ -25,7 +25,9 @@
 package java.lang;
 
 import java.io.*;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Executable;
+import java.util.Map;
 import java.util.Properties;
 import java.util.PropertyPermission;
 import java.util.StringTokenizer;
@@ -1195,6 +1197,10 @@ public final class System {
             }
             public AnnotationType getAnnotationType(Class<?> klass) {
                 return klass.getAnnotationType();
+            }
+            public Map<Class<? extends Annotation>, Annotation>
+            getSelectClassAnnotations(Class<?> klass, Class<? extends Annotation> ... annotationClasses) {
+                return klass.getSelectAnnotations(annotationClasses);
             }
             public byte[] getRawClassTypeAnnotations(Class<?> klass) {
                 return klass.getRawTypeAnnotations();

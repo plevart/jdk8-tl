@@ -62,12 +62,12 @@ public class AnnotationType {
     /**
      * The retention policy for this annotation type.
      */
-    private RetentionPolicy retention = RetentionPolicy.RUNTIME;;
+    private final RetentionPolicy retention;
 
     /**
      * Whether this annotation type is inherited.
      */
-    private boolean inherited = false;
+    private final boolean inherited;
 
     /**
      * Returns an AnnotationType instance for the specified annotation type.
@@ -80,8 +80,11 @@ public class AnnotationType {
     {
         AnnotationType result = sun.misc.SharedSecrets.getJavaLangAccess().
             getAnnotationType(annotationClass);
-        if (result == null)
+        if (result == null) {
             result = new AnnotationType((Class<? extends Annotation>) annotationClass);
+            sun.misc.SharedSecrets.getJavaLangAccess().
+                setAnnotationType(annotationClass, result);
+        }
 
         return result;
     }
@@ -121,16 +124,20 @@ public class AnnotationType {
             members.put(name, method);
         }
 
-        sun.misc.SharedSecrets.getJavaLangAccess().
-            setAnnotationType(annotationClass, this);
-
         // Initialize retention, & inherited fields.  Special treatment
         // of the corresponding annotation types breaks infinite recursion.
         if (annotationClass != Retention.class &&
             annotationClass != Inherited.class) {
-            Retention ret = annotationClass.getAnnotation(Retention.class);
+            Map<Class<? extends Annotation>, Annotation> metaAnnotations =
+                sun.misc.SharedSecrets.getJavaLangAccess().
+                    getSelectClassAnnotations(annotationClass, Retention.class, Inherited.class);
+            Retention ret = (Retention) metaAnnotations.get(Retention.class);
             retention = (ret == null ? RetentionPolicy.CLASS : ret.value());
-            inherited = annotationClass.isAnnotationPresent(Inherited.class);
+            inherited = metaAnnotations.containsKey(Inherited.class);
+        }
+        else {
+            retention = RetentionPolicy.RUNTIME;
+            inherited = false;
         }
     }
 

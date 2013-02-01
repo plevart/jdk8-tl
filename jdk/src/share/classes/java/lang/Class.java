@@ -3191,6 +3191,13 @@ public final
         return annotationType;
     }
 
+    // Called by AnnotationType constructor to parse just select (meta) annotations
+
+    Map<Class<? extends Annotation>, Annotation> getSelectAnnotations(Class<? extends Annotation> ... annotationClasses) {
+        return  AnnotationParser.parseAnnotations(
+            getRawAnnotations(), getConstantPool(), this, annotationClasses);
+    }
+
     /* Backing store of user-defined values pertaining to this class.
      * Maintained by the ClassValue class.
      */

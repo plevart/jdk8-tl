@@ -67,7 +67,25 @@ public class AnnotationParser {
             return Collections.emptyMap();
 
         try {
-            return parseAnnotations2(rawAnnotations, constPool, container);
+            return parseAnnotations2(rawAnnotations, constPool, container, null);
+        } catch(BufferUnderflowException e) {
+            throw new AnnotationFormatError("Unexpected end of annotations.");
+        } catch(IllegalArgumentException e) {
+            // Type mismatch in constant pool
+            throw new AnnotationFormatError(e);
+        }
+    }
+
+    public static Map<Class<? extends Annotation>, Annotation> parseAnnotations(
+        byte[] rawAnnotations,
+        ConstantPool constPool,
+        Class<?> container,
+        Class<? extends Annotation>[] selectAnnotationTypes) {
+        if (rawAnnotations == null)
+            return Collections.emptyMap();
+
+        try {
+            return parseAnnotations2(rawAnnotations, constPool, container, selectAnnotationTypes);
         } catch(BufferUnderflowException e) {
             throw new AnnotationFormatError("Unexpected end of annotations.");
         } catch(IllegalArgumentException e) {
@@ -79,17 +97,18 @@ public class AnnotationParser {
     private static Map<Class<? extends Annotation>, Annotation> parseAnnotations2(
                 byte[] rawAnnotations,
                 ConstantPool constPool,
-                Class<?> container) {
+                Class<?> container,
+                Class<? extends Annotation>[] selectAnnotationTypes) {
         Map<Class<? extends Annotation>, Annotation> result =
             new LinkedHashMap<Class<? extends Annotation>, Annotation>();
         ByteBuffer buf = ByteBuffer.wrap(rawAnnotations);
         int numAnnotations = buf.getShort() & 0xFFFF;
         for (int i = 0; i < numAnnotations; i++) {
-            Annotation a = parseAnnotation(buf, constPool, container, false);
+            Annotation a = parseAnnotation(buf, constPool, container, false, selectAnnotationTypes);
             if (a != null) {
                 Class<? extends Annotation> klass = a.annotationType();
-                AnnotationType type = AnnotationType.getInstance(klass);
-                if (type.retention() == RetentionPolicy.RUNTIME)
+                if (selectAnnotationTypes != null && contains(selectAnnotationTypes, klass) ||
+                    AnnotationType.getInstance(klass).retention() == RetentionPolicy.RUNTIME)
                     if (result.put(klass, a) != null)
                         throw new AnnotationFormatError(
                             "Duplicate annotation for class: "+klass+": " + a);
@@ -149,7 +168,7 @@ public class AnnotationParser {
             List<Annotation> annotations =
                 new ArrayList<Annotation>(numAnnotations);
             for (int j = 0; j < numAnnotations; j++) {
-                Annotation a = parseAnnotation(buf, constPool, container, false);
+                Annotation a = parseAnnotation(buf, constPool, container, false, null);
                 if (a != null) {
                     AnnotationType type = AnnotationType.getInstance(
                                               a.annotationType());
@@ -191,7 +210,8 @@ public class AnnotationParser {
     static Annotation parseAnnotation(ByteBuffer buf,
                                               ConstantPool constPool,
                                               Class<?> container,
-                                              boolean exceptionOnMissingAnnotationClass) {
+                                              boolean exceptionOnMissingAnnotationClass,
+                                              Class<? extends Annotation>[] selectAnnotationTypes) {
         int typeIndex = buf.getShort() & 0xFFFF;
         Class<? extends Annotation> annotationClass = null;
         String sig = "[unknown]";
@@ -214,6 +234,10 @@ public class AnnotationParser {
         catch (TypeNotPresentException e) {
             if (exceptionOnMissingAnnotationClass)
                 throw e;
+            skipAnnotation(buf, false);
+            return null;
+        }
+        if (selectAnnotationTypes != null && !contains(selectAnnotationTypes, annotationClass)) {
             skipAnnotation(buf, false);
             return null;
         }
@@ -302,7 +326,7 @@ public class AnnotationParser {
               result = parseClassValue(buf, constPool, container);
               break;
           case '@':
-              result = parseAnnotation(buf, constPool, container, true);
+              result = parseAnnotation(buf, constPool, container, true, null);
               break;
           case '[':
               return parseArray(memberType, buf, constPool, container);
@@ -715,7 +739,7 @@ public class AnnotationParser {
         for (int i = 0; i < length; i++) {
             tag = buf.get();
             if (tag == '@') {
-                result[i] = parseAnnotation(buf, constPool, container, true);
+                result[i] = parseAnnotation(buf, constPool, container, true, null);
             } else {
                 skipMemberValue(tag, buf);
                 typeMismatch = true;
@@ -793,6 +817,14 @@ public class AnnotationParser {
         int length = buf.getShort() & 0xFFFF;
         for (int i = 0; i < length; i++)
             skipMemberValue(buf);
+    }
+
+    // utility
+    private static boolean contains(Object[] array, Object element) {
+        for (Object e : array)
+            if (e == element)
+                return true;
+        return false;
     }
 
     /*
