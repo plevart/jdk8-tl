@@ -2326,7 +2326,7 @@ public final
     }
 
     // Annotations handling
-    private native byte[] getRawAnnotations();
+    native byte[] getRawAnnotations();
     // Since 1.8
     native byte[] getRawTypeAnnotations();
     static byte[] getExecutableTypeAnnotationBytes(Executable ex) {
@@ -3189,13 +3189,6 @@ public final
 
     AnnotationType getAnnotationType() {
         return annotationType;
-    }
-
-    // Called by AnnotationType constructor to parse just select (meta) annotations
-
-    Map<Class<? extends Annotation>, Annotation> getSelectAnnotations(Class<? extends Annotation> ... annotationClasses) {
-        return  AnnotationParser.parseAnnotations(
-            getRawAnnotations(), getConstantPool(), this, annotationClasses);
     }
 
     /* Backing store of user-defined values pertaining to this class.

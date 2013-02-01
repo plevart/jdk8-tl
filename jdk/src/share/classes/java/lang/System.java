@@ -1198,9 +1198,8 @@ public final class System {
             public AnnotationType getAnnotationType(Class<?> klass) {
                 return klass.getAnnotationType();
             }
-            public Map<Class<? extends Annotation>, Annotation>
-            getSelectClassAnnotations(Class<?> klass, Class<? extends Annotation> ... annotationClasses) {
-                return klass.getSelectAnnotations(annotationClasses);
+            public byte[] getRawClassAnnotations(Class<?> klass) {
+                return klass.getRawAnnotations();
             }
             public byte[] getRawClassTypeAnnotations(Class<?> klass) {
                 return klass.getRawTypeAnnotations();

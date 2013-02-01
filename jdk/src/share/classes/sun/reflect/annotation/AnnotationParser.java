@@ -76,11 +76,23 @@ public class AnnotationParser {
         }
     }
 
+    /**
+     * An overload of {@link #parseAnnotations(byte[], sun.reflect.ConstantPool, Class)}
+     * with an additional parameter {@code selectAnnotationClasses} which selects the
+     * annotation types to parse (other than selected are quickly skipped).<p>
+     * This method also treats selected annotations as having implicit
+     * {@link RetentionPolicy#RUNTIME RUNTIME} retention and is only used
+     * to parse select meta annotations in the construction phase of {@link AnnotationType}
+     * instances to prevent infinite recursion.
+     *
+     * @param selectAnnotationClasses an array of annotation types to select when parsing
+     */
+    @SafeVarargs
     public static Map<Class<? extends Annotation>, Annotation> parseAnnotations(
         byte[] rawAnnotations,
         ConstantPool constPool,
         Class<?> container,
-        Class<? extends Annotation>[] selectAnnotationClasses) {
+        Class<? extends Annotation> ... selectAnnotationClasses) {
         if (rawAnnotations == null)
             return Collections.emptyMap();
 

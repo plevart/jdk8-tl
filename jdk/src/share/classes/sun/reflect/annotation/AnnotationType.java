@@ -25,6 +25,8 @@
 
 package sun.reflect.annotation;
 
+import sun.misc.JavaLangAccess;
+
 import java.lang.annotation.*;
 import java.lang.reflect.*;
 import java.util.*;
@@ -75,15 +77,14 @@ public class AnnotationType {
      * @throw IllegalArgumentException if the specified class object for
      *     does not represent a valid annotation type
      */
-    public static synchronized AnnotationType getInstance(
+    public static AnnotationType getInstance(
         Class<? extends Annotation> annotationClass)
     {
-        AnnotationType result = sun.misc.SharedSecrets.getJavaLangAccess().
-            getAnnotationType(annotationClass);
+        JavaLangAccess jlAccess = sun.misc.SharedSecrets.getJavaLangAccess();
+        AnnotationType result = jlAccess.getAnnotationType(annotationClass);
         if (result == null) {
-            result = new AnnotationType((Class<? extends Annotation>) annotationClass);
-            sun.misc.SharedSecrets.getJavaLangAccess().
-                setAnnotationType(annotationClass, result);
+            result = new AnnotationType(annotationClass, jlAccess);
+            jlAccess.setAnnotationType(annotationClass, result);
         }
 
         return result;
@@ -96,7 +97,10 @@ public class AnnotationType {
      * @throw IllegalArgumentException if the specified class object for
      *     does not represent a valid annotation type
      */
-    private AnnotationType(final Class<? extends Annotation> annotationClass) {
+    private AnnotationType(
+        final Class<? extends Annotation> annotationClass,
+        final JavaLangAccess jlAccess
+    ) {
         if (!annotationClass.isAnnotation())
             throw new IllegalArgumentException("Not an annotation type");
 
@@ -129,8 +133,12 @@ public class AnnotationType {
         if (annotationClass != Retention.class &&
             annotationClass != Inherited.class) {
             Map<Class<? extends Annotation>, Annotation> metaAnnotations =
-                sun.misc.SharedSecrets.getJavaLangAccess().
-                    getSelectClassAnnotations(annotationClass, Retention.class, Inherited.class);
+                AnnotationParser.parseAnnotations(
+                    jlAccess.getRawClassAnnotations(annotationClass),
+                    jlAccess.getConstantPool(annotationClass),
+                    annotationClass,
+                    Retention.class, Inherited.class
+                );
             Retention ret = (Retention) metaAnnotations.get(Retention.class);
             retention = (ret == null ? RetentionPolicy.CLASS : ret.value());
             inherited = metaAnnotations.containsKey(Inherited.class);

@@ -49,6 +49,12 @@ public interface JavaLangAccess {
 
     /**
      * Get the array of bytes that is the class-file representation
+     * of this Class' annotations.
+     */
+    byte[] getRawClassAnnotations(Class<?> klass);
+
+    /**
+     * Get the array of bytes that is the class-file representation
      * of this Class' type annotations.
      */
     byte[] getRawClassTypeAnnotations(Class<?> klass);
