@@ -1,5 +1,7 @@
 package java.lang;
 
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Map;
@@ -10,28 +12,49 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 final class ConcurrentLockMap<K> extends ConcurrentHashMap<K, Object> {
 
-    // the only supported Map methods
+    private final ReferenceQueue<Object> refQueue = new ReferenceQueue<>();
 
-    @Override
-    public boolean isEmpty() {
-        return super.isEmpty();    //To change body of overridden methods use File | Settings | File Templates.
+    private static final class WeakKey<K> extends WeakReference<Object> {
+        final K key;
+
+        WeakKey(K key, Object lock, ReferenceQueue<? super Object> q) {
+            super(lock, q);
+            this.key = key;
+        }
     }
 
-    @Override
-    public int size() {
-        return super.size();    //To change body of overridden methods use File | Settings | File Templates.
+    public Object createOrGet(K key) {
+        Object lock = new Object();
+        WeakKey<K> ref = new WeakKey<>(key, lock, refQueue);
+        expungeStaleEntries();
+        @SuppressWarnings("unchecked")
+        WeakKey<K>  oldRef = (WeakKey<K> ) super.putIfAbsent(key, ref);
+        Object oldLock;
+        if (oldRef != null) {
+            if ((oldLock = oldRef.get()) != null) {
+            lock = oldLock;
+            }
+            else {
+
+            }
+        }
     }
+
+    // overriden Map methods
 
     @Override
     public Object get(Object key) {
-        return super.get(key);    //To change body of overridden methods use File | Settings | File Templates.
+        expungeStaleEntries();
+        @SuppressWarnings("unchecked")
+        WeakReference<Object> ref = (WeakReference<Object>) super.get(key);
+        return ref == null ? null : ref.get();
     }
 
-    private void expungeClearedEntries() {
+    private void expungeStaleEntries() {
 
     }
 
-    // unsupported methods (not needed for maintaining locks)
+    // unsupported Map methods (not needed for maintaining locks or even dangerous)
 
     @Override
     public boolean containsKey(Object key) {
