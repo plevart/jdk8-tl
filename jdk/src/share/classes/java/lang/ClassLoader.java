@@ -29,12 +29,10 @@ import java.io.IOException;
 import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.AccessController;
 import java.security.AccessControlContext;
 import java.security.CodeSource;
-import java.security.Policy;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
@@ -236,7 +234,7 @@ public abstract class ClassLoader {
     // class loader is parallel capable.
     // Note: VM also uses this field to decide if the current class loader
     // is parallel capable and the appropriate lock object for class loading.
-    private final ConcurrentHashMap<String, Object> parallelLockMap;
+    private final LockMap<String> parallelLockMap;
 
     // Hashtable that maps packages to certs
     private final Map <String, Certificate[]> package2certs;
@@ -278,7 +276,7 @@ public abstract class ClassLoader {
     private ClassLoader(Void unused, ClassLoader parent) {
         this.parent = parent;
         if (ParallelLoaders.isRegistered(this.getClass())) {
-            parallelLockMap = new ConcurrentHashMap<>();
+            parallelLockMap = new LockMap<>(this);
             package2certs = new ConcurrentHashMap<>();
             domains =
                 Collections.synchronizedSet(new HashSet<ProtectionDomain>());
@@ -456,15 +454,7 @@ public abstract class ClassLoader {
      * @since  1.7
      */
     protected Object getClassLoadingLock(String className) {
-        Object lock = this;
-        if (parallelLockMap != null) {
-            Object newLock = new Object();
-            lock = parallelLockMap.putIfAbsent(className, newLock);
-            if (lock == null) {
-                lock = newLock;
-            }
-        }
-        return lock;
+        return parallelLockMap == null ? this : parallelLockMap.getOrCreate(className);
     }
 
     // This method is invoked by the virtual machine to load a class.
