@@ -51,6 +51,7 @@ import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import sun.misc.ClassFileTransformer;
 import sun.misc.CompoundEnumeration;
+import sun.misc.LockMap;
 import sun.misc.Resource;
 import sun.misc.URLClassPath;
 import sun.misc.VM;

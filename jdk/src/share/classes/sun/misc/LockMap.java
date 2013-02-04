@@ -1,4 +1,4 @@
-package java.lang;
+package sun.misc;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
@@ -43,15 +43,15 @@ public final class LockMap<K> extends ConcurrentHashMap<K, Object> {
             .append("      create: ").append(createCount.sumThenReset()).append("\n")
             .append("  return old: ").append(returnOldCount.sumThenReset()).append("\n")
             .append("     replace: ").append(replaceCount.sumThenReset()).append("\n")
-            .append("    get null: ").append(getNullCount.sumThenReset()).append("\n")
-            .append("get non-null: ").append(getNonNullCount.sumThenReset()).append("\n")
+//            .append("    get null: ").append(getNullCount.sumThenReset()).append("\n")
+//            .append("get non-null: ").append(getNonNullCount.sumThenReset()).append("\n")
             .append("     expunge: ").append(expungeCount.sumThenReset()).append("\n");
         return sb.toString();
     }
 
     private final Object owner;
 
-    LockMap(Object owner) {
+    public LockMap(Object owner) {
         this.owner = owner;
     }
 
@@ -123,8 +123,8 @@ public final class LockMap<K> extends ConcurrentHashMap<K, Object> {
     private void expungeStaleEntries() {
         LockRef<K> ref;
         while ((ref = (LockRef<K>) refQueue.poll()) != null) {
-            super.remove(ref.key, ref);
-            if (keepStats) expungeCount.increment();
+            if (super.remove(ref.key, ref) && keepStats)
+                expungeCount.increment();
         }
     }
 
