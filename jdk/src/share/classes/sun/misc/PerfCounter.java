@@ -25,6 +25,8 @@
 
 package sun.misc;
 
+import sun.nio.ch.DirectBuffer;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.LongBuffer;
@@ -50,6 +52,8 @@ import java.security.AccessController;
 public class PerfCounter {
     private static final Perf perf =
         AccessController.doPrivileged(new Perf.GetPerfAction());
+    private static final Unsafe unsafe =
+        Unsafe.getUnsafe();
 
     // Must match values defined in hotspot/src/share/vm/runtime/perfdata.hpp
     private final static int V_Constant  = 1;
@@ -59,12 +63,14 @@ public class PerfCounter {
 
     private final String name;
     private final LongBuffer lb;
+    private final DirectBuffer db;
 
     private PerfCounter(String name, int type) {
         this.name = name;
         ByteBuffer bb = perf.createLong(name, U_None, type, 0L);
         bb.order(ByteOrder.nativeOrder());
         this.lb = bb.asLongBuffer();
+        this.db = bb instanceof DirectBuffer ? (DirectBuffer) bb : null;
     }
 
     static PerfCounter newPerfCounter(String name) {
@@ -79,23 +85,44 @@ public class PerfCounter {
     /**
      * Returns the current value of the perf counter.
      */
-    public synchronized long get() {
-        return lb.get(0);
+    public long get() {
+        if (db != null) {
+            return unsafe.getLongVolatile(null, db.address());
+        }
+        else {
+            synchronized (this) {
+                return lb.get(0);
+            }
+        }
     }
 
     /**
      * Sets the value of the perf counter to the given newValue.
      */
-    public synchronized void set(long newValue) {
-        lb.put(0, newValue);
+    public void set(long newValue) {
+        if (db != null) {
+            unsafe.putOrderedLong(null, db.address(), newValue);
+        }
+        else {
+            synchronized (this) {
+                lb.put(0, newValue);
+            }
+        }
     }
 
     /**
      * Adds the given value to the perf counter.
      */
-    public synchronized void add(long value) {
-        long res = get() + value;
-        lb.put(0, res);
+    public void add(long value) {
+        if (db != null) {
+            unsafe.getAndAddLong(null, db.address(), value);
+        }
+        else {
+            synchronized (this) {
+                long res = lb.get(0) + value;
+                lb.put(0, res);
+            }
+        }
     }
 
     /**
