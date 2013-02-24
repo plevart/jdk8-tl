@@ -31,6 +31,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.LongBuffer;
 import java.security.AccessController;
+import java.util.concurrent.locks.ReadWriteLock;
 
 /**
  * Performance counter support for internal JRE classes.
@@ -115,7 +116,11 @@ public class PerfCounter {
      */
     public void add(long value) {
         if (db != null) {
-            unsafe.getAndAddLong(null, db.address(), value);
+            long v;
+            do {
+                v = unsafe.getLongVolatile(null, db.address());
+            } while (!unsafe.compareAndSwapLong(null, db.address(), v, v + value));
+            //unsafe.getAndAddLong(null, db.address(), value);
         }
         else {
             synchronized (this) {

@@ -8,30 +8,18 @@ package test;
 import si.pele.microbench.TestRunner;
 import sun.misc.PerfCounter;
 
-import java.util.concurrent.atomic.LongAdder;
-
 /**
  * @author peter
  */
 public class PerfCounterBenchmark extends TestRunner {
 
     static final PerfCounter counter = PerfCounter.getFindClasses();
-    static final LongAdder adder = new LongAdder();
 
     public static final class PerfCounter_increment extends Test {
         @Override
         protected void doLoop(Loop loop, DevNull devNull1, DevNull devNull2, DevNull devNull3, DevNull devNull4, DevNull devNull5) {
             while (loop.nextIteration()) {
                 counter.increment();
-            }
-        }
-    }
-
-    public static final class LongAdder_increment extends Test {
-        @Override
-        protected void doLoop(Loop loop, DevNull devNull1, DevNull devNull2, DevNull devNull3, DevNull devNull4, DevNull devNull5) {
-            while (loop.nextIteration()) {
-                adder.increment();
             }
         }
     }
@@ -50,8 +38,8 @@ public class PerfCounterBenchmark extends TestRunner {
     }
 
     public static void main(String[] args) throws Exception {
-        doTest(PerfCounter_mix.class, 5000L, 1, 8, 1);
-        doTest(PerfCounter_increment.class, 5000L, 1, 8, 1);
-        doTest(LongAdder_increment.class, 5000L, 1, 8, 1);
+        int maxThreads = Math.max(4, Runtime.getRuntime().availableProcessors());
+        doTest(PerfCounter_increment.class, 5000L, 1, maxThreads, 1);
+        doTest(PerfCounter_mix.class, 5000L, 1, maxThreads, 1);
     }
 }
