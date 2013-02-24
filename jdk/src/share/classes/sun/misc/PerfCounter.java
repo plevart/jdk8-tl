@@ -27,10 +27,12 @@ package sun.misc;
 
 import sun.nio.ch.DirectBuffer;
 
+import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.LongBuffer;
 import java.security.AccessController;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReadWriteLock;
 
 /**
@@ -55,6 +57,18 @@ public class PerfCounter {
         AccessController.doPrivileged(new Perf.GetPerfAction());
     private static final Unsafe unsafe =
         Unsafe.getUnsafe();
+    private static final boolean VM_SUPPORTS_LONG_CAS;
+    private static final boolean BIG_ENDIAN_ORDER = ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN;
+    static {
+        try {
+            Field f = AtomicLong.class.getDeclaredField("VM_SUPPORTS_LONG_CAS");
+            f.setAccessible(true);
+            VM_SUPPORTS_LONG_CAS = (boolean) f.get(null);
+        }
+        catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new Error(e);
+        }
+    }
 
     // Must match values defined in hotspot/src/share/vm/runtime/perfdata.hpp
     private final static int V_Constant  = 1;
@@ -64,14 +78,31 @@ public class PerfCounter {
 
     private final String name;
     private final LongBuffer lb;
-    private final DirectBuffer db;
+    private final boolean isDirect;
+    private final long address, loAddress, hiAddress;
 
     private PerfCounter(String name, int type) {
         this.name = name;
         ByteBuffer bb = perf.createLong(name, U_None, type, 0L);
         bb.order(ByteOrder.nativeOrder());
         this.lb = bb.asLongBuffer();
-        this.db = bb instanceof DirectBuffer ? (DirectBuffer) bb : null;
+        if (bb instanceof DirectBuffer) {
+            isDirect = true;
+            address = ((DirectBuffer) bb).address();
+            if (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN) {
+                hiAddress = address;
+                loAddress = address + 4;
+            }
+            else {
+                hiAddress = address + 4;
+                loAddress = address;
+            }
+        }
+        else
+        {
+            isDirect = false;
+            hiAddress = loAddress = address = 0L;
+        }
     }
 
     static PerfCounter newPerfCounter(String name) {
@@ -87,8 +118,8 @@ public class PerfCounter {
      * Returns the current value of the perf counter.
      */
     public long get() {
-        if (db != null) {
-            return unsafe.getLongVolatile(null, db.address());
+        if (isDirect) {
+            return unsafe.getLongVolatile(null, address);
         }
         else {
             synchronized (this) {
@@ -101,8 +132,8 @@ public class PerfCounter {
      * Sets the value of the perf counter to the given newValue.
      */
     public void set(long newValue) {
-        if (db != null) {
-            unsafe.putOrderedLong(null, db.address(), newValue);
+        if (isDirect) {
+            unsafe.putOrderedLong(null, address, newValue);
         }
         else {
             synchronized (this) {
@@ -115,12 +146,25 @@ public class PerfCounter {
      * Adds the given value to the perf counter.
      */
     public void add(long value) {
-        if (db != null) {
-            long v;
-            do {
-                v = unsafe.getLongVolatile(null, db.address());
-            } while (!unsafe.compareAndSwapLong(null, db.address(), v, v + value));
-            //unsafe.getAndAddLong(null, db.address(), value);
+        if (isDirect) {
+            if (VM_SUPPORTS_LONG_CAS) {
+                unsafe.getAndAddLong(null, address, value);
+            }
+            else {
+                int deltaLo = (int)(value);
+                int oldLo;
+                do {
+                    oldLo = unsafe.getIntVolatile(null, loAddress);
+                } while (!unsafe.compareAndSwapInt(null, loAddress, oldLo, oldLo + deltaLo));
+
+                int deltaHi = (int)((value + ((long)oldLo & 0xFFFFFFFFL)) >>> 32);
+                if (deltaHi != 0) {
+                    int oldHi;
+                    do {
+                        oldHi = unsafe.getIntVolatile(null, hiAddress);
+                    } while (!unsafe.compareAndSwapInt(null, hiAddress, oldHi, oldHi + deltaHi));
+                }
+            }
         }
         else {
             synchronized (this) {

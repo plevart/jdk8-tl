@@ -1,87 +1,66 @@
-*** Unchanged PerfCounter
-
-#
-# PerfCounter_mix: run duration:  5,000 ms, #of logical CPUS: 8
-#
-# Warm up:
-           1 threads, Tavg =    119.40 ns/op (σ =   0.00 ns/op) [   119.40]
-           1 threads, Tavg =    118.91 ns/op (σ =   0.00 ns/op) [   118.91]
-# Measure:
-           1 threads, Tavg =    119.23 ns/op (σ =   0.00 ns/op) [   119.23]
-           2 threads, Tavg =    233.64 ns/op (σ =   0.05 ns/op) [   233.58,    233.69]
-           3 threads, Tavg =    274.05 ns/op (σ =   0.19 ns/op) [   274.14,    273.79,    274.23]
-           4 threads, Tavg =    418.75 ns/op (σ =   4.72 ns/op) [   413.91,    426.47,    416.30,    418.52]
-           5 threads, Tavg =    654.14 ns/op (σ =  11.08 ns/op) [   666.93,    661.86,    660.83,    641.88,    640.14]
-           6 threads, Tavg =    780.01 ns/op (σ =   8.12 ns/op) [   775.72,    783.39,    772.39,    771.08,    783.19,    794.78]
-           7 threads, Tavg =  1,532.36 ns/op (σ =  18.62 ns/op) [ 1,532.47,  1,531.90,  1,567.77,  1,508.01,  1,532.59,  1,511.30,  1,544.03]
-           8 threads, Tavg =  2,341.64 ns/op (σ =  25.28 ns/op) [ 2,386.01,  2,320.68,  2,351.12,  2,331.33,  2,376.69,  2,314.01,  2,335.68,  2,319.72]
+*** Original PerfCounter, Intel i7
 
 #
 # PerfCounter_increment: run duration:  5,000 ms, #of logical CPUS: 8
 #
 # Warm up:
-           1 threads, Tavg =     19.03 ns/op (σ =   0.00 ns/op) [    19.03]
-           1 threads, Tavg =     19.00 ns/op (σ =   0.00 ns/op) [    19.00]
+           1 threads, Tavg =     19.59 ns/op (σ =   0.00 ns/op) [    19.59]
+           1 threads, Tavg =     19.59 ns/op (σ =   0.00 ns/op) [    19.59]
 # Measure:
-           1 threads, Tavg =     19.02 ns/op (σ =   0.00 ns/op) [    19.02]
-           2 threads, Tavg =    109.93 ns/op (σ =   6.17 ns/op) [   116.44,    104.12]
-           3 threads, Tavg =    136.64 ns/op (σ =   2.99 ns/op) [   137.63,    139.82,    132.67]
-           4 threads, Tavg =    293.26 ns/op (σ =   5.30 ns/op) [   289.08,    301.78,    288.59,    293.95]
-           5 threads, Tavg =    316.94 ns/op (σ =   6.28 ns/op) [   314.97,    321.84,    317.22,    306.54,    324.76]
-           6 threads, Tavg =    686.96 ns/op (σ =   7.09 ns/op) [   689.44,    697.58,    689.56,    686.97,    673.89,    684.80]
-           7 threads, Tavg =    793.28 ns/op (σ =  10.57 ns/op) [   800.34,    792.12,    779.77,    787.26,    813.80,    784.24,    796.38]
-           8 threads, Tavg =    898.15 ns/op (σ =  14.63 ns/op) [   897.40,    928.24,    873.61,    896.46,    897.60,    890.65,    909.31,    893.81]
+           1 threads, Tavg =     19.56 ns/op (σ =   0.00 ns/op) [    19.56]
+           2 threads, Tavg =    112.13 ns/op (σ =  15.84 ns/op) [   129.98,     98.59]
+           3 threads, Tavg =    262.98 ns/op (σ =  11.76 ns/op) [   274.51,    247.24,    268.81]
+           4 threads, Tavg =    360.25 ns/op (σ =  10.33 ns/op) [   367.58,    342.87,    363.94,    367.82]
+           5 threads, Tavg =    588.75 ns/op (σ =  14.29 ns/op) [   574.97,    572.57,    609.55,    588.00,    600.41]
+           6 threads, Tavg =    689.86 ns/op (σ =  14.74 ns/op) [   679.85,    684.58,    695.71,    690.53,    671.89,    718.46]
+           7 threads, Tavg =    842.15 ns/op (σ =  14.88 ns/op) [   839.20,    826.35,    832.16,    828.10,    865.74,    842.26,    863.09]
+           8 threads, Tavg =    964.85 ns/op (σ =  12.03 ns/op) [   961.83,    956.52,    982.75,    945.91,    957.50,    965.19,    983.35,    966.91]
 
 
-*** Patched PerfCounter
-
-#
-# PerfCounter_mix: run duration:  5,000 ms, #of logical CPUS: 8
-#
-# Warm up:
-           1 threads, Tavg =     81.21 ns/op (σ =   0.00 ns/op) [    81.21]
-           1 threads, Tavg =     82.62 ns/op (σ =   0.00 ns/op) [    82.62]
-# Measure:
-           1 threads, Tavg =     80.59 ns/op (σ =   0.00 ns/op) [    80.59]
-           2 threads, Tavg =    130.38 ns/op (σ =   0.10 ns/op) [   130.48,    130.28]
-           3 threads, Tavg =    150.28 ns/op (σ =   0.09 ns/op) [   150.40,    150.20,    150.25]
-           4 threads, Tavg =    177.97 ns/op (σ =   0.23 ns/op) [   178.25,    177.83,    177.66,    178.12]
-           5 threads, Tavg =    207.59 ns/op (σ =  24.86 ns/op) [   191.99,    244.65,    198.59,    182.01,    234.76]
-           6 threads, Tavg =    232.28 ns/op (σ =  37.90 ns/op) [   187.22,    263.53,    264.66,    268.05,    184.96,    264.62]
-           7 threads, Tavg =    256.93 ns/op (σ =  21.08 ns/op) [   210.75,    267.39,    259.61,    274.60,    277.31,    254.28,    268.27]
-           8 threads, Tavg =    279.54 ns/op (σ =   5.03 ns/op) [   272.69,    274.34,    277.17,    286.13,    288.39,    278.69,    279.67,    280.00]
+*** Patched PerfCounter, Intel i7
 
 #
 # PerfCounter_increment: run duration:  5,000 ms, #of logical CPUS: 8
 #
 # Warm up:
-           1 threads, Tavg =      5.20 ns/op (σ =   0.00 ns/op) [     5.20]
-           1 threads, Tavg =      6.90 ns/op (σ =   0.00 ns/op) [     6.90]
+           1 threads, Tavg =      5.36 ns/op (σ =   0.00 ns/op) [     5.36]
+           1 threads, Tavg =      5.36 ns/op (σ =   0.00 ns/op) [     5.36]
 # Measure:
-           1 threads, Tavg =      5.22 ns/op (σ =   0.00 ns/op) [     5.22]
-           2 threads, Tavg =     34.51 ns/op (σ =   0.60 ns/op) [    35.12,     33.91]
-           3 threads, Tavg =     54.85 ns/op (σ =   1.42 ns/op) [    56.74,     54.61,     53.31]
-           4 threads, Tavg =     74.67 ns/op (σ =   1.71 ns/op) [    72.73,     76.22,     76.58,     73.32]
-           5 threads, Tavg =     94.71 ns/op (σ =  41.68 ns/op) [   175.42,    128.06,     81.97,     79.58,     68.87]
-           6 threads, Tavg =    114.80 ns/op (σ =  32.10 ns/op) [   131.75,    155.88,    123.21,     80.10,    161.40,     87.24]
-           7 threads, Tavg =    136.70 ns/op (σ =  26.80 ns/op) [   116.95,     92.36,    155.67,    157.79,    149.55,    149.33,    175.96]
-           8 threads, Tavg =    158.48 ns/op (σ =   9.93 ns/op) [   155.23,    154.32,    173.80,    146.28,    159.40,    146.19,    166.02,    171.48]
+           1 threads, Tavg =      5.36 ns/op (σ =   0.00 ns/op) [     5.36]
+           2 threads, Tavg =     30.13 ns/op (σ =   0.05 ns/op) [    30.08,     30.19]
+           3 threads, Tavg =     45.52 ns/op (σ =   7.03 ns/op) [    38.01,     55.03,     46.67]
+           4 threads, Tavg =     59.98 ns/op (σ =   1.30 ns/op) [    58.21,     59.37,     60.86,     61.57]
+           5 threads, Tavg =     78.17 ns/op (σ =  46.63 ns/op) [    61.29,    148.25,     56.89,    148.20,     60.34]
+           6 threads, Tavg =    103.82 ns/op (σ =  66.31 ns/op) [   202.28,     58.04,     60.41,    203.24,    141.41,    141.40]
+           7 threads, Tavg =    131.70 ns/op (σ =  48.59 ns/op) [   193.53,    168.82,    192.35,     58.90,    178.75,    140.01,    139.95]
+           8 threads, Tavg =    159.86 ns/op (σ =  15.18 ns/op) [   172.01,    150.96,    177.75,    172.80,    157.29,    140.38,    178.95,    140.39]
 
 
-*** Comparison with j.u.c.LongAdder.increment()
+*** Original PerfCounter, ARM v6
 
 #
-# LongAdder_increment: run duration:  5,000 ms, #of logical CPUS: 8
+# PerfCounter_increment: run duration:  5,000 ms, #of logical CPUS: 1
 #
 # Warm up:
-           1 threads, Tavg =      8.40 ns/op (σ =   0.00 ns/op) [     8.40]
-           1 threads, Tavg =      8.39 ns/op (σ =   0.00 ns/op) [     8.39]
+           1 threads, Tavg =    289.99 ns/op (σ =   0.00 ns/op) [   289.99]
+           1 threads, Tavg =    268.60 ns/op (σ =   0.00 ns/op) [   268.60]
 # Measure:
-           1 threads, Tavg =      8.39 ns/op (σ =   0.00 ns/op) [     8.39]
-           2 threads, Tavg =      8.38 ns/op (σ =   0.01 ns/op) [     8.37,      8.38]
-           3 threads, Tavg =      8.41 ns/op (σ =   0.00 ns/op) [     8.40,      8.41,      8.41]
-           4 threads, Tavg =      8.38 ns/op (σ =   0.01 ns/op) [     8.36,      8.38,      8.37,      8.39]
-           5 threads, Tavg =      9.53 ns/op (σ =   1.27 ns/op) [     8.48,      8.55,     11.92,      9.42,     10.05]
-           6 threads, Tavg =     10.89 ns/op (σ =   1.89 ns/op) [    13.02,     11.01,      8.40,      9.20,     13.03,     12.68]
-           7 threads, Tavg =     11.85 ns/op (σ =   1.38 ns/op) [    12.57,     14.13,     11.57,      9.22,     12.55,     11.80,     12.32]
-           8 threads, Tavg =     12.71 ns/op (σ =   1.00 ns/op) [    12.06,     14.23,     13.18,     13.17,     11.82,     11.72,     11.89,     14.25]
+           1 threads, Tavg =    269.34 ns/op (σ =   0.00 ns/op) [   269.34]
+           2 threads, Tavg =  7,170.48 ns/op (σ = 410.77 ns/op) [ 6,783.73,  7,603.95]
+           3 threads, Tavg = 12,034.82 ns/op (σ = 418.99 ns/op) [11,792.33, 11,714.67, 12,639.26]
+           4 threads, Tavg = 16,029.76 ns/op (σ = 1,411.44 ns/op) [15,592.04, 18,511.52, 15,642.52, 14,818.16]
+
+
+*** Patched PerfCounter, ARM v6
+
+#
+# PerfCounter_increment: run duration:  5,000 ms, #of logical CPUS: 1
+#
+# Warm up:
+           1 threads, Tavg =    154.36 ns/op (σ =   0.00 ns/op) [   154.36]
+           1 threads, Tavg =    166.44 ns/op (σ =   0.00 ns/op) [   166.44]
+# Measure:
+           1 threads, Tavg =    166.21 ns/op (σ =   0.00 ns/op) [   166.21]
+           2 threads, Tavg =    332.58 ns/op (σ =   0.12 ns/op) [   332.45,    332.70]
+           3 threads, Tavg =    500.30 ns/op (σ =   0.22 ns/op) [   500.04,    500.29,    500.58]
+           4 threads, Tavg =    667.95 ns/op (σ =   2.11 ns/op) [   665.22,    667.18,    668.40,    671.04]
