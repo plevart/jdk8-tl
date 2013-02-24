@@ -58,7 +58,6 @@ public class PerfCounter {
     private static final Unsafe unsafe =
         Unsafe.getUnsafe();
     private static final boolean VM_SUPPORTS_LONG_CAS;
-    private static final boolean BIG_ENDIAN_ORDER = ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN;
     static {
         try {
             Field f = AtomicLong.class.getDeclaredField("VM_SUPPORTS_LONG_CAS");
