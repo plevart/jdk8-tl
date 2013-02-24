@@ -33,7 +33,6 @@ import java.nio.ByteOrder;
 import java.nio.LongBuffer;
 import java.security.AccessController;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.locks.ReadWriteLock;
 
 /**
  * Performance counter support for internal JRE classes.
