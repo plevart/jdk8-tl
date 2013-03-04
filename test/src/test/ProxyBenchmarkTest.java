@@ -7,23 +7,20 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Proxy;
 
-import static test.ProxyBenchmarkTest.*;
+import static test.ProxyBenchmarkTest.Ann1;
+import static test.ProxyBenchmarkTest.Ann2;
+import static test.ProxyBenchmarkTest.Ann3;
+import static test.ProxyBenchmarkTest.Ann4;
+import static test.ProxyBenchmarkTest.Ann5;
 
 /**
  */
-@Ann0()
 @Ann1()
 @Ann2()
 @Ann3()
 @Ann4()
 @Ann5()
-@Ann6()
-@Ann7()
 public class ProxyBenchmarkTest extends TestRunner {
-    @Retention(RetentionPolicy.RUNTIME)
-    public @interface Ann0 {
-        String value() default "0";
-    }
 
     @Retention(RetentionPolicy.RUNTIME)
     public @interface Ann1 {
@@ -50,105 +47,68 @@ public class ProxyBenchmarkTest extends TestRunner {
         String value() default "5";
     }
 
-    @Retention(RetentionPolicy.RUNTIME)
-    public @interface Ann6 {
-        String value() default "6";
-    }
-
-    @Retention(RetentionPolicy.RUNTIME)
-    public @interface Ann7 {
-        String value() default "7";
-    }
-
     static final Annotation[] anns = ProxyBenchmarkTest.class.getDeclaredAnnotations();
-    static final Annotation ann0 = anns[0];
-    static final Annotation ann1 = anns[1];
-    static final Annotation ann2 = anns[2];
-    static final Annotation ann3 = anns[3];
-    static final Annotation ann4 = anns[4];
-    static final Annotation ann5 = anns[5];
-    static final Annotation ann6 = anns[6];
-    static final Annotation ann7 = anns[7];
+    static final Annotation ann1 = anns[0];
+    static final Annotation ann2 = anns[1];
+    static final Annotation ann3 = anns[2];
+    static final Annotation ann4 = anns[3];
+    static final Annotation ann5 = anns[4];
 
     public static class Proxy_getProxyClass extends TestRunner.Test {
-        private static final ClassLoader cl = Ann0.class.getClassLoader();
-        @Override
-        protected void doOp() {
-            consume(Proxy.getProxyClass(cl, Ann0.class));
-            consume(Proxy.getProxyClass(cl, Ann1.class));
-            consume(Proxy.getProxyClass(cl, Ann2.class));
-            consume(Proxy.getProxyClass(cl, Ann3.class));
-            consume(Proxy.getProxyClass(cl, Ann4.class));
-            consume(Proxy.getProxyClass(cl, Ann5.class));
-            consume(Proxy.getProxyClass(cl, Ann6.class));
-            consume(Proxy.getProxyClass(cl, Ann7.class));
-        }
+        private static final ClassLoader cl = Ann1.class.getClassLoader();
 
         @Override
-        protected void checkConsumeCounts(long ops, long defaultValuesConsumed, long nonDefaultValuesConsumed) {
-            if (!(defaultValuesConsumed == 0 && nonDefaultValuesConsumed == ops * 8L))
-                throw new AssertionError();
+        protected void doLoop(Loop loop, DevNull devNull1, DevNull devNull2, DevNull devNull3, DevNull devNull4, DevNull devNull5) {
+            while (loop.nextIteration()) {
+                devNull1.yield(Proxy.getProxyClass(cl, Ann1.class));
+                devNull2.yield(Proxy.getProxyClass(cl, Ann2.class));
+                devNull3.yield(Proxy.getProxyClass(cl, Ann3.class));
+                devNull4.yield(Proxy.getProxyClass(cl, Ann4.class));
+                devNull5.yield(Proxy.getProxyClass(cl, Ann5.class));
+
+            }
         }
     }
 
     public static class Proxy_isProxyClassTrue extends TestRunner.Test {
         @Override
-        protected void doOp() {
-            consume(Proxy.isProxyClass(ann0.getClass()));
-            consume(Proxy.isProxyClass(ann1.getClass()));
-            consume(Proxy.isProxyClass(ann2.getClass()));
-            consume(Proxy.isProxyClass(ann3.getClass()));
-            consume(Proxy.isProxyClass(ann4.getClass()));
-            consume(Proxy.isProxyClass(ann5.getClass()));
-            consume(Proxy.isProxyClass(ann6.getClass()));
-            consume(Proxy.isProxyClass(ann7.getClass()));
-        }
+        protected void doLoop(Loop loop, DevNull devNull1, DevNull devNull2, DevNull devNull3, DevNull devNull4, DevNull devNull5) {
+            while (loop.nextIteration()) {
+                devNull1.yield(Proxy.isProxyClass(ann1.getClass()));
+                devNull2.yield(Proxy.isProxyClass(ann2.getClass()));
+                devNull3.yield(Proxy.isProxyClass(ann3.getClass()));
+                devNull4.yield(Proxy.isProxyClass(ann4.getClass()));
+                devNull5.yield(Proxy.isProxyClass(ann5.getClass()));
 
-        @Override
-        protected void checkConsumeCounts(long ops, long defaultValuesConsumed, long nonDefaultValuesConsumed) {
-            if (!(defaultValuesConsumed == 0 && nonDefaultValuesConsumed == ops * 8L))
-                throw new AssertionError();
+            }
         }
     }
 
     public static class Proxy_isProxyClassFalse extends TestRunner.Test {
-        @Override
-        protected void doOp() {
-            consume(Proxy.isProxyClass(Ann0.class));
-            consume(Proxy.isProxyClass(Ann1.class));
-            consume(Proxy.isProxyClass(Ann2.class));
-            consume(Proxy.isProxyClass(Ann3.class));
-            consume(Proxy.isProxyClass(Ann4.class));
-            consume(Proxy.isProxyClass(Ann5.class));
-            consume(Proxy.isProxyClass(Ann6.class));
-            consume(Proxy.isProxyClass(Ann7.class));
-        }
 
         @Override
-        protected void checkConsumeCounts(long ops, long defaultValuesConsumed, long nonDefaultValuesConsumed) {
-            if (!(defaultValuesConsumed == ops * 8L && nonDefaultValuesConsumed == 0L))
-                throw new AssertionError();
+        protected void doLoop(Loop loop, DevNull devNull1, DevNull devNull2, DevNull devNull3, DevNull devNull4, DevNull devNull5) {
+            while (loop.nextIteration()) {
+                devNull1.yield(Proxy.isProxyClass(Ann1.class));
+                devNull2.yield(Proxy.isProxyClass(Ann2.class));
+                devNull3.yield(Proxy.isProxyClass(Ann3.class));
+                devNull4.yield(Proxy.isProxyClass(Ann4.class));
+                devNull5.yield(Proxy.isProxyClass(Ann5.class));
+
+            }
         }
     }
 
-
     public static class Annotation_equals extends TestRunner.Test {
         @Override
-        protected void doOp() {
-            consume(ann0.equals(ann0));
-            consume(ann1.equals(ann1));
-            consume(ann2.equals(ann3));
-            consume(ann3.equals(ann2));
-            consume(ann4.equals(ann4));
-            consume(ann5.equals(ann5));
-            consume(ann6.equals(ann7));
-            consume(ann7.equals(ann6));
-        }
-
-        @Override
-        protected void checkConsumeCounts(long ops, long defaultValuesConsumed, long nonDefaultValuesConsumed) {
-            if (!(defaultValuesConsumed == ops * 4L && nonDefaultValuesConsumed == ops * 4L))
-                throw new AssertionError();
+        protected void doLoop(Loop loop, DevNull devNull1, DevNull devNull2, DevNull devNull3, DevNull devNull4, DevNull devNull5) {
+            while (loop.nextIteration()) {
+                devNull1.yield(ann1.equals(ann1));
+                devNull2.yield(ann2.equals(ann3));
+                devNull3.yield(ann3.equals(ann2));
+                devNull4.yield(ann4.equals(ann4));
+                devNull5.yield(ann5.equals(ann5));
+            }
         }
     }
 

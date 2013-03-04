@@ -1,134 +1,132 @@
-***************************************************************
-*** Original j.l.r.Proxy (4c*2t, i7-2600K, Linux)
+*** Original j.l.r.Proxy
 
 #
 # Proxy_getProxyClass: run duration:  5,000 ms, #of logical CPUS: 8
 #
 # Warm up:
-           1 threads, Tavg =  3,992.03 ns/op (σ =   0.00 ns/op)
-           1 threads, Tavg =  3,954.69 ns/op (σ =   0.00 ns/op)
+           1 threads, Tavg =  2,342.00 ns/op (σ =   0.00 ns/op) [ 2,342.00]
+           1 threads, Tavg =  2,316.83 ns/op (σ =   0.00 ns/op) [ 2,316.83]
 # Measure:
-           1 threads, Tavg =  3,924.59 ns/op (σ =   0.00 ns/op)
-           2 threads, Tavg =  4,622.71 ns/op (σ =   0.33 ns/op)
-           3 threads, Tavg =  4,705.26 ns/op (σ =   8.93 ns/op)
-           4 threads, Tavg =  4,951.78 ns/op (σ =  39.21 ns/op) - cores==threads
-           5 threads, Tavg =  6,165.03 ns/op (σ = 259.38 ns/op)
-           6 threads, Tavg =  7,583.67 ns/op (σ = 272.51 ns/op)
-           7 threads, Tavg = 13,833.23 ns/op (σ =  86.65 ns/op)
-           8 threads, Tavg = 15,519.48 ns/op (σ = 218.76 ns/op)
+           1 threads, Tavg =  2,278.72 ns/op (σ =   0.00 ns/op) [ 2,278.72]
+           2 threads, Tavg =  2,727.22 ns/op (σ =   0.31 ns/op) [ 2,727.53,  2,726.90]
+           3 threads, Tavg =  2,774.13 ns/op (σ =   3.11 ns/op) [ 2,770.65,  2,773.56,  2,778.20]
+           4 threads, Tavg =  3,014.28 ns/op (σ =  20.40 ns/op) [ 3,020.23,  3,043.14,  3,007.39,  2,986.90]
+           5 threads, Tavg =  3,564.98 ns/op (σ = 150.23 ns/op) [ 3,692.75,  3,583.61,  3,285.19,  3,693.06,  3,603.48]
+           6 threads, Tavg =  4,197.46 ns/op (σ = 123.71 ns/op) [ 4,250.17,  4,320.22,  4,075.58,  4,054.52,  4,380.53,  4,125.48]
+           7 threads, Tavg =  4,784.18 ns/op (σ = 132.63 ns/op) [ 4,795.19,  4,698.96,  4,826.40,  4,860.25,  4,561.92,  4,748.26,  5,023.97]
+           8 threads, Tavg =  5,279.58 ns/op (σ =   6.80 ns/op) [ 5,283.91,  5,273.39,  5,278.26,  5,288.87,  5,277.35,  5,266.41,  5,282.96,  5,285.52]
 
 #
 # Proxy_isProxyClassTrue: run duration:  5,000 ms, #of logical CPUS: 8
 #
 # Warm up:
-           1 threads, Tavg =    156.15 ns/op (σ =   0.00 ns/op)
-           1 threads, Tavg =    155.99 ns/op (σ =   0.00 ns/op)
+           1 threads, Tavg =     95.17 ns/op (σ =   0.00 ns/op) [    95.17]
+           1 threads, Tavg =     94.97 ns/op (σ =   0.00 ns/op) [    94.97]
 # Measure:
-           1 threads, Tavg =    155.99 ns/op (σ =   0.00 ns/op)
-           2 threads, Tavg =    905.08 ns/op (σ =  33.64 ns/op)
-           3 threads, Tavg =  2,560.94 ns/op (σ =  99.75 ns/op)
-           4 threads, Tavg =  3,795.75 ns/op (σ = 105.18 ns/op) - cores==threads
-           5 threads, Tavg =  4,873.04 ns/op (σ =  60.73 ns/op)
-           6 threads, Tavg =  6,108.75 ns/op (σ = 507.40 ns/op)
-           7 threads, Tavg =  7,065.11 ns/op (σ =  84.59 ns/op)
-           8 threads, Tavg =  7,928.86 ns/op (σ =  99.87 ns/op)
+           1 threads, Tavg =     94.88 ns/op (σ =   0.00 ns/op) [    94.88]
+           2 threads, Tavg =    614.88 ns/op (σ = 183.29 ns/op) [   839.29,    485.16]
+           3 threads, Tavg =    766.21 ns/op (σ =  11.20 ns/op) [   753.03,    765.66,    780.43]
+           4 threads, Tavg =  2,561.18 ns/op (σ =  39.11 ns/op) [ 2,607.27,  2,500.16,  2,562.13,  2,577.55]
+           5 threads, Tavg =  2,972.10 ns/op (σ =  47.78 ns/op) [ 3,061.44,  2,946.85,  2,919.69,  2,971.05,  2,965.24]
+           6 threads, Tavg =  3,920.32 ns/op (σ =  95.35 ns/op) [ 3,887.91,  3,855.15,  3,784.65,  3,920.91,  4,058.80,  4,028.35]
+           7 threads, Tavg =  4,582.00 ns/op (σ = 144.20 ns/op) [ 4,418.96,  4,513.35,  4,567.55,  4,572.62,  4,915.29,  4,528.57,  4,588.06]
+           8 threads, Tavg =  5,300.97 ns/op (σ =  93.96 ns/op) [ 5,275.21,  5,510.77,  5,244.64,  5,188.32,  5,286.20,  5,357.84,  5,225.76,  5,332.12]
 
 #
 # Proxy_isProxyClassFalse: run duration:  5,000 ms, #of logical CPUS: 8
 #
 # Warm up:
-           1 threads, Tavg =     95.81 ns/op (σ =   0.00 ns/op)
-           1 threads, Tavg =     96.16 ns/op (σ =   0.00 ns/op)
+           1 threads, Tavg =     63.34 ns/op (σ =   0.00 ns/op) [    63.34]
+           1 threads, Tavg =     62.99 ns/op (σ =   0.00 ns/op) [    62.99]
 # Measure:
-           1 threads, Tavg =     94.31 ns/op (σ =   0.00 ns/op)
-           2 threads, Tavg =    927.73 ns/op (σ = 232.22 ns/op)
-           3 threads, Tavg =  2,240.87 ns/op (σ =  33.15 ns/op)
-           4 threads, Tavg =  3,940.25 ns/op (σ = 129.09 ns/op) - cores==threads
-           5 threads, Tavg =  4,800.73 ns/op (σ =  65.81 ns/op)
-           6 threads, Tavg =  5,820.16 ns/op (σ = 170.39 ns/op)
-           7 threads, Tavg =  6,846.67 ns/op (σ = 130.48 ns/op)
-           8 threads, Tavg =  8,341.24 ns/op (σ = 617.69 ns/op)
+           1 threads, Tavg =     62.71 ns/op (σ =   0.00 ns/op) [    62.71]
+           2 threads, Tavg =    652.31 ns/op (σ =  46.72 ns/op) [   702.22,    609.03]
+           3 threads, Tavg =  1,136.80 ns/op (σ =  13.15 ns/op) [ 1,129.89,  1,155.37,  1,125.58]
+           4 threads, Tavg =  2,486.49 ns/op (σ =  46.95 ns/op) [ 2,507.68,  2,465.84,  2,551.00,  2,424.99]
+           5 threads, Tavg =  2,879.31 ns/op (σ = 100.11 ns/op) [ 2,821.05,  2,838.23,  2,776.50,  2,916.46,  3,061.20]
+           6 threads, Tavg =  3,494.51 ns/op (σ =  48.09 ns/op) [ 3,452.15,  3,562.86,  3,483.28,  3,557.69,  3,440.86,  3,474.17]
+           7 threads, Tavg =  3,667.88 ns/op (σ =  54.15 ns/op) [ 3,656.50,  3,605.83,  3,667.88,  3,759.44,  3,715.15,  3,592.47,  3,683.48]
+           8 threads, Tavg =  4,992.76 ns/op (σ =  62.69 ns/op) [ 4,933.65,  4,985.56,  5,032.40,  5,056.27,  4,861.04,  5,050.15,  5,033.24,  4,996.14]
 
 #
 # Annotation_equals: run duration:  5,000 ms, #of logical CPUS: 8
 #
 # Warm up:
-           1 threads, Tavg =    354.55 ns/op (σ =   0.00 ns/op)
-           1 threads, Tavg =    351.60 ns/op (σ =   0.00 ns/op)
+           1 threads, Tavg =    225.84 ns/op (σ =   0.00 ns/op) [   225.84]
+           1 threads, Tavg =    223.50 ns/op (σ =   0.00 ns/op) [   223.50]
 # Measure:
-           1 threads, Tavg =    353.07 ns/op (σ =   0.00 ns/op)
-           2 threads, Tavg =    807.43 ns/op (σ =   4.37 ns/op)
-           3 threads, Tavg =  1,799.30 ns/op (σ =  47.73 ns/op)
-           4 threads, Tavg =  2,644.91 ns/op (σ =  40.84 ns/op) - cores==threads
-           5 threads, Tavg =  5,352.65 ns/op (σ = 135.80 ns/op)
-           6 threads, Tavg = 11,115.55 ns/op (σ =  59.10 ns/op)
-           7 threads, Tavg = 12,484.18 ns/op (σ = 152.53 ns/op)
-           8 threads, Tavg = 14,268.41 ns/op (σ =  99.43 ns/op)
+           1 threads, Tavg =    223.21 ns/op (σ =   0.00 ns/op) [   223.21]
+           2 threads, Tavg =    694.10 ns/op (σ =  25.52 ns/op) [   720.54,    669.53]
+           3 threads, Tavg =  1,223.15 ns/op (σ =  23.29 ns/op) [ 1,203.60,  1,210.92,  1,256.26]
+           4 threads, Tavg =  2,951.19 ns/op (σ = 163.67 ns/op) [ 2,803.73,  2,870.41,  3,231.49,  2,933.59]
+           5 threads, Tavg =  5,674.34 ns/op (σ = 157.26 ns/op) [ 5,688.18,  5,898.74,  5,408.83,  5,672.64,  5,725.36]
+           6 threads, Tavg =  7,277.84 ns/op (σ =  90.84 ns/op) [ 7,159.64,  7,275.37,  7,184.41,  7,358.64,  7,420.22,  7,275.56]
+           7 threads, Tavg =  5,407.99 ns/op (σ = 133.47 ns/op) [ 5,320.46,  5,396.71,  5,406.36,  5,478.48,  5,323.49,  5,258.00,  5,694.86]
+           8 threads, Tavg =  4,414.46 ns/op (σ = 182.35 ns/op) [ 4,344.35,  4,504.63,  4,286.89,  4,820.55,  4,437.76,  4,162.84,  4,345.71,  4,471.05]
 
 
-***************************************************************
-*** Patched j.l.r.Proxy (4c*2t, i7-2600K, Linux)
+*** Patched j.l.r.Proxy
 
 #
 # Proxy_getProxyClass: run duration:  5,000 ms, #of logical CPUS: 8
 #
 # Warm up:
-           1 threads, Tavg =    108.48 ns/op (σ =   0.00 ns/op)
-           1 threads, Tavg =    109.94 ns/op (σ =   0.00 ns/op)
+           1 threads, Tavg =    146.17 ns/op (σ =   0.00 ns/op) [   146.17]
+           1 threads, Tavg =    143.39 ns/op (σ =   0.00 ns/op) [   143.39]
 # Measure:
-           1 threads, Tavg =    108.08 ns/op (σ =   0.00 ns/op)
-           2 threads, Tavg =    108.06 ns/op (σ =   0.06 ns/op)
-           3 threads, Tavg =    108.93 ns/op (σ =   0.07 ns/op)
-           4 threads, Tavg =    112.41 ns/op (σ =   1.00 ns/op)
-           5 threads, Tavg =    134.39 ns/op (σ =   5.43 ns/op)
-           6 threads, Tavg =    155.02 ns/op (σ =   6.12 ns/op)
-           7 threads, Tavg =    175.44 ns/op (σ =   7.75 ns/op)
-           8 threads, Tavg =    198.35 ns/op (σ =   1.40 ns/op)
+           1 threads, Tavg =    142.71 ns/op (σ =   0.00 ns/op) [   142.71]
+           2 threads, Tavg =    152.62 ns/op (σ =   0.03 ns/op) [   152.65,    152.59]
+           3 threads, Tavg =    216.98 ns/op (σ =   7.86 ns/op) [   215.36,    208.74,    227.70]
+           4 threads, Tavg =    276.57 ns/op (σ =   2.47 ns/op) [   276.16,    280.10,    273.16,    276.96]
+           5 threads, Tavg =    235.74 ns/op (σ =  41.78 ns/op) [   166.90,    269.44,    259.08,    242.96,    283.23]
+           6 threads, Tavg =    275.31 ns/op (σ =  26.44 ns/op) [   261.15,    271.89,    239.50,    278.73,    290.15,    325.00]
+           7 threads, Tavg =    274.27 ns/op (σ =  37.28 ns/op) [   300.29,    270.14,    274.09,    198.67,    315.96,    293.29,    309.20]
+           8 threads, Tavg =    313.20 ns/op (σ =  14.59 ns/op) [   327.55,    294.87,    297.75,    324.92,    326.65,    323.44,    322.91,    293.09]
 
 #
 # Proxy_isProxyClassTrue: run duration:  5,000 ms, #of logical CPUS: 8
 #
 # Warm up:
-           1 threads, Tavg =     20.62 ns/op (σ =   0.00 ns/op)
-           1 threads, Tavg =     22.46 ns/op (σ =   0.00 ns/op)
+           1 threads, Tavg =     11.05 ns/op (σ =   0.00 ns/op) [    11.05]
+           1 threads, Tavg =     11.02 ns/op (σ =   0.00 ns/op) [    11.02]
 # Measure:
-           1 threads, Tavg =     20.27 ns/op (σ =   0.00 ns/op)
-           2 threads, Tavg =     20.29 ns/op (σ =   0.01 ns/op)
-           3 threads, Tavg =     20.29 ns/op (σ =   0.02 ns/op)
-           4 threads, Tavg =     20.33 ns/op (σ =   0.03 ns/op)
-           5 threads, Tavg =     25.14 ns/op (σ =   9.43 ns/op)
-           6 threads, Tavg =     30.98 ns/op (σ =   8.27 ns/op)
-           7 threads, Tavg =     34.46 ns/op (σ =   6.61 ns/op)
-           8 threads, Tavg =     38.91 ns/op (σ =   0.52 ns/op)
+           1 threads, Tavg =     10.69 ns/op (σ =   0.00 ns/op) [    10.69]
+           2 threads, Tavg =     10.73 ns/op (σ =   0.04 ns/op) [    10.69,     10.77]
+           3 threads, Tavg =     10.70 ns/op (σ =   0.01 ns/op) [    10.70,     10.69,     10.72]
+           4 threads, Tavg =     10.72 ns/op (σ =   0.02 ns/op) [    10.70,     10.75,     10.73,     10.71]
+           5 threads, Tavg =     13.45 ns/op (σ =   4.68 ns/op) [    10.73,     10.72,     20.40,     11.61,     20.00]
+           6 threads, Tavg =     15.79 ns/op (σ =   4.36 ns/op) [    20.31,     11.54,     10.73,     19.67,     19.96,     20.01]
+           7 threads, Tavg =     18.01 ns/op (σ =   3.35 ns/op) [    20.34,     20.33,     10.96,     19.77,     20.72,     19.95,     19.95]
+           8 threads, Tavg =     20.85 ns/op (σ =   0.78 ns/op) [    22.07,     20.51,     20.36,     21.98,     21.00,     19.79,     21.19,     20.14]
 
 #
 # Proxy_isProxyClassFalse: run duration:  5,000 ms, #of logical CPUS: 8
 #
 # Warm up:
-           1 threads, Tavg =      2.33 ns/op (σ =   0.00 ns/op)
-           1 threads, Tavg =      2.30 ns/op (σ =   0.00 ns/op)
+           1 threads, Tavg =      1.37 ns/op (σ =   0.00 ns/op) [     1.37]
+           1 threads, Tavg =      1.36 ns/op (σ =   0.00 ns/op) [     1.36]
 # Measure:
-           1 threads, Tavg =      2.33 ns/op (σ =   0.00 ns/op)
-           2 threads, Tavg =      2.38 ns/op (σ =   0.00 ns/op)
-           3 threads, Tavg =      2.30 ns/op (σ =   0.00 ns/op)
-           4 threads, Tavg =      2.35 ns/op (σ =   0.00 ns/op)
-           5 threads, Tavg =      2.85 ns/op (σ =   0.98 ns/op)
-           6 threads, Tavg =      2.81 ns/op (σ =   0.92 ns/op)
-           7 threads, Tavg =      3.27 ns/op (σ =   0.51 ns/op)
-           8 threads, Tavg =      3.74 ns/op (σ =   0.01 ns/op)
+           1 threads, Tavg =      1.36 ns/op (σ =   0.00 ns/op) [     1.36]
+           2 threads, Tavg =      1.36 ns/op (σ =   0.00 ns/op) [     1.36,      1.36]
+           3 threads, Tavg =      1.36 ns/op (σ =   0.00 ns/op) [     1.36,      1.36,      1.36]
+           4 threads, Tavg =      1.39 ns/op (σ =   0.02 ns/op) [     1.38,      1.39,      1.42,      1.36]
+           5 threads, Tavg =      1.80 ns/op (σ =   0.64 ns/op) [     2.71,      1.74,      1.36,      1.36,      2.71]
+           6 threads, Tavg =      2.04 ns/op (σ =   0.63 ns/op) [     1.36,      2.47,      2.71,      1.45,      2.71,      2.72]
+           7 threads, Tavg =      2.38 ns/op (σ =   0.48 ns/op) [     1.39,      2.71,      2.71,      2.61,      2.72,      2.72,      2.72]
+           8 threads, Tavg =      2.77 ns/op (σ =   0.09 ns/op) [     2.75,      2.71,      2.70,      2.71,      2.89,      2.94,      2.74,      2.72]
 
 #
 # Annotation_equals: run duration:  5,000 ms, #of logical CPUS: 8
 #
 # Warm up:
-           1 threads, Tavg =    248.77 ns/op (σ =   0.00 ns/op)
-           1 threads, Tavg =    247.00 ns/op (σ =   0.00 ns/op)
+           1 threads, Tavg =    153.77 ns/op (σ =   0.00 ns/op) [   153.77]
+           1 threads, Tavg =    150.46 ns/op (σ =   0.00 ns/op) [   150.46]
 # Measure:
-           1 threads, Tavg =    247.05 ns/op (σ =   0.00 ns/op)
-           2 threads, Tavg =    244.82 ns/op (σ =   0.38 ns/op)
-           3 threads, Tavg =    246.26 ns/op (σ =   0.24 ns/op)
-           4 threads, Tavg =    252.31 ns/op (σ =   1.75 ns/op)
-           5 threads, Tavg =    297.31 ns/op (σ =  11.60 ns/op)
-           6 threads, Tavg =    338.98 ns/op (σ =  15.93 ns/op)
-           7 threads, Tavg =    379.97 ns/op (σ =  20.73 ns/op)
-           8 threads, Tavg =    427.59 ns/op (σ =   2.81 ns/op)
+           1 threads, Tavg =    149.30 ns/op (σ =   0.00 ns/op) [   149.30]
+           2 threads, Tavg =    148.86 ns/op (σ =   0.18 ns/op) [   148.68,    149.04]
+           3 threads, Tavg =    151.61 ns/op (σ =   0.94 ns/op) [   150.35,    152.59,    151.91]
+           4 threads, Tavg =    151.44 ns/op (σ =   0.13 ns/op) [   151.57,    151.56,    151.27,    151.33]
+           5 threads, Tavg =    184.71 ns/op (σ =   5.79 ns/op) [   177.58,    190.32,    179.09,    185.46,    192.01]
+           6 threads, Tavg =    207.64 ns/op (σ =   6.10 ns/op) [   194.90,    211.90,    212.00,    211.39,    210.43,    206.35]
+           7 threads, Tavg =    232.89 ns/op (σ =   7.49 ns/op) [   242.05,    232.36,    221.43,    241.13,    239.11,    224.69,    231.17]
+           8 threads, Tavg =    262.75 ns/op (σ =   1.49 ns/op) [   263.09,    260.93,    261.10,    263.46,    264.43,    261.09,    265.11,    262.89]
