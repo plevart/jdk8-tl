@@ -385,21 +385,21 @@ public class PlatformLogger {
         }
 
         void doLog(int level, String msg) {
-            if (level < levelValue || levelValue == OFF) {
+            if (!isLoggable(level)) {
                 return;
             }
             defaultStream.print(format(level, msg, null));
         }
 
         void doLog(int level, String msg, Throwable thrown) {
-            if (level < levelValue || levelValue == OFF) {
+            if (!isLoggable(level)) {
                 return;
             }
             defaultStream.print(format(level, msg, thrown));
         }
 
         void doLog(int level, String msg, Object... params) {
-            if (level < levelValue || levelValue == OFF) {
+            if (!isLoggable(level)) {
                 return;
             }
             String newMsg = formatMessage(msg, params);
@@ -407,10 +407,7 @@ public class PlatformLogger {
         }
 
         public boolean isLoggable(int level) {
-            if (level < levelValue || levelValue == OFF) {
-                return false;
-            }
-            return true;
+            return level >= levelValue && levelValue != OFF;
         }
 
         // Copied from java.util.logging.Formatter.formatMessage
