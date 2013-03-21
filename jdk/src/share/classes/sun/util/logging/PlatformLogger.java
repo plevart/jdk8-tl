@@ -107,10 +107,15 @@ public class PlatformLogger {
         FINER(PlatformLogger.FINER),
         FINEST(PlatformLogger.FINEST),
         ALL(PlatformLogger.ALL),
-        UNKNOWN(0);
+        UNKNOWN();
 
         final int value;
         final Object object;
+
+        LevelEnum() {
+            this.value = 0;
+            this.object = null;
+        }
 
         LevelEnum(int value) {
             this.value = value;
