@@ -34,6 +34,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Date;
 import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Map;
@@ -521,7 +522,7 @@ public class PlatformLogger {
 
         static {
             if (LoggingSupport.isAvailable()) {
-                for (LevelEnum levelEnum : LevelEnum.values()) {
+                for (LevelEnum levelEnum : EnumSet.complementOf(EnumSet.of(LevelEnum.UNKNOWN))) {
                     Object levelObject = LoggingSupport.parseLevel(levelEnum.name());
                     levelObjects.put(levelEnum, levelObject);
                     levelEnums.put(levelObject, levelEnum);
