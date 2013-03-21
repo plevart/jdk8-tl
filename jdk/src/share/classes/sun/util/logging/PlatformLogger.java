@@ -96,7 +96,9 @@ public class PlatformLogger {
     public static final int FINEST  = 300;
     public static final int ALL     = Integer.MIN_VALUE;
 
-    // private enum associating level names, values and objects together
+    // enum associating level names, values and objects together
+    // private modifier ensures it is not used outside of PlatformLogger and therefore
+    // 'PlatformLogger.loggingEnabled' flags is already initialized when 1st used...
     private static enum LevelEnum {
         OFF(PlatformLogger.OFF),
         SEVERE(PlatformLogger.SEVERE),
@@ -119,6 +121,7 @@ public class PlatformLogger {
 
         LevelEnum(int value) {
             this.value = value;
+            // only use LoggingSupport if java.util.logging is enabled
             this.object = loggingEnabled && LoggingSupport.isAvailable()
                           ? LoggingSupport.parseLevel(name())
                           : null;
