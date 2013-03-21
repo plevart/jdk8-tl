@@ -119,12 +119,15 @@ public class PlatformLogger {
 
         LevelEnum(int value) {
             this.value = value;
-            this.object = LoggingSupport.isAvailable()
+            this.object = loggingEnabled && LoggingSupport.isAvailable()
                           ? LoggingSupport.parseLevel(name())
                           : null;
         }
 
         static LevelEnum forValue(int levelValue) {
+            // higher occurences first (finest, fine, finer, info)
+            // based on isLoggable(level) calls (03/20/2013)
+            // in jdk project only (including generated sources)
             switch (levelValue) {
                 case PlatformLogger.FINEST:  return FINEST;  // 116 + 2257 matches in generated files
                 case PlatformLogger.FINE:    return FINE;    // 270
