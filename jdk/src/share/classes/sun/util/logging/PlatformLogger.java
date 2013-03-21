@@ -33,6 +33,7 @@ import java.io.StringWriter;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Date;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Map;
@@ -96,9 +97,7 @@ public class PlatformLogger {
     public static final int FINEST  = 300;
     public static final int ALL     = Integer.MIN_VALUE;
 
-    // enum associating level names, values and objects together
-    // private modifier ensures it is not used outside of PlatformLogger and therefore
-    // 'PlatformLogger.loggingEnabled' flags is already initialized when 1st used...
+    // enum for converting between level names, values and objects
     private static enum LevelEnum {
         OFF(PlatformLogger.OFF),
         SEVERE(PlatformLogger.SEVERE),
@@ -109,22 +108,12 @@ public class PlatformLogger {
         FINER(PlatformLogger.FINER),
         FINEST(PlatformLogger.FINEST),
         ALL(PlatformLogger.ALL),
-        UNKNOWN();
+        UNKNOWN(0);
 
         final int value;
-        final Object object;
 
-        LevelEnum() {
-            this.value = 0;
-            this.object = null;
-        }
-
-        LevelEnum(int value) {
+        private LevelEnum(int value) {
             this.value = value;
-            // only use LoggingSupport if java.util.logging is enabled
-            this.object = loggingEnabled && LoggingSupport.isAvailable()
-                          ? LoggingSupport.parseLevel(name())
-                          : null;
         }
 
         static LevelEnum forValue(int levelValue) {
@@ -145,20 +134,14 @@ public class PlatformLogger {
             }
         }
 
-        private static final Map<Object, LevelEnum> objectToEnum;
+        // the following two methods are (and should only be) called from JavaLogger...
 
-        static {
-            LevelEnum[] levelEnums = values();
-            objectToEnum = new IdentityHashMap<>(levelEnums.length);
-            for (LevelEnum levelEnum : levelEnums) {
-                if (levelEnum.object != null) {
-                    objectToEnum.put(levelEnum.object, levelEnum);
-                }
-            }
+        Object object() {
+            return JavaLogger.levelObjects.get(this);
         }
 
         static LevelEnum forObject(Object levelObject) {
-            LevelEnum levelEnum = objectToEnum.get(levelObject);
+            LevelEnum levelEnum = JavaLogger.levelEnums.get(levelObject);
             return levelEnum == null ? UNKNOWN : levelEnum;
         }
     }
@@ -533,6 +516,19 @@ public class PlatformLogger {
      * java.util.logging.Logger object.
      */
     static class JavaLogger extends LoggerProxy {
+        static final Map<LevelEnum, Object> levelObjects = new EnumMap<>(LevelEnum.class);
+        static final Map<Object, LevelEnum> levelEnums = new IdentityHashMap<>();
+
+        static {
+            if (LoggingSupport.isAvailable()) {
+                for (LevelEnum levelEnum : LevelEnum.values()) {
+                    Object levelObject = LoggingSupport.parseLevel(levelEnum.name());
+                    levelObjects.put(levelEnum, levelObject);
+                    levelEnums.put(levelObject, levelEnum);
+                }
+            }
+        }
+
         private final Object javaLogger;
         JavaLogger(String name) {
             this(name, 0);
@@ -543,7 +539,7 @@ public class PlatformLogger {
             this.javaLogger = LoggingSupport.getLogger(name);
             if (level != 0) {
                 // level has been updated and so set the Logger's level
-                LoggingSupport.setLevel(javaLogger, LevelEnum.forValue(level).object);
+                LoggingSupport.setLevel(javaLogger, LevelEnum.forValue(level).object());
             }
         }
 
@@ -554,11 +550,11 @@ public class PlatformLogger {
         * not be updated.
         */
         void doLog(int level, String msg) {
-            LoggingSupport.log(javaLogger, LevelEnum.forValue(level).object, msg);
+            LoggingSupport.log(javaLogger, LevelEnum.forValue(level).object(), msg);
         }
 
         void doLog(int level, String msg, Throwable t) {
-            LoggingSupport.log(javaLogger, LevelEnum.forValue(level).object, msg, t);
+            LoggingSupport.log(javaLogger, LevelEnum.forValue(level).object(), msg, t);
         }
 
         void doLog(int level, String msg, Object... params) {
@@ -572,12 +568,12 @@ public class PlatformLogger {
             for (int i = 0; i < len; i++) {
                 sparams [i] = String.valueOf(params[i]);
             }
-            LoggingSupport.log(javaLogger, LevelEnum.forValue(level).object, msg, sparams);
+            LoggingSupport.log(javaLogger, LevelEnum.forValue(level).object(), msg, sparams);
         }
 
         boolean isEnabled() {
             Object level = LoggingSupport.getLevel(javaLogger);
-            return level == null || !level.equals(LevelEnum.OFF.object);
+            return level == null || !level.equals(LevelEnum.OFF.object());
         }
 
         int getLevel() {
@@ -587,11 +583,11 @@ public class PlatformLogger {
 
         void setLevel(int newLevel) {
             levelValue = newLevel;
-            LoggingSupport.setLevel(javaLogger, LevelEnum.forValue(newLevel).object);
+            LoggingSupport.setLevel(javaLogger, LevelEnum.forValue(newLevel).object());
         }
 
         public boolean isLoggable(int level) {
-            return LoggingSupport.isLoggable(javaLogger,  LevelEnum.forValue(level).object);
+            return LoggingSupport.isLoggable(javaLogger, LevelEnum.forValue(level).object());
         }
     }
 }
