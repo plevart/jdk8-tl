@@ -97,7 +97,7 @@ public class PlatformLogger {
     public static final int ALL     = Integer.MIN_VALUE;
 
     // private enum associating level names, values and objects together
-    enum LevelEnum {
+    private static enum LevelEnum {
         OFF(PlatformLogger.OFF),
         SEVERE(PlatformLogger.SEVERE),
         WARNING(PlatformLogger.WARNING),
