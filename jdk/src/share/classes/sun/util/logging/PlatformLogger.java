@@ -97,8 +97,11 @@ public class PlatformLogger {
     public static final int FINEST  = 300;
     public static final int ALL     = Integer.MIN_VALUE;
 
-    // enum for converting between level names and values
-    private static enum LevelEnum {
+    /**
+     * Private enum for converting among level names, PlatformLogger values
+     * and java.util.logging.Level objects
+     */
+    private static enum Level {
         OFF(PlatformLogger.OFF),
         SEVERE(PlatformLogger.SEVERE),
         WARNING(PlatformLogger.WARNING),
@@ -110,33 +113,41 @@ public class PlatformLogger {
         ALL(PlatformLogger.ALL),
         UNKNOWN(0);
 
+        /** PlatformLogger level as int */
         final int value;
 
-        private LevelEnum(int value) {
+        private Level(int value) {
             this.value = value;
         }
 
-        static LevelEnum forValue(int levelValue) {
+        static Level valueOf(int value) {
             // higher occurences first (finest, fine, finer, info)
             // based on isLoggable(level) calls (03/20/2013)
             // in jdk project only (including generated sources)
-            switch (levelValue) {
-                case PlatformLogger.FINEST:  return FINEST;  // 116 + 2257 matches in generated files
-                case PlatformLogger.FINE:    return FINE;    // 270
-                case PlatformLogger.FINER:   return FINER;   // 157
-                case PlatformLogger.INFO:    return INFO;    // 39
-                case PlatformLogger.WARNING: return WARNING; // 12
-                case PlatformLogger.CONFIG:  return CONFIG;  // 6
-                case PlatformLogger.SEVERE:  return SEVERE;  // 1
-                case PlatformLogger.OFF:     return OFF;     // 0
-                case PlatformLogger.ALL:     return ALL;     // 0
+            switch (value) {
+                case PlatformLogger.FINEST:  return FINEST;
+                case PlatformLogger.FINE:    return FINE;
+                case PlatformLogger.FINER:   return FINER;
+                case PlatformLogger.INFO:    return INFO;
+                case PlatformLogger.WARNING: return WARNING;
+                case PlatformLogger.CONFIG:  return CONFIG;
+                case PlatformLogger.SEVERE:  return SEVERE;
+                case PlatformLogger.OFF:     return OFF;
+                case PlatformLogger.ALL:     return ALL;
                 default:                     return UNKNOWN;
             }
         }
 
-        // java.util.logging.Level optionally initialized in JavaLogger's static initializer
-        // and used only in JavaLogger
-        Object julLevel;
+        /**
+         * Associated java.util.logging.Level optionally initialized in
+         * JavaLogger's static initializer and used only in JavaLogger
+         * (only once java.util.logging is available and enabled)
+         */
+        Object javaLevel;
+        
+        static Object javaLevel(int value) {
+            return valueOf(value).javaLevel;
+        }
     }
 
     private static final int defaultLevel = INFO;
@@ -355,7 +366,7 @@ public class PlatformLogger {
      * Default platform logging support - output messages to
      * System.err - equivalent to ConsoleHandler with SimpleFormatter.
      */
-    static class LoggerProxy {
+    private static class LoggerProxy {
         private static final PrintStream defaultStream = System.err;
 
         final String name;
@@ -407,6 +418,7 @@ public class PlatformLogger {
         }
 
         public boolean isLoggable(int level) {
+            int levelValue = this.levelValue;
             return level >= levelValue && levelValue != OFF;
         }
 
@@ -452,12 +464,12 @@ public class PlatformLogger {
             }
 
             return String.format(formatString,
-                                 date,
-                                 getCallerInfo(),
-                                 name,
-                                 LevelEnum.forValue(level).name(),
-                                 msg,
-                                 throwable);
+                date,
+                getCallerInfo(),
+                name,
+                Level.valueOf(level).name(),
+                msg,
+                throwable);
         }
 
         // Returns the caller's class and method's name; best effort
@@ -505,15 +517,20 @@ public class PlatformLogger {
      * JavaLogger forwards all the calls to its corresponding
      * java.util.logging.Logger object.
      */
-    static class JavaLogger extends LoggerProxy {
-        private static final Map<Object, LevelEnum> julLevelToEnum = new IdentityHashMap<>();
+    private static class JavaLogger extends LoggerProxy {
+
+        /**
+         * A map from java.util.logging.Level objects to private enum members
+         * used to speed-up {@link #getLevel()} method.
+         */
+        private static final Map<Object, Level> javaLevelToLevel = new IdentityHashMap<>();
 
         static {
             if (LoggingSupport.isAvailable()) {
-                for (LevelEnum levelEnum : EnumSet.complementOf(EnumSet.of(LevelEnum.UNKNOWN))) {
-                    Object level = LoggingSupport.parseLevel(levelEnum.name());
-                    levelEnum.julLevel = level;
-                    julLevelToEnum.put(level, levelEnum);
+                for (Level level : EnumSet.complementOf(EnumSet.of(Level.UNKNOWN))) {
+                    Object javaLevel = LoggingSupport.parseLevel(level.name());
+                    level.javaLevel = javaLevel;
+                    javaLevelToLevel.put(javaLevel, level);
                 }
             }
         }
@@ -528,7 +545,7 @@ public class PlatformLogger {
             this.javaLogger = LoggingSupport.getLogger(name);
             if (level != 0) {
                 // level has been updated and so set the Logger's level
-                LoggingSupport.setLevel(javaLogger, LevelEnum.forValue(level).julLevel);
+                LoggingSupport.setLevel(javaLogger, Level.javaLevel(level));
             }
         }
 
@@ -539,11 +556,11 @@ public class PlatformLogger {
         * not be updated.
         */
         void doLog(int level, String msg) {
-            LoggingSupport.log(javaLogger, LevelEnum.forValue(level).julLevel, msg);
+            LoggingSupport.log(javaLogger, Level.javaLevel(level), msg);
         }
 
         void doLog(int level, String msg, Throwable t) {
-            LoggingSupport.log(javaLogger, LevelEnum.forValue(level).julLevel, msg, t);
+            LoggingSupport.log(javaLogger, Level.javaLevel(level), msg, t);
         }
 
         void doLog(int level, String msg, Object... params) {
@@ -557,27 +574,27 @@ public class PlatformLogger {
             for (int i = 0; i < len; i++) {
                 sparams [i] = String.valueOf(params[i]);
             }
-            LoggingSupport.log(javaLogger, LevelEnum.forValue(level).julLevel, msg, sparams);
+            LoggingSupport.log(javaLogger, Level.javaLevel(level), msg, sparams);
         }
 
         boolean isEnabled() {
-            Object level = LoggingSupport.getLevel(javaLogger);
-            return level == null || !level.equals(LevelEnum.OFF.julLevel);
+            Object javaLevel = LoggingSupport.getLevel(javaLogger);
+            return javaLevel == null || !javaLevel.equals(Level.OFF.javaLevel);
         }
 
         int getLevel() {
-            Object level = LoggingSupport.getLevel(javaLogger);
-            LevelEnum levelEnum = julLevelToEnum.get(level);
-            return levelEnum == null ? 0 : levelEnum.value;
+            Object javaLevel = LoggingSupport.getLevel(javaLogger);
+            Level level = javaLevelToLevel.get(javaLevel);
+            return level == null ? 0 : level.value;
         }
 
         void setLevel(int newLevel) {
             levelValue = newLevel;
-            LoggingSupport.setLevel(javaLogger, LevelEnum.forValue(newLevel).julLevel);
+            LoggingSupport.setLevel(javaLogger, Level.javaLevel(newLevel));
         }
 
         public boolean isLoggable(int level) {
-            return LoggingSupport.isLoggable(javaLogger, LevelEnum.forValue(level).julLevel);
+            return LoggingSupport.isLoggable(javaLogger, Level.javaLevel(level));
         }
     }
 }
