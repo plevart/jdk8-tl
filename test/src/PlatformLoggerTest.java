@@ -34,7 +34,6 @@
  */
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.util.logging.*;
 import sun.util.logging.PlatformLogger;
 
