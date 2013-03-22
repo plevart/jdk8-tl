@@ -17,6 +17,11 @@ public class PlatformLoggerPerfTest {
 
         log.setLevel(PlatformLogger.INFO);
 
+        test(log);
+    }
+
+    static void test(PlatformLogger log) {
+
         /*
          * Note: -XX:-UseTLAB because Thread local allocator is efficient (fast enough) to deal with big Integer allocations
          * 

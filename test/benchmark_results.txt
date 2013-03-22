@@ -1,0 +1,134 @@
+##
+## tests run on recent JDK8 build, i7 (4 cores) Linux
+##
+
+** Original code
+
+>> JVM START
+#
+# isLoggableFinest: run duration:  5,000 ms, #of logical CPUS: 8
+#
+# Warm up:
+           1 threads, Tavg =      1.78 ns/op (σ =   0.00 ns/op) [     1.78]
+           1 threads, Tavg =      1.67 ns/op (σ =   0.00 ns/op) [     1.67]
+# Measure:
+           1 threads, Tavg =      1.44 ns/op (σ =   0.00 ns/op) [     1.44]
+           2 threads, Tavg =      1.37 ns/op (σ =   0.01 ns/op) [     1.37,      1.38]
+           3 threads, Tavg =      1.53 ns/op (σ =   0.13 ns/op) [     1.41,      1.49,      1.71]
+           4 threads, Tavg =      1.43 ns/op (σ =   0.10 ns/op) [     1.36,      1.62,      1.39,      1.38]
+
+<< JVM END
+
+>> JVM START
+
+>> java.util.logging enabled
+
+#
+# isLoggableFinest: run duration:  5,000 ms, #of logical CPUS: 8
+#
+# Warm up:
+           1 threads, Tavg =      4.81 ns/op (σ =   0.00 ns/op) [     4.81]
+           1 threads, Tavg =      4.79 ns/op (σ =   0.00 ns/op) [     4.79]
+# Measure:
+           1 threads, Tavg =      4.67 ns/op (σ =   0.00 ns/op) [     4.67]
+           2 threads, Tavg =      4.67 ns/op (σ =   0.00 ns/op) [     4.67,      4.67]
+           3 threads, Tavg =      4.87 ns/op (σ =   0.31 ns/op) [     4.67,      4.68,      5.32]
+           4 threads, Tavg =      4.68 ns/op (σ =   0.01 ns/op) [     4.68,      4.67,      4.68,      4.69]
+
+<< JVM END
+
+>> JVM START
+#
+# isLoggableFinest: run duration:  5,000 ms, #of logical CPUS: 8
+#
+# Warm up:
+           1 threads, Tavg =      1.39 ns/op (σ =   0.00 ns/op) [     1.39]
+           1 threads, Tavg =      1.80 ns/op (σ =   0.00 ns/op) [     1.80]
+# Measure:
+           1 threads, Tavg =      1.38 ns/op (σ =   0.00 ns/op) [     1.38]
+           2 threads, Tavg =      1.38 ns/op (σ =   0.00 ns/op) [     1.38,      1.38]
+           3 threads, Tavg =      1.38 ns/op (σ =   0.01 ns/op) [     1.39,      1.38,      1.37]
+           4 threads, Tavg =      1.38 ns/op (σ =   0.02 ns/op) [     1.42,      1.37,      1.37,      1.37]
+
+
+>> java.util.logging enabled
+
+#
+# isLoggableFinest: run duration:  5,000 ms, #of logical CPUS: 8
+#
+# Warm up:
+           1 threads, Tavg =     11.87 ns/op (σ =   0.00 ns/op) [    11.87]
+           1 threads, Tavg =      9.08 ns/op (σ =   0.00 ns/op) [     9.08]
+# Measure:
+           1 threads, Tavg =      9.12 ns/op (σ =   0.00 ns/op) [     9.12]
+           2 threads, Tavg =      9.02 ns/op (σ =   0.02 ns/op) [     9.05,      9.00]
+           3 threads, Tavg =      9.20 ns/op (σ =   0.04 ns/op) [     9.26,      9.19,      9.17]
+           4 threads, Tavg =      9.33 ns/op (σ =   0.07 ns/op) [     9.44,      9.34,      9.26,      9.28]
+
+<< JVM END
+
+
+** Patched code (webrev.07)
+
+>> JVM START
+#
+# isLoggableFinest: run duration:  5,000 ms, #of logical CPUS: 8
+#
+# Warm up:
+           1 threads, Tavg =      1.38 ns/op (σ =   0.00 ns/op) [     1.38]
+           1 threads, Tavg =      1.68 ns/op (σ =   0.00 ns/op) [     1.68]
+# Measure:
+           1 threads, Tavg =      1.38 ns/op (σ =   0.00 ns/op) [     1.38]
+           2 threads, Tavg =      1.40 ns/op (σ =   0.02 ns/op) [     1.37,      1.42]
+           3 threads, Tavg =      1.49 ns/op (σ =   0.21 ns/op) [     1.80,      1.38,      1.36]
+           4 threads, Tavg =      1.50 ns/op (σ =   0.13 ns/op) [     1.47,      1.73,      1.41,      1.42]
+
+<< JVM END
+
+>> JVM START
+
+>> java.util.logging enabled
+
+#
+# isLoggableFinest: run duration:  5,000 ms, #of logical CPUS: 8
+#
+# Warm up:
+           1 threads, Tavg =      1.80 ns/op (σ =   0.00 ns/op) [     1.80]
+           1 threads, Tavg =      1.74 ns/op (σ =   0.00 ns/op) [     1.74]
+# Measure:
+           1 threads, Tavg =      1.78 ns/op (σ =   0.00 ns/op) [     1.78]
+           2 threads, Tavg =      1.80 ns/op (σ =   0.00 ns/op) [     1.80,      1.80]
+           3 threads, Tavg =      1.84 ns/op (σ =   0.03 ns/op) [     1.80,      1.88,      1.86]
+           4 threads, Tavg =      1.78 ns/op (σ =   0.00 ns/op) [     1.78,      1.77,      1.77,      1.78]
+
+<< JVM END
+
+>> JVM START
+#
+# isLoggableFinest: run duration:  5,000 ms, #of logical CPUS: 8
+#
+# Warm up:
+           1 threads, Tavg =      1.73 ns/op (σ =   0.00 ns/op) [     1.73]
+           1 threads, Tavg =      1.72 ns/op (σ =   0.00 ns/op) [     1.72]
+# Measure:
+           1 threads, Tavg =      1.38 ns/op (σ =   0.00 ns/op) [     1.38]
+           2 threads, Tavg =      1.37 ns/op (σ =   0.00 ns/op) [     1.37,      1.37]
+           3 threads, Tavg =      1.52 ns/op (σ =   0.19 ns/op) [     1.37,      1.45,      1.79]
+           4 threads, Tavg =      1.58 ns/op (σ =   0.19 ns/op) [     1.42,      1.79,      1.81,      1.41]
+
+
+>> java.util.logging enabled
+
+#
+# isLoggableFinest: run duration:  5,000 ms, #of logical CPUS: 8
+#
+# Warm up:
+           1 threads, Tavg =      5.43 ns/op (σ =   0.00 ns/op) [     5.43]
+           1 threads, Tavg =      5.65 ns/op (σ =   0.00 ns/op) [     5.65]
+# Measure:
+           1 threads, Tavg =      5.66 ns/op (σ =   0.00 ns/op) [     5.66]
+           2 threads, Tavg =      5.67 ns/op (σ =   0.01 ns/op) [     5.68,      5.66]
+           3 threads, Tavg =      5.65 ns/op (σ =   0.00 ns/op) [     5.65,      5.65,      5.65]
+           4 threads, Tavg =      5.66 ns/op (σ =   0.01 ns/op) [     5.65,      5.65,      5.67,      5.67]
+
+<< JVM END
