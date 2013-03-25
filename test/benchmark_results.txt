@@ -79,12 +79,12 @@
 #
 # Warm up:
            1 threads, Tavg =      1.33 ns/op (σ =   0.00 ns/op) [     1.33]
-           1 threads, Tavg =      1.59 ns/op (σ =   0.00 ns/op) [     1.59]
+           1 threads, Tavg =      1.36 ns/op (σ =   0.00 ns/op) [     1.36]
 # Measure:
-           1 threads, Tavg =      1.32 ns/op (σ =   0.00 ns/op) [     1.32]
-           2 threads, Tavg =      1.30 ns/op (σ =   0.01 ns/op) [     1.29,      1.31]
-           3 threads, Tavg =      1.27 ns/op (σ =   0.04 ns/op) [     1.30,      1.29,      1.22]
-           4 threads, Tavg =      1.30 ns/op (σ =   0.02 ns/op) [     1.33,      1.30,      1.27,      1.29]
+           1 threads, Tavg =      1.36 ns/op (σ =   0.00 ns/op) [     1.36]
+           2 threads, Tavg =      1.30 ns/op (σ =   0.04 ns/op) [     1.34,      1.25]
+           3 threads, Tavg =      1.29 ns/op (σ =   0.06 ns/op) [     1.37,      1.25,      1.27]
+           4 threads, Tavg =      1.32 ns/op (σ =   0.10 ns/op) [     1.24,      1.25,      1.31,      1.49]
 
 
 >> java.util.logging enabled
@@ -93,12 +93,12 @@
 # isLoggableFinest: run duration:  5,000 ms, #of logical CPUS: 8
 #
 # Warm up:
-           1 threads, Tavg =      1.73 ns/op (σ =   0.00 ns/op) [     1.73]
+           1 threads, Tavg =      1.74 ns/op (σ =   0.00 ns/op) [     1.74]
            1 threads, Tavg =      1.73 ns/op (σ =   0.00 ns/op) [     1.73]
 # Measure:
-           1 threads, Tavg =      1.58 ns/op (σ =   0.00 ns/op) [     1.58]
-           2 threads, Tavg =      1.60 ns/op (σ =   0.02 ns/op) [     1.62,      1.58]
-           3 threads, Tavg =      1.58 ns/op (σ =   0.00 ns/op) [     1.58,      1.57,      1.58]
-           4 threads, Tavg =      1.65 ns/op (σ =   0.12 ns/op) [     1.58,      1.58,      1.86,      1.61]
+           1 threads, Tavg =      1.57 ns/op (σ =   0.00 ns/op) [     1.57]
+           2 threads, Tavg =      1.57 ns/op (σ =   0.00 ns/op) [     1.58,      1.57]
+           3 threads, Tavg =      1.58 ns/op (σ =   0.00 ns/op) [     1.57,      1.58,      1.57]
+           4 threads, Tavg =      1.59 ns/op (σ =   0.01 ns/op) [     1.61,      1.58,      1.58,      1.59]
 
 << JVM END

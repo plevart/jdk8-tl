@@ -140,8 +140,8 @@ public class PlatformLogger {
 
         /**
          * Associated java.util.logging.Level optionally initialized in
-         * {@link JavaLoggerProxy.JavaLevel}'s static initializer and accessed only through
-         * {@link JavaLoggerProxy.JavaLevel}'s static methods
+         * {@link JavaLevel}'s static initializer and accessed only through
+         * {@link JavaLevel}'s static methods
          * (only once java.util.logging is available and enabled)
          */
         Object javaLevel;
@@ -519,44 +519,47 @@ public class PlatformLogger {
     }
 
     /**
+     * Lazily initialized mapping between java.util.logging.Level objects
+     * and {@link LevelEnum} members.
+     */
+    private static class JavaLevel {
+        /**
+         * A map from java.util.logging.Level objects to LevelEnum members
+         * used to speed-up {@link #getLevel()} method.
+         */
+        private static final Map<Object, LevelEnum> javaLevelToEnum = new IdentityHashMap<>();
+
+        static {
+            if (LoggingSupport.isAvailable()) {
+                for (LevelEnum levelEnum : EnumSet.complementOf(EnumSet.of(LevelEnum.UNKNOWN))) {
+                    Object javaLevel = LoggingSupport.parseLevel(levelEnum.name());
+                    levelEnum.javaLevel = javaLevel;
+                    javaLevelToEnum.put(javaLevel, levelEnum);
+                }
+            }
+        }
+
+        static Object get(int level) {
+            return get(LevelEnum.valueOf(level));
+        }
+
+        static Object get(LevelEnum levelEnum) {
+            return levelEnum.javaLevel;
+        }
+
+        static LevelEnum getLevelEnum(Object javaLevel) {
+            LevelEnum levelEnum = javaLevelToEnum.get(javaLevel);
+            return levelEnum == null ? LevelEnum.UNKNOWN : levelEnum;
+        }
+    }
+
+    /**
      * JavaLoggerProxy forwards all the calls to its corresponding
      * java.util.logging.Logger object.
      */
     private static class JavaLoggerProxy extends LoggerProxy {
         // force static initialization of whole LoggerProxy hierarchy
         static void init() {}
-
-        // delay initialization of javaLevel objects until 1st needed
-        private static class JavaLevel {
-            /**
-             * A map from java.util.logging.Level objects to LevelEnum members
-             * used to speed-up {@link #getLevel()} method.
-             */
-            private static final Map<Object, LevelEnum> javaLevelToEnum = new IdentityHashMap<>();
-
-            static {
-                if (LoggingSupport.isAvailable()) {
-                    for (LevelEnum levelEnum : EnumSet.complementOf(EnumSet.of(LevelEnum.UNKNOWN))) {
-                        Object javaLevel = LoggingSupport.parseLevel(levelEnum.name());
-                        levelEnum.javaLevel = javaLevel;
-                        javaLevelToEnum.put(javaLevel, levelEnum);
-                    }
-                }
-            }
-
-            static Object get(int level) {
-                return get(LevelEnum.valueOf(level));
-            }
-
-            static Object get(LevelEnum levelEnum) {
-                return levelEnum.javaLevel;
-            }
-
-            static LevelEnum getLevelEnum(Object javaLevel) {
-                LevelEnum levelEnum = javaLevelToEnum.get(javaLevel);
-                return levelEnum == null ? LevelEnum.UNKNOWN : levelEnum;
-            }
-        }
 
         /** java.util.logging.Logger */
         private final Object javaLogger;

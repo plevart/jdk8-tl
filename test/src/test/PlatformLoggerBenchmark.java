@@ -35,7 +35,7 @@ public class PlatformLoggerBenchmark extends TestRunner {
 
         System.out.println(">> JVM START");
 
-//        doTest(isLoggableFinest.class, 5000L, 1, 4, 1);
+        doTest(isLoggableFinest.class, 5000L, 1, 4, 1);
 
         // enable java.util.logging
         LogManager.getLogManager().getLogger(log.getName());
