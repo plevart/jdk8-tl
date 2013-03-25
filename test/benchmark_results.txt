@@ -68,20 +68,20 @@
 << JVM END
 
 
-** Patched code (webrev.07)
+** Patched code (webrev.mh.01)
 
 >> JVM START
 #
 # isLoggableFinest: run duration:  5,000 ms, #of logical CPUS: 8
 #
 # Warm up:
-           1 threads, Tavg =      1.38 ns/op (σ =   0.00 ns/op) [     1.38]
-           1 threads, Tavg =      1.68 ns/op (σ =   0.00 ns/op) [     1.68]
+           1 threads, Tavg =      1.40 ns/op (σ =   0.00 ns/op) [     1.40]
+           1 threads, Tavg =      1.39 ns/op (σ =   0.00 ns/op) [     1.39]
 # Measure:
-           1 threads, Tavg =      1.38 ns/op (σ =   0.00 ns/op) [     1.38]
-           2 threads, Tavg =      1.40 ns/op (σ =   0.02 ns/op) [     1.37,      1.42]
-           3 threads, Tavg =      1.49 ns/op (σ =   0.21 ns/op) [     1.80,      1.38,      1.36]
-           4 threads, Tavg =      1.50 ns/op (σ =   0.13 ns/op) [     1.47,      1.73,      1.41,      1.42]
+           1 threads, Tavg =      1.42 ns/op (σ =   0.00 ns/op) [     1.42]
+           2 threads, Tavg =      1.31 ns/op (σ =   0.00 ns/op) [     1.31,      1.31]
+           3 threads, Tavg =      1.43 ns/op (σ =   0.20 ns/op) [     1.74,      1.32,      1.32]
+           4 threads, Tavg =      1.34 ns/op (σ =   0.01 ns/op) [     1.35,      1.35,      1.33,      1.35]
 
 << JVM END
 
@@ -93,28 +93,28 @@
 # isLoggableFinest: run duration:  5,000 ms, #of logical CPUS: 8
 #
 # Warm up:
-           1 threads, Tavg =      1.80 ns/op (σ =   0.00 ns/op) [     1.80]
+           1 threads, Tavg =      1.69 ns/op (σ =   0.00 ns/op) [     1.69]
+           1 threads, Tavg =      1.77 ns/op (σ =   0.00 ns/op) [     1.77]
+# Measure:
+           1 threads, Tavg =      1.73 ns/op (σ =   0.00 ns/op) [     1.73]
+           2 threads, Tavg =      1.73 ns/op (σ =   0.00 ns/op) [     1.72,      1.73]
+           3 threads, Tavg =      1.97 ns/op (σ =   0.49 ns/op) [     2.74,      1.72,      1.73]
+           4 threads, Tavg =      1.80 ns/op (σ =   0.05 ns/op) [     1.83,      1.73,      1.79,      1.87]
+
+<< JVM END
+
+>> JVM START
+#
+# isLoggableFinest: run duration:  5,000 ms, #of logical CPUS: 8
+#
+# Warm up:
+           1 threads, Tavg =      1.35 ns/op (σ =   0.00 ns/op) [     1.35]
            1 threads, Tavg =      1.74 ns/op (σ =   0.00 ns/op) [     1.74]
 # Measure:
-           1 threads, Tavg =      1.78 ns/op (σ =   0.00 ns/op) [     1.78]
-           2 threads, Tavg =      1.80 ns/op (σ =   0.00 ns/op) [     1.80,      1.80]
-           3 threads, Tavg =      1.84 ns/op (σ =   0.03 ns/op) [     1.80,      1.88,      1.86]
-           4 threads, Tavg =      1.78 ns/op (σ =   0.00 ns/op) [     1.78,      1.77,      1.77,      1.78]
-
-<< JVM END
-
->> JVM START
-#
-# isLoggableFinest: run duration:  5,000 ms, #of logical CPUS: 8
-#
-# Warm up:
-           1 threads, Tavg =      1.73 ns/op (σ =   0.00 ns/op) [     1.73]
-           1 threads, Tavg =      1.72 ns/op (σ =   0.00 ns/op) [     1.72]
-# Measure:
-           1 threads, Tavg =      1.38 ns/op (σ =   0.00 ns/op) [     1.38]
-           2 threads, Tavg =      1.37 ns/op (σ =   0.00 ns/op) [     1.37,      1.37]
-           3 threads, Tavg =      1.52 ns/op (σ =   0.19 ns/op) [     1.37,      1.45,      1.79]
-           4 threads, Tavg =      1.58 ns/op (σ =   0.19 ns/op) [     1.42,      1.79,      1.81,      1.41]
+           1 threads, Tavg =      1.33 ns/op (σ =   0.00 ns/op) [     1.33]
+           2 threads, Tavg =      1.44 ns/op (σ =   0.00 ns/op) [     1.44,      1.44]
+           3 threads, Tavg =      1.28 ns/op (σ =   0.01 ns/op) [     1.30,      1.27,      1.29]
+           4 threads, Tavg =      1.31 ns/op (σ =   0.03 ns/op) [     1.34,      1.27,      1.29,      1.33]
 
 
 >> java.util.logging enabled
@@ -123,12 +123,12 @@
 # isLoggableFinest: run duration:  5,000 ms, #of logical CPUS: 8
 #
 # Warm up:
-           1 threads, Tavg =      5.43 ns/op (σ =   0.00 ns/op) [     5.43]
-           1 threads, Tavg =      5.65 ns/op (σ =   0.00 ns/op) [     5.65]
+           1 threads, Tavg =      2.04 ns/op (σ =   0.00 ns/op) [     2.04]
+           1 threads, Tavg =      2.04 ns/op (σ =   0.00 ns/op) [     2.04]
 # Measure:
-           1 threads, Tavg =      5.66 ns/op (σ =   0.00 ns/op) [     5.66]
-           2 threads, Tavg =      5.67 ns/op (σ =   0.01 ns/op) [     5.68,      5.66]
-           3 threads, Tavg =      5.65 ns/op (σ =   0.00 ns/op) [     5.65,      5.65,      5.65]
-           4 threads, Tavg =      5.66 ns/op (σ =   0.01 ns/op) [     5.65,      5.65,      5.67,      5.67]
+           1 threads, Tavg =      2.04 ns/op (σ =   0.00 ns/op) [     2.04]
+           2 threads, Tavg =      2.04 ns/op (σ =   0.00 ns/op) [     2.04,      2.04]
+           3 threads, Tavg =      2.04 ns/op (σ =   0.00 ns/op) [     2.04,      2.03,      2.04]
+           4 threads, Tavg =      2.04 ns/op (σ =   0.00 ns/op) [     2.04,      2.04,      2.04,      2.05]
 
 << JVM END
