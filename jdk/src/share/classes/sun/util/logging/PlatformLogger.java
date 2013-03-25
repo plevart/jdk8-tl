@@ -26,14 +26,10 @@
 
 package sun.util.logging;
 
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
 import java.lang.ref.WeakReference;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.lang.reflect.UndeclaredThrowableException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Date;
@@ -204,14 +200,8 @@ public class PlatformLogger {
      * Creates a new JavaLoggerProxy and redirects the platform logger to it
      */
     private void redirectToJavaLoggerProxy() {
-        LoggerProxy loggerProxy = this.loggerProxy;
-        JavaLoggerProxy javaLoggerProxy = new JavaLoggerProxy(loggerProxy.name, loggerProxy.effectiveLevel);
-        // it is important to 1st set javaLoggerProxy (null -> not-null transition) ...
-        this.javaLoggerProxy = javaLoggerProxy;
-        // ...and only then change loggerProxy (not-null LoggerProxy -> not-null JavaLoggerProxy transition)
-        // so that isLoggable is never called via isLoggableLoggerProxy call-site when loggerProxy references JavaLoggerProxy instance
-        // and consequently doesn't thrash the monomorphic call-site.
-        this.loggerProxy = javaLoggerProxy;
+        LoggerProxy lp = this.loggerProxy;
+        this.loggerProxy = this.javaLoggerProxy = new JavaLoggerProxy(lp.name, lp.effectiveLevel);
     }
 
     // LoggerProxy may be replaced with a JavaLoggerProxy object
@@ -249,46 +239,10 @@ public class PlatformLogger {
      * be logged by this logger.
      */
     public boolean isLoggable(int level) {
-        try {
-            return (boolean) isLoggableHM.invokeExact(javaLoggerProxy, loggerProxy, level);
-        }
-        catch (Throwable t) {
-            throw unchecked(t);
-        }
-    }
-
-    private static boolean isJavaLoggerProxyNotNull(JavaLoggerProxy javaLoggerProxy) {
-        return javaLoggerProxy != null;
-    }
-
-    private static boolean isLoggableLoggerProxy(JavaLoggerProxy javaLoggerProxy, LoggerProxy loggerProxy, int level) {
-        return loggerProxy.isLoggable(level);
-    }
-
-    private static boolean isLoggableJavaLoggerProxy(JavaLoggerProxy javaLoggerProxy, LoggerProxy loggerProxy, int level) {
-        return javaLoggerProxy.isLoggable(level);
-    }
-
-    private static final MethodHandle isLoggableHM;
-
-    static {
-        try {
-            MethodHandles.Lookup lookup = MethodHandles.lookup();
-            MethodHandle isJavaLoggerProxyNotNullMH = lookup.findStatic(
-                PlatformLogger.class,
-                "isJavaLoggerProxyNotNull",
-                MethodType.methodType(boolean.class, JavaLoggerProxy.class)
-            );
-            MethodType isLoggableMT = MethodType.methodType(boolean.class, JavaLoggerProxy.class, LoggerProxy.class, int.class);
-            isLoggableHM = MethodHandles.guardWithTest(
-                isJavaLoggerProxyNotNullMH,
-                lookup.findStatic(PlatformLogger.class, "isLoggableJavaLoggerProxy", isLoggableMT),
-                lookup.findStatic(PlatformLogger.class, "isLoggableLoggerProxy", isLoggableMT)
-            );
-        }
-        catch (NoSuchMethodException | IllegalAccessException e) {
-            throw new Error(e.getMessage(), e);
-        }
+        // this method is very performance sensitive, so
+        // dispatch via two call-sites - it's faster, they are monomorphic
+        JavaLoggerProxy jlp = javaLoggerProxy;
+        return jlp != null ? jlp.isLoggable(level) : loggerProxy.isLoggable(level);
     }
 
     /**
@@ -409,23 +363,6 @@ public class PlatformLogger {
 
     public void finest(String msg, Object... params) {
         loggerProxy.doLog(FINEST, msg, params);
-    }
-
-    /**
-     * Throws passed-in unchecked throwable or a checked throwable wrapped into UndeclaredThrowableException
-     * @param t the {@link Throwable} to throw
-     * @return nothing (never completes normally)
-     */
-    private static RuntimeException unchecked(Throwable t) {
-        try {
-            throw t;
-        }
-        catch (RuntimeException | Error unchecked) {
-            throw unchecked;
-        }
-        catch (Throwable throwable) {
-            throw new UndeclaredThrowableException(throwable);
-        }
     }
 
     /**
