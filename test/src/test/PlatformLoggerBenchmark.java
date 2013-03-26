@@ -33,16 +33,20 @@ public class PlatformLoggerBenchmark extends TestRunner {
 
     public static void main(String[] args) throws Exception {
 
-        System.out.println(">> JVM START");
+        startTests();
 
-        doTest(isLoggableFinest.class, 5000L, 1, 4, 1);
+        doTest(isLoggableFinest.class, 3000L, 1, 4, 1, 2, 1);
 
         // enable java.util.logging
-        LogManager.getLogManager().getLogger(log.getName());
-        System.out.println("\n>> java.util.logging enabled\n");
+        doAction("java.util.logging enabled", new Runnable() {
+            @Override
+            public void run() {
+                LogManager.getLogManager().getLogger(log.getName());
+            }
+        });
 
-        doTest(isLoggableFinest.class, 5000L, 1, 4, 1);
+        doTest(isLoggableFinest.class, 3000L, 1, 4, 1, 0, 3);
 
-        System.out.println("<< JVM END");
+        endTests();
     }
 }
