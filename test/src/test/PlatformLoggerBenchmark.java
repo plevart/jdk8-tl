@@ -25,7 +25,9 @@ public class PlatformLoggerBenchmark extends TestRunner {
         @Override
         protected void doLoop(Loop loop, DevNull devNull1, DevNull devNull2, DevNull devNull3, DevNull devNull4, DevNull devNull5) {
             while (loop.nextIteration()) {
-                devNull1.yield(log.isLoggable(PlatformLogger.FINEST));
+                if (log.isLoggable(PlatformLogger.FINEST))
+                    log.finest("FINEST LOG");
+//                devNull1.yield(log.isLoggable(PlatformLogger.FINEST));
             }
         }
     }

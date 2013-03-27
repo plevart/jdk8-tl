@@ -34,11 +34,16 @@
  */
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 import java.util.logging.*;
 import sun.util.logging.PlatformLogger;
 
 public class PlatformLoggerTest {
-    private static final int defaultEffectiveLevel = 0;
     public static void main(String[] args) throws Exception {
         final String FOO_PLATFORM_LOGGER = "test.platformlogger.foo";
         final String BAR_PLATFORM_LOGGER = "test.platformlogger.bar";
@@ -83,9 +88,9 @@ public class PlatformLoggerTest {
                 logger.getName() + " but expected " + name);
         }
 
-        if (logger.getLevel() != defaultEffectiveLevel) {
+        if (logger.getLevel() != null) {
             throw new RuntimeException("Invalid default level for logger " +
-                logger.getName());
+                logger.getName() + ": " + logger.getLevel());
         }
 
         if (logger.isLoggable(PlatformLogger.FINE) != false) {
@@ -94,7 +99,7 @@ public class PlatformLoggerTest {
         }
 
         logger.setLevel(PlatformLogger.FINER);
-        if (logger.getLevel() != Level.FINER.intValue()) {
+        if (logger.getLevel() != PlatformLogger.FINER) {
             throw new RuntimeException("Invalid level for logger " +
                 logger.getName() + " " + logger.getLevel());
         }
@@ -128,36 +133,70 @@ public class PlatformLoggerTest {
         logger.info("Test info(String)");
     }
 
-    private static void checkPlatformLoggerLevelEntanglements(PlatformLogger logger) {
-        checkPlatformLoggerLevelEntanglement(logger, Level.OFF);
-        checkPlatformLoggerLevelEntanglement(logger, Level.SEVERE);
-        checkPlatformLoggerLevelEntanglement(logger, Level.WARNING);
-        checkPlatformLoggerLevelEntanglement(logger, Level.INFO);
-        checkPlatformLoggerLevelEntanglement(logger, Level.CONFIG);
-        checkPlatformLoggerLevelEntanglement(logger, Level.FINE);
-        checkPlatformLoggerLevelEntanglement(logger, Level.FINER);
-        checkPlatformLoggerLevelEntanglement(logger, Level.FINEST);
-        checkPlatformLoggerLevelEntanglement(logger, Level.ALL);
+    private static final List<Level> levels = new ArrayList<>();
+
+    static {
+        for (Field levelField : Level.class.getDeclaredFields()) {
+            int modifiers = levelField.getModifiers();
+            if (Modifier.isPublic(modifiers) && Modifier.isStatic(modifiers) &&
+                Modifier.isFinal(modifiers) && levelField.getType() == Level.class) {
+                try {
+                    levels.add((Level) levelField.get(null));
+                }
+                catch (IllegalAccessException e) {
+                    throw (Error) new IllegalAccessError(e.getMessage()).initCause(e);
+                }
+            }
+        }
+        Collections.sort(levels, new Comparator<Level>() {
+            @Override
+            public int compare(Level l1, Level l2) {
+                return l1.intValue() < l2.intValue() ? -1 : (l1.intValue() > l2.intValue() ? 1 : 0);
+            }
+        });
     }
 
-    private static void checkPlatformLoggerLevelEntanglement(PlatformLogger logger, Level level) {
+    private static void checkPlatformLoggerLevelEntanglements(PlatformLogger logger) {
+
+        // check mappings
+        for (Level level : levels) {
+            checkPlatformLoggerLevelMapping(logger, level);
+        }
+
+        // check order
+        PlatformLogger.Level[] platformLevels = PlatformLogger.Level.values();
+
+        if (levels.size() != platformLevels.length) {
+            throw new RuntimeException("There are " + platformLevels.length + " PlatformLogger.Level members, but " +
+                                       levels.size() + " standard java.util.logging levels - the numbers should be equal.");
+        }
+
+        for (int i = 0; i < levels.size(); i++) {
+            if (!levels.get(i).getName().equals(platformLevels[i].name())) {
+                throw new RuntimeException("The order of PlatformLogger.Level members: " + Arrays.toString(platformLevels) +
+                                           " is not consistent with java.util.logging.Level.intValue() ordering: " + levels);
+            }
+        }
+    }
+
+    private static void checkPlatformLoggerLevelMapping(PlatformLogger logger, Level level) {
         Field platformLevelField;
-        int platformLevel;
+        PlatformLogger.Level platformLevel;
         try {
             platformLevelField = PlatformLogger.class.getDeclaredField(level.getName());
-            platformLevel = (int) platformLevelField.get(null);
+            platformLevel = (PlatformLogger.Level) platformLevelField.get(null);
         }
         catch (Exception e) {
-            throw new RuntimeException("No public static int PlatformLogger." + level.getName() +
+            throw new RuntimeException("No public static PlatformLogger." + level.getName() +
                                        " field", e);
         }
 
-        if (platformLevel != level.intValue())
-            throw new RuntimeException("The value of PlatformLogger." + level.getName() + " field is "
-                                       + platformLevel + " but expected " + level.intValue());
+        if (!platformLevel.name().equals(level.getName()))
+            throw new RuntimeException("The value of PlatformLogger." + level.getName() + ".name() is "
+                                       + platformLevel.name() + " but expected " + level.getName());
 
         logger.setLevel(platformLevel);
-        int retrievedPlatformLevel = logger.getLevel();
+        PlatformLogger.Level retrievedPlatformLevel = logger.getLevel();
 
         if (platformLevel != retrievedPlatformLevel)
             throw new RuntimeException("Retrieved PlatformLogger level " + retrievedPlatformLevel +
