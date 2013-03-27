@@ -182,7 +182,7 @@ public class PlatformLogger {
     private void redirectToJavaLoggerProxy() {
         DefaultLoggerProxy defaultLoggerProxy = this.defaultLoggerProxy;
         JavaLoggerProxy javaLoggerProxy = new JavaLoggerProxy(defaultLoggerProxy.name, defaultLoggerProxy.level);
-        // the order of assignments is important...
+        // the order of assignments is important - at no time must both fields be null
         this.javaLoggerProxy = javaLoggerProxy; // 1st javaLoggerProxy null -> not-null
         this.defaultLoggerProxy = null; // then defaultLoggerProxy not-null -> null
         this.loggerProxy = javaLoggerProxy;
@@ -193,8 +193,8 @@ public class PlatformLogger {
     private volatile LoggerProxy loggerProxy;
     // exactly one of the following two fields is null and the other is non-null
     // depending on which backing logger proxy is currently enabled
-    private volatile JavaLoggerProxy javaLoggerProxy;      // can be initialized as null and later transitions to not-null
-    private volatile DefaultLoggerProxy defaultLoggerProxy;// can be initialized as not-null and later transitions to null
+    private volatile JavaLoggerProxy javaLoggerProxy;
+    private volatile DefaultLoggerProxy defaultLoggerProxy;
 
     private PlatformLogger(String name) {
         if (loggingEnabled) {
@@ -550,8 +550,10 @@ public class PlatformLogger {
 
         // initialize javaLevel fields for mapping from Level enum -> j.u.l.Level object
         static {
-            for (Level level : Level.values()) {
-                level.javaLevel = LoggingSupport.parseLevel(level.name());
+            if (LoggingSupport.isAvailable()) {
+                for (Level level : Level.values()) {
+                    level.javaLevel = LoggingSupport.parseLevel(level.name());
+                }
             }
         }
 
@@ -570,12 +572,6 @@ public class PlatformLogger {
             }
         }
 
-       /**
-        * Let Logger.log() do the filtering since if the level of a
-        * platform logger is altered directly from
-        * java.util.logging.Logger.setLevel(), the effectiveLevel will
-        * not be updated.
-        */
         void doLog(Level level, String msg) {
             LoggingSupport.log(javaLogger, level.javaLevel, msg);
         }
