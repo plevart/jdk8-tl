@@ -56,22 +56,22 @@
 ** Patched code (webrev.enumapi.01)
 
 ##############################################################
-# Java: 1.8.0-internal-peter_2013_03_04_10_48-b00
-#   VM: OpenJDK 64-Bit Server VM 25.0-b19 (mixed mode)
+# Java: 1.8.0-internal-peter_2013_01_16_13_44-b00
+#   VM: OpenJDK 64-Bit Server VM 25.0-b14 (mixed mode)
 #   OS: Linux 3.7.9-104.fc17.x86_64 (amd64)
-# CPUs: 8 (virtual) - Intel i7-2600K
+# CPUs: 8 (virtual)
 #
 #-------------------------------------------------------------
 # isLoggableFinest: run duration:  3,000 ms
 #
 # Warm up:
-#           1 threads, Tavg =      1.71 ns/op (σ =   0.00 ns/op) [     1.71]
-#           1 threads, Tavg =      1.45 ns/op (σ =   0.00 ns/op) [     1.45]
+#           1 threads, Tavg =      1.42 ns/op (σ =   0.00 ns/op) [     1.42]
+#           1 threads, Tavg =      1.42 ns/op (σ =   0.00 ns/op) [     1.42]
 # Measure:
-            1 threads, Tavg =      1.69 ns/op (σ =   0.00 ns/op) [     1.69]
-            2 threads, Tavg =      1.69 ns/op (σ =   0.00 ns/op) [     1.69,      1.69]
-            3 threads, Tavg =      1.67 ns/op (σ =   0.04 ns/op) [     1.70,      1.70,      1.62]
-            4 threads, Tavg =      1.66 ns/op (σ =   0.11 ns/op) [     1.49,      1.70,      1.79,      1.69]
+            1 threads, Tavg =      1.47 ns/op (σ =   0.00 ns/op) [     1.47]
+            2 threads, Tavg =      1.46 ns/op (σ =   0.01 ns/op) [     1.48,      1.45]
+            3 threads, Tavg =      1.46 ns/op (σ =   0.01 ns/op) [     1.47,      1.45,      1.45]
+            4 threads, Tavg =      1.47 ns/op (σ =   0.01 ns/op) [     1.48,      1.46,      1.48,      1.45]
 #
 #-------------------------------------------------------------
 # java.util.logging enabled
@@ -81,18 +81,18 @@
 # isLoggableFinest: run duration:  3,000 ms
 #
 # Measure:
-            1 threads, Tavg =      1.75 ns/op (σ =   0.00 ns/op) [     1.75]
-            2 threads, Tavg =      1.78 ns/op (σ =   0.01 ns/op) [     1.79,      1.77]
-            3 threads, Tavg =      1.68 ns/op (σ =   0.02 ns/op) [     1.68,      1.66,      1.69]
-            4 threads, Tavg =      1.66 ns/op (σ =   0.00 ns/op) [     1.65,      1.65,      1.66,      1.66]
-            1 threads, Tavg =      1.68 ns/op (σ =   0.00 ns/op) [     1.68]
-            2 threads, Tavg =      1.68 ns/op (σ =   0.02 ns/op) [     1.70,      1.66]
-            3 threads, Tavg =      1.67 ns/op (σ =   0.02 ns/op) [     1.69,      1.65,      1.66]
-            4 threads, Tavg =      1.68 ns/op (σ =   0.03 ns/op) [     1.65,      1.65,      1.66,      1.73]
-            1 threads, Tavg =      1.65 ns/op (σ =   0.00 ns/op) [     1.65]
-            2 threads, Tavg =      1.68 ns/op (σ =   0.03 ns/op) [     1.71,      1.65]
-            3 threads, Tavg =      1.66 ns/op (σ =   0.00 ns/op) [     1.66,      1.65,      1.66]
-            4 threads, Tavg =      1.74 ns/op (σ =   0.12 ns/op) [     1.95,      1.70,      1.69,      1.65]
+            1 threads, Tavg =      1.74 ns/op (σ =   0.00 ns/op) [     1.74]
+            2 threads, Tavg =      1.59 ns/op (σ =   0.01 ns/op) [     1.60,      1.58]
+            3 threads, Tavg =      1.59 ns/op (σ =   0.01 ns/op) [     1.59,      1.58,      1.58]
+            4 threads, Tavg =      1.61 ns/op (σ =   0.01 ns/op) [     1.62,      1.60,      1.60,      1.61]
+            1 threads, Tavg =      1.59 ns/op (σ =   0.00 ns/op) [     1.59]
+            2 threads, Tavg =      1.59 ns/op (σ =   0.01 ns/op) [     1.59,      1.58]
+            3 threads, Tavg =      1.59 ns/op (σ =   0.00 ns/op) [     1.59,      1.59,      1.59]
+            4 threads, Tavg =      1.64 ns/op (σ =   0.02 ns/op) [     1.64,      1.64,      1.62,      1.67]
+            1 threads, Tavg =      1.59 ns/op (σ =   0.00 ns/op) [     1.59]
+            2 threads, Tavg =      1.59 ns/op (σ =   0.01 ns/op) [     1.60,      1.58]
+            3 threads, Tavg =      1.69 ns/op (σ =   0.15 ns/op) [     1.59,      1.91,      1.60]
+            4 threads, Tavg =      1.59 ns/op (σ =   0.01 ns/op) [     1.60,      1.59,      1.59,      1.59]
 #
 #-------------------------------------------------------------
 # END.
@@ -102,19 +102,19 @@
 # Java: 1.8.0-ea-b82
 #   VM: Java HotSpot(TM) 64-Bit Server VM 25.0-b23 (mixed mode)
 #   OS: SunOS 5.10 (sparcv9)
-# CPUs: 64 (virtual) - UltraSPARC-T2
+# CPUs: 64 (virtual)
 #
 #-------------------------------------------------------------
 # isLoggableFinest: run duration:  3,000 ms
 #
 # Warm up:
-#           1 threads, Tavg =     40.63 ns/op (? =   0.00 ns/op) [    40.63]
-#           1 threads, Tavg =     38.69 ns/op (? =   0.00 ns/op) [    38.69]
+#           1 threads, Tavg =     45.97 ns/op (? =   0.00 ns/op) [    45.97]
+#           1 threads, Tavg =     42.99 ns/op (? =   0.00 ns/op) [    42.99]
 # Measure:
-            1 threads, Tavg =     38.64 ns/op (? =   0.00 ns/op) [    38.64]
-            2 threads, Tavg =     38.70 ns/op (? =   0.04 ns/op) [    38.74,     38.66]
-            3 threads, Tavg =     38.89 ns/op (? =   0.06 ns/op) [    38.97,     38.85,     38.84]
-            4 threads, Tavg =     38.94 ns/op (? =   0.18 ns/op) [    39.18,     38.76,     38.78,     39.04]
+            1 threads, Tavg =     43.10 ns/op (? =   0.00 ns/op) [    43.10]
+            2 threads, Tavg =     43.06 ns/op (? =   0.03 ns/op) [    43.03,     43.08]
+            3 threads, Tavg =     43.13 ns/op (? =   0.23 ns/op) [    43.46,     42.99,     42.95]
+            4 threads, Tavg =     43.19 ns/op (? =   0.14 ns/op) [    42.97,     43.19,     43.36,     43.25]
 #
 #-------------------------------------------------------------
 # java.util.logging enabled
@@ -124,18 +124,18 @@
 # isLoggableFinest: run duration:  3,000 ms
 #
 # Measure:
-            1 threads, Tavg =    101.37 ns/op (? =   0.00 ns/op) [   101.37]
-            2 threads, Tavg =     99.67 ns/op (? =   0.01 ns/op) [    99.67,     99.68]
-            3 threads, Tavg =     48.27 ns/op (? =   0.06 ns/op) [    48.31,     48.31,     48.19]
-            4 threads, Tavg =     48.28 ns/op (? =   0.14 ns/op) [    48.11,     48.24,     48.28,     48.50]
-            1 threads, Tavg =     48.14 ns/op (? =   0.00 ns/op) [    48.14]
-            2 threads, Tavg =     48.21 ns/op (? =   0.01 ns/op) [    48.21,     48.22]
-            3 threads, Tavg =     48.26 ns/op (? =   0.18 ns/op) [    48.52,     48.11,     48.16]
-            4 threads, Tavg =     48.30 ns/op (? =   0.10 ns/op) [    48.33,     48.44,     48.15,     48.27]
-            1 threads, Tavg =     48.21 ns/op (? =   0.00 ns/op) [    48.21]
-            2 threads, Tavg =     48.18 ns/op (? =   0.09 ns/op) [    48.27,     48.09]
-            3 threads, Tavg =     48.44 ns/op (? =   0.09 ns/op) [    48.54,     48.44,     48.33]
-            4 threads, Tavg =     49.29 ns/op (? =   0.16 ns/op) [    49.36,     49.02,     49.33,     49.46]
+            1 threads, Tavg =    102.15 ns/op (? =   0.00 ns/op) [   102.15]
+            2 threads, Tavg =    100.78 ns/op (? =   0.13 ns/op) [   100.65,    100.90]
+            3 threads, Tavg =     49.12 ns/op (? =   0.11 ns/op) [    48.97,     49.20,     49.18]
+            4 threads, Tavg =     49.20 ns/op (? =   0.09 ns/op) [    49.09,     49.31,     49.13,     49.27]
+            1 threads, Tavg =     49.16 ns/op (? =   0.00 ns/op) [    49.16]
+            2 threads, Tavg =     48.98 ns/op (? =   0.03 ns/op) [    48.95,     49.01]
+            3 threads, Tavg =     49.04 ns/op (? =   0.09 ns/op) [    48.94,     49.15,     49.04]
+            4 threads, Tavg =     49.08 ns/op (? =   0.12 ns/op) [    48.93,     49.11,     49.02,     49.26]
+            1 threads, Tavg =     49.06 ns/op (? =   0.00 ns/op) [    49.06]
+            2 threads, Tavg =     49.26 ns/op (? =   0.32 ns/op) [    48.94,     49.59]
+            3 threads, Tavg =     49.01 ns/op (? =   0.06 ns/op) [    49.09,     48.95,     49.00]
+            4 threads, Tavg =     49.66 ns/op (? =   0.34 ns/op) [    49.90,     49.70,     49.10,     49.96]
 #
 #-------------------------------------------------------------
 # END.

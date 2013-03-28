@@ -84,7 +84,7 @@ import sun.misc.SharedSecrets;
  * @since 1.7
  */
 public class PlatformLogger {
-    // shortcuts
+    // shortcut to PlatformLogger.Level enums
     public static final Level OFF     = Level.OFF;
     public static final Level SEVERE  = Level.SEVERE;
     public static final Level WARNING = Level.WARNING;
@@ -96,32 +96,39 @@ public class PlatformLogger {
     public static final Level ALL     = Level.ALL;
 
     /**
-     * {@link PlatformLogger} logging levels.
+     * PlatformLogger logging levels.
      */
     public static enum Level {
-        // The names should match the names of {@code java.util.logging.Level} objects.
-        // Mapping depends on that. The order of members is important. It should be
-        // ascending by the associated {@code java.util.logging.Level.intValue()}.
-        ALL,
-        FINEST,
-        FINER,
-        FINE,
-        CONFIG,
-        INFO,
-        WARNING,
-        SEVERE,
-        OFF;
+        // The name and value must match that of {@code java.util.logging.Level} objects.
+        ALL(Integer.MIN_VALUE),
+        FINEST(300),
+        FINER(400),
+        FINE(500),
+        CONFIG(700),
+        INFO(800),
+        WARNING(900),
+        SEVERE(1000),
+        OFF(Integer.MAX_VALUE);
 
         /**
-         * Associated java.util.logging.Level optionally initialized in
-         * {@link JavaLoggerProxy}'s static initializer and accessed only by
-         * {@link JavaLoggerProxy}.
-         * (only once java.util.logging is available and enabled)
+         * Associated java.util.logging.Level lazily initialized in
+         * JavaLoggerProxy's static initializer only once
+         * when java.util.logging is available and enabled.
+         * Only accessed by JavaLoggerProxy.
          */
         /* java.util.logging.Level */ Object javaLevel;
+
+        private final int value;
+        public int intValue() {
+            return value;
+        }
+
+        Level(int value) {
+            this.value = value;
+        }
     }
 
-    private static final Level defaultLevel = INFO;
+    private static final Level DEFAULT_LEVEL = INFO;
     private static boolean loggingEnabled;
     static {
         loggingEnabled = AccessController.doPrivileged(
@@ -132,11 +139,20 @@ public class PlatformLogger {
                     return (cname != null || fname != null);
                 }
             });
-        // force loading of all LoggerProxy (sub)classes, but don't initialize them just yet
-        // this makes JIT de-optimizations less probable later...
-        LoggerProxy.class.getName();
-        DefaultLoggerProxy.class.getName();
-        JavaLoggerProxy.class.getName();
+
+        // force loading of all JavaLoggerProxy (sub)classes to make JIT de-optimizations
+        // less probable.  Don't initialize JavaLoggerProxy class since
+        // java.util.logging may not be enabled.
+        try {
+            Class.forName("sun.util.logging.PlatformLogger$DefaultLoggerProxy",
+                          false,
+                          PlatformLogger.class.getClassLoader());
+            Class.forName("sun.util.logging.PlatformLogger$JavaLoggerProxy",
+                          false,
+                          PlatformLogger.class.getClassLoader());
+        } catch (ClassNotFoundException ex) {
+            throw new InternalError(ex);
+        }
     }
 
     // Table of known loggers.  Maps names to PlatformLoggers.
@@ -180,27 +196,23 @@ public class PlatformLogger {
      * Creates a new JavaLoggerProxy and redirects the platform logger to it
      */
     private void redirectToJavaLoggerProxy() {
-        DefaultLoggerProxy defaultLoggerProxy = this.defaultLoggerProxy;
-        JavaLoggerProxy javaLoggerProxy = new JavaLoggerProxy(defaultLoggerProxy.name, defaultLoggerProxy.level);
-        // the order of assignments is important - at no time must both fields be null
-        this.javaLoggerProxy = javaLoggerProxy; // 1st javaLoggerProxy null -> not-null
-        this.defaultLoggerProxy = null; // then defaultLoggerProxy not-null -> null
-        this.loggerProxy = javaLoggerProxy;
+        DefaultLoggerProxy lp = DefaultLoggerProxy.class.cast(this.loggerProxy);
+        JavaLoggerProxy jlp = new JavaLoggerProxy(lp.name, lp.level);
+        // the order of assignments is important
+        this.javaLoggerProxy = jlp;   // isLoggable checks javaLoggerProxy if set
+        this.loggerProxy = jlp;
     }
 
     // DefaultLoggerProxy may be replaced with a JavaLoggerProxy object
     // when the java.util.logging facility is enabled
     private volatile LoggerProxy loggerProxy;
-    // exactly one of the following two fields is null and the other is non-null
-    // depending on which backing logger proxy is currently enabled
+    // javaLoggerProxy is only set when the java.util.logging facility is enabled
     private volatile JavaLoggerProxy javaLoggerProxy;
-    private volatile DefaultLoggerProxy defaultLoggerProxy;
-
     private PlatformLogger(String name) {
         if (loggingEnabled) {
             this.loggerProxy = this.javaLoggerProxy = new JavaLoggerProxy(name);
         } else {
-            this.loggerProxy = this.defaultLoggerProxy = new DefaultLoggerProxy(name);
+            this.loggerProxy = new DefaultLoggerProxy(name);
         }
     }
 
@@ -224,9 +236,10 @@ public class PlatformLogger {
      * be logged by this logger.
      */
     public boolean isLoggable(Level level) {
+        return loggerProxy.isLoggable(level);
         // performance-sensitive method: use two monomorphic call-sites
-        JavaLoggerProxy jlp = javaLoggerProxy;
-        return jlp != null ? jlp.isLoggable(level) : defaultLoggerProxy.isLoggable(level);
+//        JavaLoggerProxy jlp = javaLoggerProxy;
+//        return jlp != null ? jlp.isLoggable(level) : loggerProxy.isLoggable(level);
     }
 
     /**
@@ -383,27 +396,23 @@ public class PlatformLogger {
         abstract boolean isLoggable(Level level);
     }
 
-    /**
-     * Default platform logging support - output messages to
-     * System.err - equivalent to ConsoleHandler with SimpleFormatter.
-     */
-    private static final class DefaultLoggerProxy extends LoggerProxy {
 
+    private static final class DefaultLoggerProxy extends LoggerProxy {
+        /**
+         * Default platform logging support - output messages to System.err -
+         * equivalent to ConsoleHandler with SimpleFormatter.
+         */
         private static PrintStream outputStream() {
-            return System.err; // can change!
+            return System.err;
         }
 
         volatile Level effectiveLevel; // effective level (never null)
-        volatile Level level;          // current level for this node (may be null)
+        volatile Level level;          // current level set for this node (may be null)
 
         DefaultLoggerProxy(String name) {
-            this(name, null);
-        }
-
-        DefaultLoggerProxy(String name, Level level) {
             super(name);
-            this.level = level;
-            this.effectiveLevel = deriveEffectiveLevel(level);
+            this.effectiveLevel = deriveEffectiveLevel(null);
+            this.level = null;
         }
 
         boolean isEnabled() {
@@ -443,12 +452,12 @@ public class PlatformLogger {
 
         boolean isLoggable(Level level) {
             Level effectiveLevel = this.effectiveLevel;
-            return level.ordinal() >= effectiveLevel.ordinal() && effectiveLevel != OFF;
+            return level.intValue() >= effectiveLevel.intValue() && effectiveLevel != OFF;
         }
 
         // derive effective level (could do inheritance search like j.u.l.Logger)
         private Level deriveEffectiveLevel(Level level) {
-            return level == null ? defaultLevel : level;
+            return level == null ? DEFAULT_LEVEL : level;
         }
 
         // Copied from java.util.logging.Formatter.formatMessage
@@ -493,12 +502,12 @@ public class PlatformLogger {
             }
 
             return String.format(formatString,
-                date,
-                getCallerInfo(),
-                name,
-                level.name(),
-                msg,
-                throwable);
+                                 date,
+                                 getCallerInfo(),
+                                 name,
+                                 level.name(),
+                                 msg,
+                                 throwable);
         }
 
         // Returns the caller's class and method's name; best effort
@@ -547,13 +556,10 @@ public class PlatformLogger {
      * java.util.logging.Logger object.
      */
     private static final class JavaLoggerProxy extends LoggerProxy {
-
         // initialize javaLevel fields for mapping from Level enum -> j.u.l.Level object
         static {
-            if (LoggingSupport.isAvailable()) {
-                for (Level level : Level.values()) {
-                    level.javaLevel = LoggingSupport.parseLevel(level.name());
-                }
+            for (Level level : Level.values()) {
+                level.javaLevel = LoggingSupport.parseLevel(level.name());
             }
         }
 
@@ -602,10 +608,9 @@ public class PlatformLogger {
             Object javaLevel = LoggingSupport.getLevel(javaLogger);
             try {
                 return javaLevel == null
-                       ? null
-                       : Level.valueOf(LoggingSupport.getLevelName(javaLevel));
-            }
-            catch (IllegalArgumentException e) {
+                        ? null
+                        : Level.valueOf(LoggingSupport.getLevelName(javaLevel));
+            } catch (IllegalArgumentException e) {
                 // in case custom j.u.l.Level was set on j.u.l.Logger
                 return null;
             }

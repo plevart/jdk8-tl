@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug     6882376 6985460
+ * @bug     6882376 6985460 8010309
  * @summary Test if java.util.logging.Logger is created before and after
  *          logging is enabled.  Also validate some basic PlatformLogger
  *          operations.  othervm mode to make sure java.util.logging
@@ -34,12 +34,6 @@
  */
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
 import java.util.logging.*;
 import sun.util.logging.PlatformLogger;
 
@@ -78,8 +72,7 @@ public class PlatformLoggerTest {
         foo.setLevel(PlatformLogger.SEVERE);
         checkLogger(FOO_PLATFORM_LOGGER, Level.SEVERE);
 
-        checkPlatformLoggerLevelEntanglements(foo);
-        checkPlatformLoggerLevelEntanglements(bar);
+        checkPlatformLoggerLevels(foo, bar);
     }
 
     private static void checkPlatformLogger(PlatformLogger logger, String name) {
@@ -133,80 +126,71 @@ public class PlatformLoggerTest {
         logger.info("Test info(String)");
     }
 
-    private static final List<Level> levels = new ArrayList<>();
+    private static void checkPlatformLoggerLevels(PlatformLogger... loggers) {
+        final Level[] levels = new Level[] {
+            Level.ALL, Level.CONFIG, Level.FINE, Level.FINER, Level.FINEST,
+            Level.INFO, Level.OFF, Level.SEVERE, Level.WARNING
+        };
 
-    static {
-        for (Field levelField : Level.class.getDeclaredFields()) {
-            int modifiers = levelField.getModifiers();
-            if (Modifier.isPublic(modifiers) && Modifier.isStatic(modifiers) &&
-                Modifier.isFinal(modifiers) && levelField.getType() == Level.class) {
-                try {
-                    levels.add((Level) levelField.get(null));
-                }
-                catch (IllegalAccessException e) {
-                    throw (Error) new IllegalAccessError(e.getMessage()).initCause(e);
-                }
-            }
+        int count = PlatformLogger.Level.values().length;
+        if (levels.length != count) {
+            throw new RuntimeException("There are " + count +
+                    " PlatformLogger.Level members, but " + levels.length +
+                    " standard java.util.logging levels - the numbers should be equal.");
         }
-        Collections.sort(levels, new Comparator<Level>() {
-            @Override
-            public int compare(Level l1, Level l2) {
-                return l1.intValue() < l2.intValue() ? -1 : (l1.intValue() > l2.intValue() ? 1 : 0);
-            }
-        });
-    }
-
-    private static void checkPlatformLoggerLevelEntanglements(PlatformLogger logger) {
-
         // check mappings
         for (Level level : levels) {
-            checkPlatformLoggerLevelMapping(logger, level);
+            checkPlatformLoggerLevelMapping(level);
         }
 
-        // check order
-        PlatformLogger.Level[] platformLevels = PlatformLogger.Level.values();
+        for (Level level : levels) {
+            PlatformLogger.Level platformLevel = PlatformLogger.Level.valueOf(level.getName());
+            for (PlatformLogger logger : loggers) {
+                // verify PlatformLogger.setLevel to a given level
+                logger.setLevel(platformLevel);
+                PlatformLogger.Level retrievedPlatformLevel = logger.getLevel();
+                if (platformLevel != retrievedPlatformLevel) {
+                    throw new RuntimeException("Retrieved PlatformLogger level " +
+                            retrievedPlatformLevel +
+                            " is not the same as set level " + platformLevel);
+                }
 
-        if (levels.size() != platformLevels.length) {
-            throw new RuntimeException("There are " + platformLevels.length + " PlatformLogger.Level members, but " +
-                                       levels.size() + " standard java.util.logging levels - the numbers should be equal.");
-        }
-
-        for (int i = 0; i < levels.size(); i++) {
-            if (!levels.get(i).getName().equals(platformLevels[i].name())) {
-                throw new RuntimeException("The order of PlatformLogger.Level members: " + Arrays.toString(platformLevels) +
-                                           " is not consistent with java.util.logging.Level.intValue() ordering: " + levels);
+                // check the level set in java.util.logging.Logger
+                Logger javaLogger = LogManager.getLogManager().getLogger(logger.getName());
+                Level javaLevel = javaLogger.getLevel();
+                if (javaLogger.getLevel() != level) {
+                    throw new RuntimeException("Retrieved backing java.util.logging.Logger level " +
+                            javaLevel + " is not the expected " + level);
+                }
             }
         }
     }
 
-    private static void checkPlatformLoggerLevelMapping(PlatformLogger logger, Level level) {
-        Field platformLevelField;
-        PlatformLogger.Level platformLevel;
-        try {
-            platformLevelField = PlatformLogger.class.getDeclaredField(level.getName());
-            platformLevel = (PlatformLogger.Level) platformLevelField.get(null);
+    private static void checkPlatformLoggerLevelMapping(Level level) {
+        // map the given level to PlatformLogger.Level of the same name and value
+        PlatformLogger.Level platformLevel = PlatformLogger.Level.valueOf(level.getName());
+        if (platformLevel == null || platformLevel.intValue() != level.intValue()) {
+            throw new RuntimeException("Mismatched level: " + level
+                    + " PlatformLogger.Level" + platformLevel);
         }
-        catch (Exception e) {
+
+        PlatformLogger.Level plevel;
+        try {
+            // validate if there is a public static final field in PlatformLogger
+            // matching the level name
+            Field platformLevelField = PlatformLogger.class.getField(level.getName());
+            plevel = (PlatformLogger.Level) platformLevelField.get(null);
+        } catch (Exception e) {
             throw new RuntimeException("No public static PlatformLogger." + level.getName() +
                                        " field", e);
         }
-
-        if (!platformLevel.name().equals(level.getName()))
+        if (!plevel.name().equals(level.getName()))
             throw new RuntimeException("The value of PlatformLogger." + level.getName() + ".name() is "
                                        + platformLevel.name() + " but expected " + level.getName());
 
-        logger.setLevel(platformLevel);
-        PlatformLogger.Level retrievedPlatformLevel = logger.getLevel();
-
-        if (platformLevel != retrievedPlatformLevel)
-            throw new RuntimeException("Retrieved PlatformLogger level " + retrievedPlatformLevel +
-                                       " is not the same as set level " + platformLevel);
-
-        Logger javaLogger = LogManager.getLogManager().getLogger(logger.getName());
-        Level javaLevel = javaLogger.getLevel();
-        if (javaLogger.getLevel() != level)
-            throw new RuntimeException("Retrieved backing java.util.logging.Logger level " + javaLevel +
-                                        " is not the expected " + level);
+        if (plevel.intValue() != level.intValue())
+            throw new RuntimeException("The value of PlatformLogger." + level.intValue() + ".intValue() is "
+                                       + platformLevel.intValue() + " but expected " + level.intValue());
     }
 
     static Point[] getPoints() {
