@@ -84,22 +84,30 @@ import sun.misc.SharedSecrets;
  * @since 1.7
  */
 public class PlatformLogger {
-    // shortcut to PlatformLogger.Level enums
-    public static final Level OFF     = Level.OFF;
-    public static final Level SEVERE  = Level.SEVERE;
-    public static final Level WARNING = Level.WARNING;
-    public static final Level INFO    = Level.INFO;
-    public static final Level CONFIG  = Level.CONFIG;
-    public static final Level FINE    = Level.FINE;
-    public static final Level FINER   = Level.FINER;
-    public static final Level FINEST  = Level.FINEST;
-    public static final Level ALL     = Level.ALL;
+    /*
+     * These constants should be shortcuts to Level enum constants that
+     * the clients of sun.util.logging.PlatformLogger require no source
+     * modification and avoid the conversion from int to Level enum.
+     *
+     * This can be done when JavaFX is converted to use the new PlatformLogger.Level API.
+     */
+    public static final int OFF     = Integer.MAX_VALUE;
+    public static final int SEVERE  = 1000;
+    public static final int WARNING = 900;
+    public static final int INFO    = 800;
+    public static final int CONFIG  = 700;
+    public static final int FINE    = 500;
+    public static final int FINER   = 400;
+    public static final int FINEST  = 300;
+    public static final int ALL     = Integer.MIN_VALUE;
 
     /**
      * PlatformLogger logging levels.
      */
     public static enum Level {
         // The name and value must match that of {@code java.util.logging.Level} objects.
+        // They are declared in ascending order of the given value (see
+        // JavaLoggerProxy.getLevel dependency)
         ALL(Integer.MIN_VALUE),
         FINEST(300),
         FINER(400),
@@ -126,9 +134,26 @@ public class PlatformLogger {
         Level(int value) {
             this.value = value;
         }
+
+        static Level valueOf(int level) {
+            // ordering per the highest occurences in the jdk source
+            // finest, fine, finer, info first
+            switch (level) {
+                case PlatformLogger.FINEST:  return Level.FINEST;
+                case PlatformLogger.FINE:    return Level.FINE;
+                case PlatformLogger.FINER:   return Level.FINER;
+                case PlatformLogger.INFO:    return Level.INFO;
+                case PlatformLogger.WARNING: return Level.WARNING;
+                case PlatformLogger.CONFIG:  return Level.CONFIG;
+                case PlatformLogger.SEVERE:  return Level.SEVERE;
+                case PlatformLogger.OFF:     return Level.OFF;
+                case PlatformLogger.ALL:     return Level.ALL;
+                default: return Level.OFF;
+            }
+        }
     }
 
-    private static final Level DEFAULT_LEVEL = INFO;
+    private static final Level DEFAULT_LEVEL = Level.INFO;
     private static boolean loggingEnabled;
     static {
         loggingEnabled = AccessController.doPrivileged(
@@ -148,7 +173,7 @@ public class PlatformLogger {
                           false,
                           PlatformLogger.class.getClassLoader());
             Class.forName("sun.util.logging.PlatformLogger$JavaLoggerProxy",
-                          false,
+                          false,   // do not invoke class initializer
                           PlatformLogger.class.getClassLoader());
         } catch (ClassNotFoundException ex) {
             throw new InternalError(ex);
@@ -234,12 +259,44 @@ public class PlatformLogger {
     /**
      * Returns true if a message of the given level would actually
      * be logged by this logger.
+     *
+     * @deprecated Use isLoggable(Level) instead.
+     */
+    @Deprecated
+    public boolean isLoggable(int levelValue) {
+        return isLoggable(Level.valueOf(levelValue));
+    }
+
+    /**
+     * Gets the current log level.  Returns 0 if the current effective level
+     * is not set (equivalent to Logger.getLevel() returns null).
+     *
+     * @deprecated Use level() instead
+     */
+    @Deprecated
+    public int getLevel() {
+        Level level = loggerProxy.getLevel();
+        return level != null ? level.intValue() : 0;
+    }
+
+    /**
+     * Sets the log level.
+     *
+     * @deprecated Use setLevel(Level) instead
+     */
+    @Deprecated
+    public void setLevel(int newLevel) {
+        loggerProxy.setLevel(newLevel == 0 ? null : Level.valueOf(newLevel));
+    }
+
+    /**
+     * Returns true if a message of the given level would actually
+     * be logged by this logger.
      */
     public boolean isLoggable(Level level) {
-        return loggerProxy.isLoggable(level);
         // performance-sensitive method: use two monomorphic call-sites
-//        JavaLoggerProxy jlp = javaLoggerProxy;
-//        return jlp != null ? jlp.isLoggable(level) : loggerProxy.isLoggable(level);
+        JavaLoggerProxy jlp = javaLoggerProxy;
+        return jlp != null ? jlp.isLoggable(level) : loggerProxy.isLoggable(level);
     }
 
     /**
@@ -249,7 +306,7 @@ public class PlatformLogger {
      *
      * @return  this PlatformLogger's level
      */
-    public Level getLevel() {
+    public Level level() {
         return loggerProxy.getLevel();
     }
 
@@ -273,105 +330,105 @@ public class PlatformLogger {
      * Logs a SEVERE message.
      */
     public void severe(String msg) {
-        loggerProxy.doLog(SEVERE, msg);
+        loggerProxy.doLog(Level.SEVERE, msg);
     }
 
     public void severe(String msg, Throwable t) {
-        loggerProxy.doLog(SEVERE, msg, t);
+        loggerProxy.doLog(Level.SEVERE, msg, t);
     }
 
     public void severe(String msg, Object... params) {
-        loggerProxy.doLog(SEVERE, msg, params);
+        loggerProxy.doLog(Level.SEVERE, msg, params);
     }
 
     /**
      * Logs a WARNING message.
      */
     public void warning(String msg) {
-        loggerProxy.doLog(WARNING, msg);
+        loggerProxy.doLog(Level.WARNING, msg);
     }
 
     public void warning(String msg, Throwable t) {
-        loggerProxy.doLog(WARNING, msg, t);
+        loggerProxy.doLog(Level.WARNING, msg, t);
     }
 
     public void warning(String msg, Object... params) {
-        loggerProxy.doLog(WARNING, msg, params);
+        loggerProxy.doLog(Level.WARNING, msg, params);
     }
 
     /**
      * Logs an INFO message.
      */
     public void info(String msg) {
-        loggerProxy.doLog(INFO, msg);
+        loggerProxy.doLog(Level.INFO, msg);
     }
 
     public void info(String msg, Throwable t) {
-        loggerProxy.doLog(INFO, msg, t);
+        loggerProxy.doLog(Level.INFO, msg, t);
     }
 
     public void info(String msg, Object... params) {
-        loggerProxy.doLog(INFO, msg, params);
+        loggerProxy.doLog(Level.INFO, msg, params);
     }
 
     /**
      * Logs a CONFIG message.
      */
     public void config(String msg) {
-        loggerProxy.doLog(CONFIG, msg);
+        loggerProxy.doLog(Level.CONFIG, msg);
     }
 
     public void config(String msg, Throwable t) {
-        loggerProxy.doLog(CONFIG, msg, t);
+        loggerProxy.doLog(Level.CONFIG, msg, t);
     }
 
     public void config(String msg, Object... params) {
-        loggerProxy.doLog(CONFIG, msg, params);
+        loggerProxy.doLog(Level.CONFIG, msg, params);
     }
 
     /**
      * Logs a FINE message.
      */
     public void fine(String msg) {
-        loggerProxy.doLog(FINE, msg);
+        loggerProxy.doLog(Level.FINE, msg);
     }
 
     public void fine(String msg, Throwable t) {
-        loggerProxy.doLog(FINE, msg, t);
+        loggerProxy.doLog(Level.FINE, msg, t);
     }
 
     public void fine(String msg, Object... params) {
-        loggerProxy.doLog(FINE, msg, params);
+        loggerProxy.doLog(Level.FINE, msg, params);
     }
 
     /**
      * Logs a FINER message.
      */
     public void finer(String msg) {
-        loggerProxy.doLog(FINER, msg);
+        loggerProxy.doLog(Level.FINER, msg);
     }
 
     public void finer(String msg, Throwable t) {
-        loggerProxy.doLog(FINER, msg, t);
+        loggerProxy.doLog(Level.FINER, msg, t);
     }
 
     public void finer(String msg, Object... params) {
-        loggerProxy.doLog(FINER, msg, params);
+        loggerProxy.doLog(Level.FINER, msg, params);
     }
 
     /**
      * Logs a FINEST message.
      */
     public void finest(String msg) {
-        loggerProxy.doLog(FINEST, msg);
+        loggerProxy.doLog(Level.FINEST, msg);
     }
 
     public void finest(String msg, Throwable t) {
-        loggerProxy.doLog(FINEST, msg, t);
+        loggerProxy.doLog(Level.FINEST, msg, t);
     }
 
     public void finest(String msg, Object... params) {
-        loggerProxy.doLog(FINEST, msg, params);
+        loggerProxy.doLog(Level.FINEST, msg, params);
     }
 
     /**
@@ -416,7 +473,7 @@ public class PlatformLogger {
         }
 
         boolean isEnabled() {
-            return effectiveLevel != OFF;
+            return effectiveLevel != Level.OFF;
         }
 
         Level getLevel() {
@@ -452,7 +509,7 @@ public class PlatformLogger {
 
         boolean isLoggable(Level level) {
             Level effectiveLevel = this.effectiveLevel;
-            return level.intValue() >= effectiveLevel.intValue() && effectiveLevel != OFF;
+            return level.intValue() >= effectiveLevel.intValue() && effectiveLevel != Level.OFF;
         }
 
         // derive effective level (could do inheritance search like j.u.l.Logger)
@@ -604,16 +661,31 @@ public class PlatformLogger {
             return LoggingSupport.isLoggable(javaLogger, Level.OFF.javaLevel);
         }
 
+        /**
+         * Returns the PlatformLogger.Level mapped from j.u.l.Level
+         * set in the logger.  If the j.u.l.Logger is set to a custom Level,
+         * this method will return the nearest Level.
+         */
         Level getLevel() {
             Object javaLevel = LoggingSupport.getLevel(javaLogger);
+            if (javaLevel == null) return null;
+
+            Level level;
             try {
-                return javaLevel == null
-                        ? null
-                        : Level.valueOf(LoggingSupport.getLevelName(javaLevel));
+                level = Level.valueOf(LoggingSupport.getLevelName(javaLevel));
             } catch (IllegalArgumentException e) {
-                // in case custom j.u.l.Level was set on j.u.l.Logger
-                return null;
+                int value = LoggingSupport.getLevelValue(javaLevel);
+                level = Level.ALL;
+                for (Level l : Level.values()) {
+                    // Level enum constants should be declared in ascending order
+                    assert level.intValue() <= l.intValue();
+                    if (l.intValue() >= value) {
+                        break;
+                    }
+                    level = l;
+                }
             }
+            return level;
         }
 
         void setLevel(Level level) {
