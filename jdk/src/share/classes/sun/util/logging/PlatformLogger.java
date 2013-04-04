@@ -32,6 +32,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -105,9 +106,8 @@ public class PlatformLogger {
      * PlatformLogger logging levels.
      */
     public static enum Level {
-        // The name and value must match that of {@code java.util.logging.Level} objects.
-        // They are declared in ascending order of the given value (see
-        // JavaLoggerProxy.getLevel dependency)
+        // The name and intValue must match that of {@code java.util.logging.Level} objects.
+        // They are declared in ascending order of the given intValue (see valueOf(int) dependency)
         ALL(Integer.MIN_VALUE),
         FINEST(300),
         FINER(400),
@@ -126,29 +126,39 @@ public class PlatformLogger {
          */
         /* java.util.logging.Level */ Object javaLevel;
 
-        private final int value;
+        private final int intValue;
         public int intValue() {
-            return value;
+            return intValue;
         }
 
-        Level(int value) {
-            this.value = value;
+        Level(int intValue) {
+            this.intValue = intValue;
+        }
+
+        private static final Level[] values;
+        private static final int[] intValues;
+        static { // this static initializer must be placed after enum constants
+            values = values();
+            intValues = new int[values.length];
+            for (int i = 0; i < values.length; i++) {
+                intValues[i] = values[i].intValue;
+            }
         }
 
         static Level valueOf(int level) {
             // ordering per the highest occurences in the jdk source
-            // finest, fine, finer, info first
+            // finest, fine, finer, info first ...
             switch (level) {
                 case PlatformLogger.FINEST:  return Level.FINEST;
                 case PlatformLogger.FINE:    return Level.FINE;
                 case PlatformLogger.FINER:   return Level.FINER;
                 case PlatformLogger.INFO:    return Level.INFO;
-                case PlatformLogger.WARNING: return Level.WARNING;
-                case PlatformLogger.CONFIG:  return Level.CONFIG;
-                case PlatformLogger.SEVERE:  return Level.SEVERE;
-                case PlatformLogger.OFF:     return Level.OFF;
-                case PlatformLogger.ALL:     return Level.ALL;
-                default: return Level.OFF;
+                // ... for the rest use binary search
+                default:
+                    int i = Arrays.binarySearch(intValues, level);
+                    // return the nearest equal or greater than level,
+                    // don't return OFF for level > SEVERE, but rather SEVERE
+                    return values[i >= 0 ? i : Math.min(-i - 1, values.length - 2)];
             }
         }
     }
@@ -313,7 +323,7 @@ public class PlatformLogger {
     /**
      * Set the log level specifying which message levels will be
      * logged by this logger.  Message levels lower than this
-     * value will be discarded.  The level value {@link #OFF}
+     * value will be discarded.  The level value {@link Level#OFF}
      * can be used to turn off logging.
      * <p>
      * If the new level is null, it means that this node should
@@ -662,30 +672,17 @@ public class PlatformLogger {
         }
 
         /**
-         * Returns the PlatformLogger.Level mapped from j.u.l.Level
-         * set in the logger.  If the j.u.l.Logger is set to a custom Level,
-         * this method will return the nearest Level.
+         * Returns the {@link PlatformLogger.Level} mapped from j.u.l.Level
+         * set in the logger. If the j.u.l.Logger is set to a custom Level,
+         * this method will return the nearest Level with greater value unless
+         * the value is greater than {@link Level#SEVERE} in which case it
+         * will return {@link Level#SEVERE}.
          */
         Level getLevel() {
             Object javaLevel = LoggingSupport.getLevel(javaLogger);
-            if (javaLevel == null) return null;
-
-            Level level;
-            try {
-                level = Level.valueOf(LoggingSupport.getLevelName(javaLevel));
-            } catch (IllegalArgumentException e) {
-                int value = LoggingSupport.getLevelValue(javaLevel);
-                level = Level.ALL;
-                for (Level l : Level.values()) {
-                    // Level enum constants should be declared in ascending order
-                    assert level.intValue() <= l.intValue();
-                    if (l.intValue() >= value) {
-                        break;
-                    }
-                    level = l;
-                }
-            }
-            return level;
+            return (javaLevel == null)
+                   ? null
+                   : Level.valueOf(LoggingSupport.getLevelValue(javaLevel));
         }
 
         void setLevel(Level level) {
