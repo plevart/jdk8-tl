@@ -106,17 +106,17 @@ public class PlatformLogger {
      * PlatformLogger logging levels.
      */
     public static enum Level {
-        // The name and intValue must match that of {@code java.util.logging.Level} objects.
-        // They are declared in ascending order of the given intValue (see valueOf(int) dependency)
-        ALL(Integer.MIN_VALUE),
-        FINEST(300),
-        FINER(400),
-        FINE(500),
-        CONFIG(700),
-        INFO(800),
-        WARNING(900),
-        SEVERE(1000),
-        OFF(Integer.MAX_VALUE);
+        // The name and value must match that of {@code java.util.logging.Level}s.
+        // Declare in ascending order of the given value for binary search.
+        ALL,
+        FINEST,
+        FINER,
+        FINE,
+        CONFIG,
+        INFO,
+        WARNING,
+        SEVERE,
+        OFF;
 
         /**
          * Associated java.util.logging.Level lazily initialized in
@@ -126,40 +126,35 @@ public class PlatformLogger {
          */
         /* java.util.logging.Level */ Object javaLevel;
 
-        private final int intValue;
+        // ascending order for binary search matching the list of enum constants
+        private static final int[] levelValues = new int[] {
+            PlatformLogger.ALL, PlatformLogger.FINEST, PlatformLogger.FINER,
+            PlatformLogger.FINE, PlatformLogger.CONFIG, PlatformLogger.INFO,
+            PlatformLogger.WARNING, PlatformLogger.SEVERE, PlatformLogger.OFF
+        };
+
         public int intValue() {
-            return intValue;
-        }
-
-        Level(int intValue) {
-            this.intValue = intValue;
-        }
-
-        private static final Level[] values;
-        private static final int[] intValues;
-        static { // this static initializer must be placed after enum constants
-            values = values();
-            intValues = new int[values.length];
-            for (int i = 0; i < values.length; i++) {
-                intValues[i] = values[i].intValue;
-            }
+            return levelValues[this.ordinal()];
         }
 
         static Level valueOf(int level) {
-            // ordering per the highest occurences in the jdk source
-            // finest, fine, finer, info first ...
             switch (level) {
-                case PlatformLogger.FINEST:  return Level.FINEST;
-                case PlatformLogger.FINE:    return Level.FINE;
-                case PlatformLogger.FINER:   return Level.FINER;
-                case PlatformLogger.INFO:    return Level.INFO;
-                // ... for the rest use binary search
-                default:
-                    int i = Arrays.binarySearch(intValues, level);
-                    // return the nearest equal or greater than level,
-                    // don't return OFF for level > SEVERE, but rather SEVERE
-                    return values[i >= 0 ? i : Math.min(-i - 1, values.length - 2)];
+                // ordering per the highest occurences in the jdk source
+                // finest, fine, finer, info first
+                case PlatformLogger.FINEST  : return Level.FINEST;
+                case PlatformLogger.FINE    : return Level.FINE;
+                case PlatformLogger.FINER   : return Level.FINER;
+                case PlatformLogger.INFO    : return Level.INFO;
+                case PlatformLogger.WARNING : return Level.WARNING;
+                case PlatformLogger.CONFIG  : return Level.CONFIG;
+                case PlatformLogger.SEVERE  : return Level.SEVERE;
+                case PlatformLogger.OFF     : return Level.OFF;
+                case PlatformLogger.ALL     : return Level.ALL;
             }
+            // return the nearest Level value >= the given level,
+            // for level > SEVERE, return SEVERE and exclude OFF
+            int i = Arrays.binarySearch(levelValues, 0, levelValues.length-2, level);
+            return values()[i >= 0 ? i : (-i-1)];
         }
     }
 
@@ -278,8 +273,8 @@ public class PlatformLogger {
     }
 
     /**
-     * Gets the current log level.  Returns 0 if the current effective level
-     * is not set (equivalent to Logger.getLevel() returns null).
+     * Gets the current log level. Returns 0 if the current effective level is
+     * not set (equivalent to Logger.getLevel() returns null).
      *
      * @deprecated Use level() instead
      */
@@ -304,6 +299,9 @@ public class PlatformLogger {
      * be logged by this logger.
      */
     public boolean isLoggable(Level level) {
+        if (level == null) {
+            throw new NullPointerException();
+        }
         // performance-sensitive method: use two monomorphic call-sites
         JavaLoggerProxy jlp = javaLoggerProxy;
         return jlp != null ? jlp.isLoggable(level) : loggerProxy.isLoggable(level);
@@ -323,7 +321,7 @@ public class PlatformLogger {
     /**
      * Set the log level specifying which message levels will be
      * logged by this logger.  Message levels lower than this
-     * value will be discarded.  The level value {@link Level#OFF}
+     * value will be discarded.  The level value {@link #OFF}
      * can be used to turn off logging.
      * <p>
      * If the new level is null, it means that this node should
@@ -672,17 +670,19 @@ public class PlatformLogger {
         }
 
         /**
-         * Returns the {@link PlatformLogger.Level} mapped from j.u.l.Level
-         * set in the logger. If the j.u.l.Logger is set to a custom Level,
-         * this method will return the nearest Level with greater value unless
-         * the value is greater than {@link Level#SEVERE} in which case it
-         * will return {@link Level#SEVERE}.
+         * Returns the PlatformLogger.Level mapped from j.u.l.Level
+         * set in the logger.  If the j.u.l.Logger is set to a custom Level,
+         * this method will return the nearest Level.
          */
         Level getLevel() {
             Object javaLevel = LoggingSupport.getLevel(javaLogger);
-            return (javaLevel == null)
-                   ? null
-                   : Level.valueOf(LoggingSupport.getLevelValue(javaLevel));
+            if (javaLevel == null) return null;
+
+            try {
+                return Level.valueOf(LoggingSupport.getLevelName(javaLevel));
+            } catch (IllegalArgumentException e) {
+                return Level.valueOf(LoggingSupport.getLevelValue(javaLevel));
+            }
         }
 
         void setLevel(Level level) {

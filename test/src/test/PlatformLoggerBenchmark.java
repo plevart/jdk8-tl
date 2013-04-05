@@ -30,12 +30,22 @@ public class PlatformLoggerBenchmark extends TestRunner {
         }
     }
 
+    public static class isLoggableWarning extends Test {
+        @Override
+        protected void doLoop(Loop loop, DevNull devNull1, DevNull devNull2, DevNull devNull3, DevNull devNull4, DevNull devNull5) {
+            while (loop.nextIteration()) {
+                devNull1.yield(log.isLoggable(PlatformLogger.WARNING));
+            }
+        }
+    }
+
 
     public static void main(String[] args) throws Exception {
 
         startTests();
 
-        doTest(isLoggableFinest.class, 3000L, 1, 4, 1, 2, 1);
+        doTest(isLoggableFinest.class, 3000L, 1, 1, 1, 3, 0);
+        doTest(isLoggableWarning.class, 3000L, 1, 1, 1, 3, 0);
 
         // enable java.util.logging
         doAction("java.util.logging enabled", new Runnable() {
@@ -46,6 +56,7 @@ public class PlatformLoggerBenchmark extends TestRunner {
         });
 
         doTest(isLoggableFinest.class, 3000L, 1, 4, 1, 0, 3);
+        doTest(isLoggableWarning.class, 3000L, 1, 4, 1, 0, 3);
 
         endTests();
     }
