@@ -47,7 +47,9 @@ public final class WeakCache<K, P, V> {
     }
 
     /**
-     * Look-up the value through the cache.
+     * Look-up the value through the cache. This always evaluates the {@code subKeyFactory} function
+     * and optionally evaluates {@code valueFactory} function if there is no entry in the cache for given pair of
+     * (key, subKey) or the entry has already been cleared.
      *
      * @param key       possibly null key
      * @param parameter parameter used together with key to create sub-key and value (should not be null)
