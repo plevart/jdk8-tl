@@ -214,8 +214,9 @@ public final class WeakCache<K, P, V> {
     private static final class CacheKey<K> extends WeakReference<K> implements Expungable {
 
         static <K> Object valueOf(K key, ReferenceQueue<Object> refQueue, Object subKey) {
+            Objects.requireNonNull(subKey, "subKey");
             return key == null
-                   // null key means we don't have to weakly reference it, so the subKey itself is appropriate
+                   // null key means we can't weakly reference it, so the subKey itself is appropriate
                    ? subKey
                    // non-null key requires wrapping with a WeakReference
                    : new CacheKey<>(key, refQueue, subKey);
@@ -227,7 +228,7 @@ public final class WeakCache<K, P, V> {
         private CacheKey(K key, ReferenceQueue<Object> refQueue, Object subKey) {
             super(key, refQueue);
             this.hash = key.hashCode() * 31 + subKey.hashCode();
-            this.subKey = Objects.requireNonNull(subKey, "subKey");
+            this.subKey = subKey;
         }
 
         @Override
