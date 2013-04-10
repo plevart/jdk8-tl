@@ -64,7 +64,11 @@ public final class WeakCache<K, P, V> {
 
         expungeStaleEntries();
 
-        Object cacheKey = CacheKey.valueOf(key, refQueue, subKeyFactory.apply(key, parameter));
+        Object cacheKey = CacheKey.valueOf(
+            key,
+            refQueue,
+            Objects.requireNonNull(subKeyFactory.apply(key, parameter), "subKey returned by subKeyFactory is null")
+        );
         Supplier<V> supplier = map.get(cacheKey);
         Factory factory = null;
 
@@ -77,8 +81,8 @@ public final class WeakCache<K, P, V> {
                 }
             }
             // else no supplier in cache
-            // or a supplier that returned null (can be cleared CacheValue or a Factory
-            //   that wasn't successful in installing the CacheValue)
+            // or a supplier that returned null (could be a cleared CacheValue
+            // or a Factory that wasn't successful in installing the CacheValue)
 
             // lazily construct a Factory
             if (factory == null) {
@@ -94,7 +98,9 @@ public final class WeakCache<K, P, V> {
                 // else retry with winning supplier
             } else {
                 if (map.replace(cacheKey, supplier, factory)) {
-                    // successfully replaced cleared CacheEntry with Factory
+                    // successfully replaced
+                    // cleared CacheEntry / unsuccessful Factory
+                    // with our Factory
                     supplier = factory;
                 } else {
                     // retry with current supplier
@@ -127,66 +133,42 @@ public final class WeakCache<K, P, V> {
         public synchronized V get() { // serialize access
             // re-check
             Supplier<V> supplier = map.get(cacheKey);
-            V value;
-            if (supplier != null && supplier != this) { // already replaced with CacheValue?
-                value = supplier.get();
-                if (value != null) { // and the CacheValue is not cleared yet
-                    return value;
-                }
+            if (supplier != this) {
+                // something changed while we were waiting:
+                // might be that we were replaced by a CacheValue
+                // or were removed because of failure ->
+                // return null to signal WeakCache.get() to retry the loop
+                return null;
             }
             // else still us (supplier == this)
-            // or removed because of failure (supplier == null)
-            // or replaced with a CacheValue that has already been cleared (supplier.get() == null)
 
             // create new value
+            V value;
             try {
-                value = valueFactory.apply(key, parameter);
+                value = Objects.requireNonNull(valueFactory.apply(key, parameter), "valueFactory returned null");
             }
             catch (RuntimeException | Error e) {
-                // remove us on failure (if still in the map)
-                if (supplier == this) {
-                    map.remove(cacheKey, this);
-                }
+                // remove us on failure
+                map.remove(cacheKey, this);
                 // re-throw
                 throw e;
             }
             catch (Throwable t) { // should not happen, but be conservative
-                // remove us on failure (if still in the map)
-                if (supplier == this) {
-                    map.remove(cacheKey, this);
-                }
+                // remove us on failure
+                map.remove(cacheKey, this);
                 // re-throw wrapped
                 throw new UndeclaredThrowableException(t);
             }
 
-            // wrap it with CacheValue
+            // wrap value with CacheValue (WeakReference)
             CacheValue<V> cacheValue = new CacheValue<>(cacheKey, value, refQueue);
 
-            // try installing / replacing supplier with CacheValue
-            if (supplier == this) {
-                // still us -> replace with CacheValue (this should always succeed)
-                if (!map.replace(cacheKey, this, cacheValue)) {
-                    throw new AssertionError("Somebody replaced us in the middle of constructing new value - should not happen");
-                }
-            } else if (supplier == null) {
-                // removed because of failure -> previous invocation to this Factory.get failed and so
-                // we were removed from map but this invocation succeeded, so try to install the CacheValue anyway
-                // (this can fail if the removed slot has already been taken by another Factory or CacheValue)
-                supplier = map.putIfAbsent(cacheKey, cacheValue);
-                if (supplier != null) { // already taken?
-                    // rather than returning the value produced by us, return null to trigger retry in WeakCache.get()
-                    return null;
-                }
-            } else {
-                // replaced with CacheValue that has already been cleared -> try to replace it with the CacheValue
-                // produced by us (this can fail if it was already replaced by another Factory or CacheValue)
-                if (!map.replace(cacheKey, supplier, cacheValue)) { // already replaced with another supplier?
-                    // rather than returning the value produced by us, return null to trigger retry in WeakCache.get()
-                    return null;
-                }
+            // try replacing us with CacheValue (this should always succeed)
+            if (!map.replace(cacheKey, this, cacheValue)) {
+                throw new AssertionError("Somebody replaced us in the middle of constructing new value - should not happen");
             }
 
-            // successfully installed / replaced new CacheValue -> return the value wrapped by it
+            // successfully replaced us with new CacheValue -> return the value wrapped by it
             return value;
         }
     }
@@ -206,7 +188,8 @@ public final class WeakCache<K, P, V> {
 
         @Override
         public boolean expungeFrom(ConcurrentMap<?, ?> map) {
-            // only remove if still mapped to same CacheValue (by reference - using default Object.equals)
+            // only remove if still mapped to same CacheValue
+            // (by reference - CacheValue does not override Object.equals)
             return map.remove(cacheKey, this);
         }
     }
@@ -214,7 +197,6 @@ public final class WeakCache<K, P, V> {
     private static final class CacheKey<K> extends WeakReference<K> implements Expungable {
 
         static <K> Object valueOf(K key, ReferenceQueue<Object> refQueue, Object subKey) {
-            Objects.requireNonNull(subKey, "subKey");
             return key == null
                    // null key means we can't weakly reference it, so the subKey itself is appropriate
                    ? subKey
