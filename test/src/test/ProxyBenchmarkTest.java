@@ -113,10 +113,12 @@ public class ProxyBenchmarkTest extends TestRunner {
     }
 
     public static void main(String[] args) throws InterruptedException {
+        startTests();
         int maxThreads = Math.max(4, Runtime.getRuntime().availableProcessors());
         doTest(Proxy_getProxyClass.class, 5000L, 1, maxThreads, 1);
         doTest(Proxy_isProxyClassTrue.class, 5000L, 1, maxThreads, 1);
         doTest(Proxy_isProxyClassFalse.class, 5000L, 1, maxThreads, 1);
         doTest(Annotation_equals.class, 5000L, 1, maxThreads, 1);
+        endTests();
     }
 }
