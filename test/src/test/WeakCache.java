@@ -67,7 +67,7 @@ public final class WeakCache<K, P, V> {
         Object cacheKey = CacheKey.valueOf(
             key,
             refQueue,
-            Objects.requireNonNull(subKeyFactory.apply(key, parameter), "subKey returned by subKeyFactory is null")
+            Objects.requireNonNull(subKeyFactory.apply(key, parameter), "subKeyFactory returned null")
         );
         Supplier<V> supplier = map.get(cacheKey);
         Factory factory = null;
@@ -135,8 +135,8 @@ public final class WeakCache<K, P, V> {
             Supplier<V> supplier = map.get(cacheKey);
             if (supplier != this) {
                 // something changed while we were waiting:
-                // might be that we were replaced by a CacheValue
-                // or were removed because of failure ->
+                // might be that we were replaced by a CacheValue (in another thread)
+                // or were removed because of failure (in another thread) ->
                 // return null to signal WeakCache.get() to retry the loop
                 return null;
             }
@@ -174,7 +174,7 @@ public final class WeakCache<K, P, V> {
     }
 
     private interface Expungable {
-        boolean expungeFrom(ConcurrentMap<?, ?> map);
+        void expungeFrom(ConcurrentMap<?, ?> map);
     }
 
     private static final class CacheValue<V> extends WeakReference<V> implements Supplier<V>, Expungable {
@@ -187,10 +187,10 @@ public final class WeakCache<K, P, V> {
         }
 
         @Override
-        public boolean expungeFrom(ConcurrentMap<?, ?> map) {
+        public void expungeFrom(ConcurrentMap<?, ?> map) {
             // only remove if still mapped to same CacheValue
             // (by reference - CacheValue does not override Object.equals)
-            return map.remove(cacheKey, this);
+            map.remove(cacheKey, this);
         }
     }
 
@@ -218,7 +218,6 @@ public final class WeakCache<K, P, V> {
             return hash;
         }
 
-        @SuppressWarnings("unchecked")
         @Override
         public boolean equals(Object obj) {
             CacheKey other;
@@ -227,15 +226,15 @@ public final class WeakCache<K, P, V> {
                    obj != null &&
                    obj.getClass() == this.getClass() &&
                    (thisKey = this.get()) != null &&
-                   thisKey.equals((other = (CacheKey) obj).get()) &&
+                   thisKey.equals((other = (CacheKey<?>) obj).get()) &&
                    this.subKey.equals(other.subKey);
         }
 
         @Override
-        public boolean expungeFrom(ConcurrentMap<?, ?> map) {
-            // removing just by key is always safe here because when a CacheKey is cleared
-            // it is only equal to itself (see equals method)...
-            return map.remove(this) != null;
+        public void expungeFrom(ConcurrentMap<?, ?> map) {
+            // removing just by key is always safe here because after a CacheKey is cleared
+            // and enqueue-ed it is only equal to itself (see equals method)...
+            map.remove(this);
         }
     }
 }
