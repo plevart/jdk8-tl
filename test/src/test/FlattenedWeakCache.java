@@ -15,8 +15,8 @@ import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
 /**
- * This {@link WeakCache} implementation uses single {@code ConcurrentMap<WeakReferenceWithSubKey<K>, WeakReference<V>>}
- * as the main backing data-structure where {@code key} and {@code subKey} are flattened into a single {@code cacheKey}.
+ * This {@link WeakCache} implementation uses single {@code ConcurrentMap<CacheKey<K>, WeakReference<V>>}
+ * as the main backing data-structure where {@code key} and {@code subKey} are flattened into a single {@link CacheKey}.
  */
 public class FlattenedWeakCache<K, P, V> implements WeakCache<K, P, V> {
 
@@ -173,6 +173,10 @@ public class FlattenedWeakCache<K, P, V> implements WeakCache<K, P, V> {
         }
     }
 
+    /**
+     * An interface implemented by WeakReference subclasses with a single method {@link #expungeFrom}
+     * which is used to hold the clean-up code.
+     */
     private interface Expungable {
         void expungeFrom(ConcurrentMap<?, ?> map, ConcurrentMap<?, Boolean> reverseMap);
     }
@@ -252,6 +256,12 @@ public class FlattenedWeakCache<K, P, V> implements WeakCache<K, P, V> {
         }
     }
 
+    /**
+     * Flattened cacheKey containing a weekly referenced {@code key} and strongly referenced
+     * {@code subKey}. It also implements {@link Expungable} so it can clean-up when the weekly
+     * referenced key is garbage collected. The containing {@code key} is compared by identity
+     * and the {@code subKey} by value.
+     */
     private static final class CacheKey<K> extends WeakReference<K> implements Expungable {
 
         static <K> Object valueOf(K key, ReferenceQueue<Object> refQueue, Object subKey) {
