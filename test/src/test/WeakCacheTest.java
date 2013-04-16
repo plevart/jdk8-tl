@@ -5,6 +5,9 @@
  */
 package test;
 
+import sun.misc.FlattenedWeakCache;
+import sun.misc.WeakCache;
+
 import java.util.Arrays;
 import java.util.function.BiFunction;
 

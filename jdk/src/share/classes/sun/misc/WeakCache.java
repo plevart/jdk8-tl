@@ -3,7 +3,7 @@
  * and released to the public domain, as explained at
  * http://creativecommons.org/publicdomain/zero/1.0/
  */
-package test;
+package sun.misc;
 
 /**
  * Cache mapping pairs of {@code (key, sub-key) -> value}. Keys and values are weakly but sub-keys are strongly referenced.
@@ -12,9 +12,9 @@ package test;
  * Values are calculated from keys and parameters using the {@code valueFactory} function passed to the constructor
  * of implementing classes.
  * Keys can be null and are compared by identity while sub-keys returned by {@code subKeyFactory} or
- * values returned by {@code valueFactory} can not be null.
- * Entries are expunged from cache lazily on each invocation to {@link #get} method.
- * WeakCache implementations may also provide {@link #containsValue} and {@link #size} optional operations.
+ * values returned by {@code valueFactory} can not be null. Sub-keys are compared using their {@link #equals} method.
+ * Entries are expunged from cache lazily on each invocation to {@link #get}, {@link #containsValue} or {@link #size}
+ * methods.
  *
  * @param <K> type of keys
  * @param <P> type of parameters

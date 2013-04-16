@@ -3,7 +3,7 @@
  * and released to the public domain, as explained at
  * http://creativecommons.org/publicdomain/zero/1.0/
  */
-package test;
+package sun.misc;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
@@ -15,7 +15,7 @@ import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
 /**
- * This {@link WeakCache} implementation uses single {@code ConcurrentMap<CacheKey<K>, WeakReference<V>>}
+ * This {@link WeakCache} implementation uses single {@code ConcurrentMap<CacheKey<K>, CacheValue<V>>}
  * as the main backing data-structure where {@code key} and {@code subKey} are flattened into a single {@link CacheKey}.
  */
 public class FlattenedWeakCache<K, P, V> implements WeakCache<K, P, V> {
