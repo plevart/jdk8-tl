@@ -30,15 +30,12 @@ import java.security.Permission;
 import java.security.PrivilegedAction;
 import java.util.IdentityHashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
 import sun.misc.FlattenedWeakCache;
 import sun.misc.ProxyGenerator;
-import sun.misc.Unsafe;
 import sun.misc.WeakCache;
 import sun.reflect.Reflection;
 import sun.reflect.misc.ReflectUtil;
@@ -595,23 +592,6 @@ public class Proxy implements java.io.Serializable {
                 throw new IllegalArgumentException(e.toString());
             }
 
-            return proxyClass;
-        }
-    }
-
-    /**
-     * A supplier that holds already constructed proxy class.
-     * For fast-path retrieval.
-     */
-    static final class ProxyClassHolder implements Supplier<Class<?>> {
-        private final Class<?> proxyClass;
-
-        ProxyClassHolder(Class<?> proxyClass) {
-            this.proxyClass = proxyClass;
-        }
-
-        @Override
-        public Class<?> get() {
             return proxyClass;
         }
     }
