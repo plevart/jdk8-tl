@@ -27,12 +27,13 @@ public class FlattenedWeakCache<K, P, V> implements WeakCache<K, P, V> {
     private final BiFunction<? super K, ? super P, ? extends V> valueFactory;
 
     /**
-     * Construct an instance of {@code WeakCache}
+     * Construct an instance of {@code FlattenedWeakCache}
      *
      * @param subKeyFactory                 a function mapping a pair of {@code (key, parameter) -> sub-key}
      * @param valueFactory                  a function mapping a pair of {@code (key, parameter) -> value}
      * @param supportContainsValueOperation if true the cache also maintains an inverse index
-     *                                      of cached values to support {@link #containsValue} operation
+     *                                      of cached values to support {@link #containsValue} and
+     *                                      {@link #size} optional operations
      * @throws NullPointerException if {@code subKeyFactory} or {@code valueFactory} is null.
      */
     public FlattenedWeakCache(BiFunction<? super K, ? super P, ?> subKeyFactory,
@@ -98,7 +99,16 @@ public class FlattenedWeakCache<K, P, V> implements WeakCache<K, P, V> {
     public boolean containsValue(V value) {
         if (reverseMap == null)
             throw new UnsupportedOperationException();
+        expungeStaleEntries();
         return value != null && reverseMap.containsKey(new LookupValue<>(value));
+    }
+
+    @Override
+    public int size() {
+        if (reverseMap == null)
+            throw new UnsupportedOperationException();
+        expungeStaleEntries();
+        return reverseMap.size();
     }
 
     private void expungeStaleEntries() {
