@@ -32,7 +32,6 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiFunction;
-import java.util.function.Supplier;
 
 import sun.misc.FlattenedWeakCache;
 import sun.misc.ProxyGenerator;

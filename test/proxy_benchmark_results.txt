@@ -229,7 +229,7 @@
 ##############################################################
 
 
-Summary (4 Cores x 2 Threads CPU):
+Summary (4 Cores x 2 Threads i7 CPU):
 
 Test                     Threads  ns/op Original  Patched (CL field)  Patched (WeakCache)
 =======================  =======  ==============  ==================  ===================
