@@ -4,6 +4,7 @@ import si.pele.microbench.SizeOf;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  */
@@ -38,6 +39,7 @@ public class SizeOfTest {
         };
         Class<?>[] proxyClasses = new Class[interfaces.length * classLoaders.length];
         SizeOf sizeOf = new SizeOf(SizeOf.Visitor.NULL);
+        SizeOf sizeOfOut = new SizeOf(SizeOf.Visitor.STDOUT);
         System.out.printf("class     proxy     size of   delta to\n");
         System.out.printf("loaders   classes   caches    prev.ln.\n");
         System.out.printf("--------  --------  --------  --------\n");
@@ -59,7 +61,7 @@ public class SizeOfTest {
         }
     }
 
-    public static void main(String[] args) throws Exception {
+    static void testCaches() throws Exception {
         if (true) {
             Field cacheField = Proxy.class.getDeclaredField("proxyClassCache");
             cacheField.setAccessible(true);
@@ -74,5 +76,19 @@ public class SizeOfTest {
             Object cache2 = cacheField2.get(null);
             doTest(cache, cache2);
         }
+    }
+
+    static void chmTest() {
+        SizeOf sizeOf = new SizeOf(SizeOf.Visitor.STDOUT);
+        ConcurrentHashMap<Integer, Integer> chm = new ConcurrentHashMap<>();
+        sizeOf.deepSizeOf(chm);
+        for (int i = 0; i < 20; i++) {
+            chm.put(i, i);
+            sizeOf.deepSizeOf(chm);
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+        testCaches();
     }
 }

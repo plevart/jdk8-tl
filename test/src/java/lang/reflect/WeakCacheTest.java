@@ -3,11 +3,7 @@
  * and released to the public domain, as explained at
  * http://creativecommons.org/publicdomain/zero/1.0/
  */
-package test;
-
-import java.lang.reflect.FlattenedWeakCache;
-import java.lang.reflect.TwoLevelWeakCache;
-import java.lang.reflect.WeakCache;
+package java.lang.reflect;
 
 import java.util.Arrays;
 import java.util.function.BiFunction;
