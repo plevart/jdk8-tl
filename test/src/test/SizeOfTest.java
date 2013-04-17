@@ -10,45 +10,62 @@ import java.lang.reflect.Proxy;
 public class SizeOfTest {
 
     public interface I0 {}
+
     public interface I1 {}
+
     public interface I2 {}
+
     public interface I3 {}
+
     public interface I4 {}
+
     public interface I5 {}
+
     public interface I6 {}
+
     public interface I7 {}
+
     public interface I8 {}
+
     public interface I9 {}
 
-    static final Class<?>[] interfaces = { I0.class, I1.class, I2.class, I3.class, I4.class, I5.class, I6.class, I7.class, I8.class, I9.class };
-    static final Class<?>[] proxyClasses = new Class[interfaces.length];
+    static final Class<?>[] interfaces = {I0.class, I1.class, I2.class, I3.class, I4.class, I5.class, I6.class, I7.class, I8.class, I9.class};
 
-    static void doTest(Object ...caches) {
+    static void doTest(Object... caches) {
+        ClassLoader[] classLoaders = {
+            new ClassLoader(Thread.currentThread().getContextClassLoader()) {},
+            new ClassLoader(Thread.currentThread().getContextClassLoader()) {},
+        };
+        Class<?>[] proxyClasses = new Class[interfaces.length * classLoaders.length];
         SizeOf sizeOf = new SizeOf(SizeOf.Visitor.NULL);
-        System.out.printf("proxy     size of   delta to\n");
-        System.out.printf("classes   caches    prev.ln.\n");
-        System.out.printf("--------  --------  --------\n");
-        long prevSize = 0L;
-        for (int i = 0; i<=interfaces.length; i++) {
-            long size = 0L;
-            for (Object cache : caches)
-                size += sizeOf.deepSizeOf(cache);
-            System.out.printf("%8d  %8d  %8d\n", i, size, size - prevSize);
-            prevSize = size;
-            if (i < interfaces.length) {
-                proxyClasses[i] = Proxy.getProxyClass(Thread.currentThread().getContextClassLoader(), interfaces[i]);
+        System.out.printf("class     proxy     size of   delta to\n");
+        System.out.printf("loaders   classes   caches    prev.ln.\n");
+        System.out.printf("--------  --------  --------  --------\n");
+        long size = 0L;
+        for (Object cache : caches)
+            size += sizeOf.deepSizeOf(cache);
+        System.out.printf("%8d  %8d  %8d  %8d\n", 0, 0, size, size);
+        long prevSize = size;
+        int classes = 0;
+        for (int cli = 0; cli < classLoaders.length; cli++) {
+            for (int ii = 0; ii < interfaces.length; ii++) {
+                proxyClasses[classes++] = Proxy.getProxyClass(classLoaders[cli], interfaces[ii]);
+                size = 0L;
+                for (Object cache : caches)
+                    size += sizeOf.deepSizeOf(cache);
+                System.out.printf("%8d  %8d  %8d  %8d\n", cli+1, classes, size, size - prevSize);
+                prevSize = size;
             }
         }
     }
 
     public static void main(String[] args) throws Exception {
-        if (false) {
+        if (true) {
             Field cacheField = Proxy.class.getDeclaredField("proxyClassCache");
             cacheField.setAccessible(true);
             Object cache = cacheField.get(null);
             doTest(cache);
-        }
-        else {
+        } else {
             Field cacheField = Proxy.class.getDeclaredField("loaderToCache");
             cacheField.setAccessible(true);
             Object cache = cacheField.get(null);

@@ -5,8 +5,9 @@
  */
 package test;
 
-import sun.misc.FlattenedWeakCache;
-import sun.misc.WeakCache;
+import java.lang.reflect.FlattenedWeakCache;
+import java.lang.reflect.TwoLevelWeakCache;
+import java.lang.reflect.WeakCache;
 
 import java.util.Arrays;
 import java.util.function.BiFunction;
@@ -55,7 +56,7 @@ public class WeakCacheTest {
     }
 
     public static void main(String[] args) {
-        WeakCache<String, Integer, String> wc = new FlattenedWeakCache<>(
+        WeakCache<String, Integer, String> fwc = new FlattenedWeakCache<>(
             new BiFunction<String, Integer, Object>() {
                 @Override
                 public Object apply(String s, Integer integer) {
@@ -71,10 +72,29 @@ public class WeakCacheTest {
             true
         );
 
-        doTest(wc);
-        //doGc();
-        System.out.println(wc.size());
+        doTest(fwc);
         doGc();
-        System.out.println(wc.size());
+        System.out.println(fwc.size());
+
+        WeakCache<String, Integer, String> twc = new TwoLevelWeakCache<>(
+            new BiFunction<String, Integer, Object>() {
+                @Override
+                public Object apply(String s, Integer integer) {
+                    return integer;
+                }
+            },
+            new BiFunction<String, Integer, String>() {
+                @Override
+                public String apply(String s, Integer integer) {
+                    return s + ":" + integer;
+                }
+            },
+            true
+        );
+
+        doTest(twc);
+        doGc();
+        System.out.println(twc.size());
+
     }
 }

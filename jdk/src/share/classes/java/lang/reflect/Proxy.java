@@ -33,9 +33,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiFunction;
 
-import sun.misc.FlattenedWeakCache;
 import sun.misc.ProxyGenerator;
-import sun.misc.WeakCache;
 import sun.reflect.Reflection;
 import sun.reflect.misc.ReflectUtil;
 import sun.security.util.SecurityConstants;
@@ -230,9 +228,11 @@ public class Proxy implements java.io.Serializable {
     private static final Class[] constructorParams =
         { InvocationHandler.class };
 
-    /** a cache of proxy classes */
-    private static final WeakCache<ClassLoader, Class<?>[], Class<?>> proxyClassCache =
-        new FlattenedWeakCache<>(
+    /**
+     * a cache of proxy classes
+     */
+    private static final WeakCache<ClassLoader, Class<?>[], Class<?>>
+        proxyClassCache = new TwoLevelWeakCache<>(
             new KeyFactory(),
             new ProxyClassFactory(),
             true
