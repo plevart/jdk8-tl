@@ -45,6 +45,7 @@ import java.util.function.Supplier;
  * Entries are expunged from cache lazily on each invocation to {@link #get},
  * {@link #containsValue} or {@link #size} methods.
  *
+ * @author Peter Levart
  * @param <K> type of keys
  * @param <P> type of parameters
  * @param <V> type of values
