@@ -5,14 +5,21 @@
  */
 package java.lang.reflect;
 
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.function.BiFunction;
+import java.util.function.Supplier;
+
 /**
  * Cache mapping pairs of {@code (key, sub-key) -> value}. Keys and values are
  * weakly but sub-keys are strongly referenced.  Keys are passed directly to
  * {@link #get} method which also takes a {@code parameter}. Sub-keys are
  * calculated from keys and parameters using the {@code subKeyFactory} function
- * passed to the constructor of implementing classes. Values are calculated from
- * keys and parameters using the {@code valueFactory} function passed to the
- * constructor of implementing classes.
+ * passed to the constructor. Values are calculated from keys and parameters
+ * using the {@code valueFactory} function passed to the constructor.
  * Keys can be null and are compared by identity while sub-keys returned by
  * {@code subKeyFactory} or values returned by {@code valueFactory}
  * can not be null. Sub-keys are compared using their {@link #equals} method.
@@ -22,10 +29,36 @@ package java.lang.reflect;
  * @param <K> type of keys
  * @param <P> type of parameters
  * @param <V> type of values
- * @see FlattenedWeakCache
- * @see TwoLevelWeakCache
  */
-interface WeakCache<K, P, V> {
+final class WeakCache<K, P, V> {
+
+    private final ReferenceQueue<Object> refQueue
+        = new ReferenceQueue<>();
+    private final ConcurrentMap<Object, ConcurrentMap<Object, Supplier<V>>> map
+        = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Supplier<V>, Boolean> reverseMap
+        = new ConcurrentHashMap<>();
+    private final BiFunction<? super K, ? super P, ?> subKeyFactory;
+    private final BiFunction<? super K, ? super P, ? extends V> valueFactory;
+
+    /**
+     * Construct an instance of {@code TwoLevelWeakCache}
+     *
+     * @param subKeyFactory a function mapping a pair of
+     *                      {@code (key, parameter) -> sub-key}
+     * @param valueFactory  a function mapping a pair of
+     *                      {@code (key, parameter) -> value}
+     * @throws NullPointerException if {@code subKeyFactory} or
+     *                              {@code valueFactory} is null.
+     */
+    public WeakCache(
+        BiFunction<? super K, ? super P, ?> subKeyFactory,
+        BiFunction<? super K, ? super P, ? extends V> valueFactory
+    ) {
+        this.subKeyFactory = Objects.requireNonNull(subKeyFactory);
+        this.valueFactory = Objects.requireNonNull(valueFactory);
+    }
+
     /**
      * Look-up the value through the cache. This always evaluates the
      * {@code subKeyFactory} function and optionally evaluates
@@ -45,29 +78,325 @@ interface WeakCache<K, P, V> {
      * @throws Error                or subtype if {@code subKeyFactory} or
      *                              {@code valueFactory} throws it
      */
-    V get(K key, P parameter);
+    public final V get(K key, P parameter) {
+        Objects.requireNonNull(parameter);
+
+        expungeStaleEntries();
+
+        Object cacheKey = CacheKey.valueOf(
+            key,
+            refQueue
+        );
+
+        // lazily install the 2nd level valuesMap for the particular cacheKey
+        ConcurrentMap<Object, Supplier<V>> valuesMap = map.get(cacheKey);
+        if (valuesMap == null) {
+            ConcurrentMap<Object, Supplier<V>> oldValuesMap = map.putIfAbsent(
+                cacheKey,
+                valuesMap = new ConcurrentHashMap<>()
+            );
+            if (oldValuesMap != null) {
+                valuesMap = oldValuesMap;
+            }
+        }
+
+        // create subKey and retrieve the possible Supplier<V> stored by that
+        // subKey from valuesMap
+        Object subKey = Objects.requireNonNull(subKeyFactory.apply(key, parameter));
+        Supplier<V> supplier = valuesMap.get(subKey);
+        Factory factory = null;
+
+        while (true) {
+            if (supplier != null) {
+                // supplier might be a Factory or a CacheValue<V> instance
+                V value = supplier.get();
+                if (value != null) {
+                    return value;
+                }
+            }
+            // else no supplier in cache
+            // or a supplier that returned null (could be a cleared CacheValue
+            // or a Factory that wasn't successful in installing the CacheValue)
+
+            // lazily construct a Factory
+            if (factory == null) {
+                factory = new Factory(key, parameter, subKey, valuesMap);
+            }
+
+            if (supplier == null) {
+                supplier = valuesMap.putIfAbsent(subKey, factory);
+                if (supplier == null) {
+                    // successfully installed Factory
+                    supplier = factory;
+                }
+                // else retry with winning supplier
+            } else {
+                if (valuesMap.replace(subKey, supplier, factory)) {
+                    // successfully replaced
+                    // cleared CacheEntry / unsuccessful Factory
+                    // with our Factory
+                    supplier = factory;
+                } else {
+                    // retry with current supplier
+                    supplier = valuesMap.get(subKey);
+                }
+            }
+        }
+    }
 
     /**
-     * Optional operation.
      * Checks whether the specified non-null value is already present in this
      * {@code WeakCache}. The check is made using identity comparison regardless
      * of whether values's class overrides {@link Object#equals} or not.
      *
      * @param value the non-null value to check
      * @return true if given {@code value} is already cached
-     * @throws UnsupportedOperationException if this operation is not supported
-     *                                       in this instance of cache
      */
-    boolean containsValue(V value);
+    public boolean containsValue(V value) {
+        expungeStaleEntries();
+        return value != null && reverseMap.containsKey(new LookupValue<>(value));
+    }
 
     /**
-     * Optional operation. If {@link #containsValue} is supported then this
-     * method should be supported too.
-     *
      * @return current number of cached entries
      *         (can decrease over time when keys/values are GC-ed)
-     * @throws UnsupportedOperationException if this operation is not supported
-     *                                       in this instance of cache
      */
-    int size();
+    public int size() {
+        expungeStaleEntries();
+        return reverseMap.size();
+    }
+
+    private void expungeStaleEntries() {
+        Expungable expungable;
+        while ((expungable = (Expungable) refQueue.poll()) != null) {
+            expungable.expungeFrom(map, reverseMap);
+        }
+    }
+
+    /**
+     * A factory {@link Supplier} that implements the lazy synchronized
+     * construction of the value and installment of it into the cache.
+     */
+    private final class Factory implements Supplier<V> {
+
+        private final K key;
+        private final P parameter;
+        private final Object subKey;
+        private final ConcurrentMap<Object, Supplier<V>> valuesMap;
+
+        Factory(K key, P parameter, Object subKey,
+                ConcurrentMap<Object, Supplier<V>> valuesMap) {
+            this.key = key;
+            this.parameter = parameter;
+            this.subKey = subKey;
+            this.valuesMap = valuesMap;
+        }
+
+        @Override
+        public synchronized V get() { // serialize access
+            // re-check
+            Supplier<V> supplier = valuesMap.get(subKey);
+            if (supplier != this) {
+                // something changed while we were waiting:
+                // might be that we were replaced by a CacheValue
+                // or were removed because of failure ->
+                // return null to signal TwoLevelWeakCache.get() to retry
+                // the loop
+                return null;
+            }
+            // else still us (supplier == this)
+
+            // create new value
+            V value = null;
+            try {
+                value = Objects.requireNonNull(valueFactory.apply(key, parameter));
+            } finally {
+                if (value == null) { // remove us on failure
+                    valuesMap.remove(subKey, this);
+                }
+            }
+            // the only path to reach here is with non-null value
+            assert value != null;
+
+            // wrap value with CacheValue (WeakReference)
+            CacheValue<V> cacheValue = new CacheValue<>(
+                value,
+                refQueue,
+                subKey,
+                valuesMap
+            );
+
+            // try replacing us with CacheValue (this should always succeed)
+            if (valuesMap.replace(subKey, this, cacheValue)) {
+                // put also in reverseMap if needed
+                if (reverseMap != null) {
+                    reverseMap.put(cacheValue, Boolean.TRUE);
+                }
+            } else {
+                throw new AssertionError("Replaced by ghost - should not happen");
+            }
+
+            // successfully replaced us with new CacheValue -> return the value
+            // wrapped by it
+            return value;
+        }
+    }
+
+    /**
+     * An interface implemented by WeakReference subclasses with a single method
+     * {@link #expungeFrom} which is used to clean-up entry from maps.
+     */
+    private interface Expungable {
+        void expungeFrom(ConcurrentMap<?, ? extends ConcurrentMap<?, ?>> map,
+                         ConcurrentMap<?, Boolean> reverseMap);
+    }
+
+    /**
+     * Common type of value suppliers that are holding a referent.
+     * The {@link #equals} and {@link #hashCode} of implementations is defined
+     * to compare the referent by identity.
+     */
+    private interface Value<V> extends Supplier<V> {}
+
+    /**
+     * An optimized {@link Value} used to look-up the value in
+     * {@link WeakCache#containsValue} method so that we are not
+     * constructing the whole {@link CacheValue} just to look-up the referent.
+     */
+    private static final class LookupValue<V> implements Value<V> {
+
+        private final V value;
+
+        LookupValue(V value) {
+            this.value = value;
+        }
+
+        @Override
+        public V get() {
+            return value;
+        }
+
+        @Override
+        public int hashCode() {
+            return System.identityHashCode(value); // compare by identity
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return obj == this ||
+                   obj instanceof Value &&
+                   this.value == ((Value<?>) obj).get();  // compare by identity
+        }
+    }
+
+    /**
+     * A {@link Value} that weakly references the referent and also holds a
+     * reference to {@code subKey} o that it can implement {@link Expungable}
+     * by removing the corresponding entries from the maps.
+     */
+    private static final class CacheValue<V>
+        extends WeakReference<V>
+        implements Value<V>, Expungable {
+        private final int hash;
+        private final Object subKey;
+        private final ConcurrentMap<Object, Supplier<V>> valuesMap;
+
+        CacheValue(V value,
+                   ReferenceQueue<Object> refQueue,
+                   Object subKey,
+                   ConcurrentMap<Object, Supplier<V>> valuesMap) {
+            super(value, refQueue);
+            this.hash = System.identityHashCode(value); // compare by identity
+            this.subKey = subKey;
+            this.valuesMap = valuesMap;
+        }
+
+        @Override
+        public int hashCode() {
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            V value;
+            return obj == this ||
+                   obj instanceof Value &&
+                   // cleared CacheValue is only equal to itself
+                   (value = get()) != null &&
+                   value == ((Value<?>) obj).get(); // compare by identity
+        }
+
+        @Override
+        public void expungeFrom(ConcurrentMap<?, ? extends ConcurrentMap<?, ?>> map,
+                                ConcurrentMap<?, Boolean> reverseMap) {
+            // only remove if still mapped to same Supplier
+            valuesMap.remove(subKey, this);
+            // remove from reverseMap too...
+            if (reverseMap != null) {
+                reverseMap.remove(this);
+            }
+        }
+    }
+
+    /**
+     * CacheKey containing a weekly referenced {@code key}. It also implements
+     * {@link Expungable} so it can clean-up when the weekly referenced key is
+     * garbage collected. The containing {@code key} is compared by identity.
+     */
+    private static final class CacheKey<K>
+        extends WeakReference<K>
+        implements Expungable {
+
+        // a replacement for null keys
+        private static final Object NULL_KEY = new Object();
+
+        static <K> Object valueOf(K key, ReferenceQueue<Object> refQueue) {
+            return key == null
+                   // null key means we can't weakly reference it,
+                   // so we substitute it with a NULL_KEY
+                   ? NULL_KEY
+                   // non-null key requires wrapping with a WeakReference
+                   : new CacheKey<>(key, refQueue);
+        }
+
+        private final int hash;
+
+        private CacheKey(K key, ReferenceQueue<Object> refQueue) {
+            super(key, refQueue);
+            this.hash = System.identityHashCode(key);  // by identity
+        }
+
+        @Override
+        public int hashCode() {
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            CacheKey other;
+            K thisKey;
+            return obj == this ||
+                   obj != null &&
+                   obj.getClass() == this.getClass() &&
+                   // cleared CacheKey is only equal to itself
+                   (thisKey = this.get()) != null &&
+                   // compare key by identity
+                   thisKey == (other = (CacheKey<?>) obj).get();
+        }
+
+        @Override
+        public void expungeFrom(ConcurrentMap<?, ? extends ConcurrentMap<?, ?>> map,
+                                ConcurrentMap<?, Boolean> reverseMap) {
+            // removing just by key is always safe here because after a CacheKey
+            // is cleared and enqueue-ed it is only equal to itself
+            // (see equals method)...
+            ConcurrentMap<?, ?> valuesMap = map.remove(this);
+            // remove also from reverseMap if needed
+            if (valuesMap != null && reverseMap != null) {
+                for (Object cacheValue : valuesMap.values()) {
+                    reverseMap.remove(cacheValue);
+                }
+            }
+        }
+    }
 }

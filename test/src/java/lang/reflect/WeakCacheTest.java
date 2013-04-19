@@ -52,7 +52,7 @@ public class WeakCacheTest {
     }
 
     public static void main(String[] args) {
-        WeakCache<String, Integer, String> fwc = new FlattenedWeakCache<>(
+        WeakCache<String, Integer, String> fwc = new WeakCache<>(
             new BiFunction<String, Integer, Object>() {
                 @Override
                 public Object apply(String s, Integer integer) {
@@ -64,33 +64,11 @@ public class WeakCacheTest {
                 public String apply(String s, Integer integer) {
                     return s + ":" + integer;
                 }
-            },
-            true
+            }
         );
 
         doTest(fwc);
         doGc();
         System.out.println(fwc.size());
-
-        WeakCache<String, Integer, String> twc = new TwoLevelWeakCache<>(
-            new BiFunction<String, Integer, Object>() {
-                @Override
-                public Object apply(String s, Integer integer) {
-                    return integer;
-                }
-            },
-            new BiFunction<String, Integer, String>() {
-                @Override
-                public String apply(String s, Integer integer) {
-                    return s + ":" + integer;
-                }
-            },
-            true
-        );
-
-        doTest(twc);
-        doGc();
-        System.out.println(twc.size());
-
     }
 }
