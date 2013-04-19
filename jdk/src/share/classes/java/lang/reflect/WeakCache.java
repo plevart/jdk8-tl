@@ -98,15 +98,12 @@ final class WeakCache<K, P, V> {
      * @throws Error                or subtype if {@code subKeyFactory} or
      *                              {@code valueFactory} throws it
      */
-    public final V get(K key, P parameter) {
+    public V get(K key, P parameter) {
         Objects.requireNonNull(parameter);
 
         expungeStaleEntries();
 
-        Object cacheKey = CacheKey.valueOf(
-            key,
-            refQueue
-        );
+        Object cacheKey = CacheKey.valueOf(key, refQueue);
 
         // lazily install the 2nd level valuesMap for the particular cacheKey
         ConcurrentMap<Object, Supplier<V>> valuesMap = map.get(cacheKey);
