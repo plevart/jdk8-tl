@@ -75,7 +75,7 @@
 ##############################################################
 
 
-*** Patched j.l.r.Proxy (WeakCache using default validation in getProxyClass0)
+*** Patched j.l.r.Proxy (WeakCache using validation in getProxyClass0)
 
 ##############################################################
 # Java: 1.8.0-internal-peter_2013_04_19_08_58-b00
@@ -152,22 +152,99 @@
 ##############################################################
 
 
+*** Patched j.l.r.Proxy (WeakCache using validation in ValueFactory but an interface-based key instead of interface-name based)
+
+##############################################################
+# Java: 1.8.0-internal-peter_2013_04_19_08_58-b00
+#   VM: OpenJDK 64-Bit Server VM 25.0-b28 (mixed mode)
+#   OS: Linux 3.8.4-102.fc17.x86_64 (amd64)
+# CPUs: 8 (virtual)
+#
+#-------------------------------------------------------------
+# Proxy_getProxyClass: run duration:  5,000 ms
+#
+# Warm up:
+#           1 threads, Tavg =    175.73 ns/op (σ =   0.00 ns/op) [   175.73]
+#           1 threads, Tavg =    171.07 ns/op (σ =   0.00 ns/op) [   171.07]
+# Measure:
+            1 threads, Tavg =    170.27 ns/op (σ =   0.00 ns/op) [   170.27]
+            2 threads, Tavg =    173.89 ns/op (σ =   0.27 ns/op) [   174.17,    173.62]
+            3 threads, Tavg =    218.23 ns/op (σ =   1.08 ns/op) [   219.26,    216.73,    218.71]
+            4 threads, Tavg =    221.51 ns/op (σ =  17.53 ns/op) [   192.77,    233.04,    232.63,    233.60]
+            5 threads, Tavg =    298.90 ns/op (σ =   8.15 ns/op) [   303.58,    298.65,    310.30,    297.53,    285.54]
+            6 threads, Tavg =    258.71 ns/op (σ =  25.78 ns/op) [   220.33,    284.80,    268.33,    297.47,    244.84,    251.93]
+            7 threads, Tavg =    289.94 ns/op (σ =  24.37 ns/op) [   234.85,    303.20,    292.25,    300.10,    295.90,    310.32,    309.57]
+            8 threads, Tavg =    305.60 ns/op (σ =  14.31 ns/op) [   314.86,    297.66,    317.71,    313.77,    317.95,    315.38,    298.94,    274.22]
+#
+#-------------------------------------------------------------
+# Proxy_isProxyClassTrue: run duration:  5,000 ms
+#
+# Warm up:
+#           1 threads, Tavg =     45.09 ns/op (σ =   0.00 ns/op) [    45.09]
+#           1 threads, Tavg =     44.83 ns/op (σ =   0.00 ns/op) [    44.83]
+# Measure:
+            1 threads, Tavg =     41.33 ns/op (σ =   0.00 ns/op) [    41.33]
+            2 threads, Tavg =     41.27 ns/op (σ =   0.02 ns/op) [    41.29,     41.25]
+            3 threads, Tavg =     41.27 ns/op (σ =   0.04 ns/op) [    41.33,     41.25,     41.25]
+            4 threads, Tavg =     42.22 ns/op (σ =   0.32 ns/op) [    42.59,     41.92,     42.49,     41.90]
+            5 threads, Tavg =     49.03 ns/op (σ =  13.27 ns/op) [    41.33,     41.34,     67.91,     41.50,     67.70]
+            6 threads, Tavg =     55.89 ns/op (σ =  11.67 ns/op) [    66.06,     42.08,     42.82,     68.00,     63.96,     67.73]
+            7 threads, Tavg =     64.95 ns/op (σ =  32.85 ns/op) [   124.83,     69.59,     41.73,    118.79,     67.92,     67.09,     42.76]
+            8 threads, Tavg =     70.24 ns/op (σ =  11.45 ns/op) [    67.49,     77.72,     79.36,     80.59,     45.74,     75.70,     83.08,     70.93]
+#
+#-------------------------------------------------------------
+# Proxy_isProxyClassFalse: run duration:  5,000 ms
+#
+# Warm up:
+#           1 threads, Tavg =      1.37 ns/op (σ =   0.00 ns/op) [     1.37]
+#           1 threads, Tavg =      1.36 ns/op (σ =   0.00 ns/op) [     1.36]
+# Measure:
+            1 threads, Tavg =      1.36 ns/op (σ =   0.00 ns/op) [     1.36]
+            2 threads, Tavg =      1.36 ns/op (σ =   0.00 ns/op) [     1.36,      1.36]
+            3 threads, Tavg =      1.36 ns/op (σ =   0.00 ns/op) [     1.36,      1.36,      1.36]
+            4 threads, Tavg =      1.36 ns/op (σ =   0.00 ns/op) [     1.36,      1.36,      1.36,      1.37]
+            5 threads, Tavg =      1.70 ns/op (σ =   0.50 ns/op) [     1.92,      1.36,      1.56,      1.48,      2.72]
+            6 threads, Tavg =      2.09 ns/op (σ =   0.61 ns/op) [     2.71,      2.30,      1.49,      1.46,      2.79,      2.81]
+            7 threads, Tavg =      2.38 ns/op (σ =   0.46 ns/op) [     2.71,      2.58,      1.42,      2.64,      2.74,      2.71,      2.72]
+            8 threads, Tavg =      2.72 ns/op (σ =   1.02 ns/op) [     3.29,      1.41,      4.11,      1.87,      2.77,      3.70,      3.77,      3.98]
+#
+#-------------------------------------------------------------
+# Annotation_equals: run duration:  5,000 ms
+#
+# Warm up:
+#           1 threads, Tavg =    193.83 ns/op (σ =   0.00 ns/op) [   193.83]
+#           1 threads, Tavg =    190.18 ns/op (σ =   0.00 ns/op) [   190.18]
+# Measure:
+            1 threads, Tavg =    195.49 ns/op (σ =   0.00 ns/op) [   195.49]
+            2 threads, Tavg =    194.86 ns/op (σ =   0.10 ns/op) [   194.96,    194.76]
+            3 threads, Tavg =    199.01 ns/op (σ =   2.89 ns/op) [   200.97,    201.22,    194.97]
+            4 threads, Tavg =    205.99 ns/op (σ =   5.34 ns/op) [   202.70,    207.55,    214.13,    200.11]
+            5 threads, Tavg =    235.22 ns/op (σ =   4.04 ns/op) [   230.85,    239.61,    240.59,    231.82,    233.57]
+            6 threads, Tavg =    266.69 ns/op (σ =   7.50 ns/op) [   254.56,    275.95,    275.14,    264.65,    261.91,    269.18]
+            7 threads, Tavg =    299.97 ns/op (σ =  11.61 ns/op) [   301.11,    303.72,    317.29,    292.71,    310.13,    278.22,    299.84]
+            8 threads, Tavg =    342.21 ns/op (σ =   3.54 ns/op) [   338.33,    343.69,    341.64,    348.14,    342.97,    344.82,    342.53,    335.88]
+#
+#-------------------------------------------------------------
+# END.
+##############################################################
+
+
 Summary (4 Cores x 2 Threads i7 CPU):
 
 Test                     Threads  ns/op Original  WeakCache#1  WeakCache#2
 =======================  =======  ==============  ===========  ===========
-Proxy_getProxyClass            1        2,403.27     2,174.51
-                               4        3,039.01     2,555.00
-                               8        5,193.58     4,273.42
+Proxy_getProxyClass            1        2,403.27     2,174.51       170.27
+                               4        3,039.01     2,555.00       221.51
+                               8        5,193.58     4,273.42       305.60
 
-Proxy_isProxyClassTrue         1           95.02        43.14
-                               4        2,266.29        43.23
-                               8        4,782.29        72.06
+Proxy_isProxyClassTrue         1           95.02        43.14        41.33
+                               4        2,266.29        43.23        42.22
+                               8        4,782.29        72.06        70.24
 
-Proxy_isProxyClassFalse        1           95.02         1.36
-                               4        2,186.59         1.36
-                               8        4,891.15         2.72
+Proxy_isProxyClassFalse        1           95.02         1.36         1.36
+                               4        2,186.59         1.36         1.36
+                               8        4,891.15         2.72         2.72
 
-Annotation_equals              1          240.10       195.68
-                               4        1,864.06       201.41
-                               8        8,639.20       337.46
+Annotation_equals              1          240.10       195.68       195.49
+                               4        1,864.06       201.41       205.99
+                               8        8,639.20       337.46       342.21

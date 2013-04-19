@@ -25,8 +25,10 @@
 
 package java.lang.reflect;
 
+import java.lang.ref.WeakReference;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Arrays;
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
@@ -405,92 +407,125 @@ public class Proxy implements java.io.Serializable {
             throw new IllegalArgumentException("interface limit exceeded");
         }
 
-        Map<Class<?>, Boolean> interfaceSet = new IdentityHashMap<>(interfaces.length);
-        for (Class<?> intf : interfaces) {
-            /*
-             * Verify that the class loader resolves the name of this
-             * interface to the same Class object.
-             */
-            Class<?> interfaceClass = null;
-            try {
-                interfaceClass = Class.forName(intf.getName(), false, loader);
-            } catch (ClassNotFoundException e) {
-            }
-            if (interfaceClass != intf) {
-                throw new IllegalArgumentException(
-                    intf + " is not visible from class loader");
-            }
-            /*
-             * Verify that the Class object actually represents an
-             * interface.
-             */
-            if (!interfaceClass.isInterface()) {
-                throw new IllegalArgumentException(
-                    interfaceClass.getName() + " is not an interface");
-            }
-            /*
-             * Verify that this interface is not a duplicate.
-             */
-            if (interfaceSet.put(interfaceClass, Boolean.TRUE) != null) {
-                throw new IllegalArgumentException(
-                    "repeated interface: " + interfaceClass.getName());
-            }
-        }
-
         return proxyClassCache.get(loader, interfaces);
     }
 
-    /**
-     * A key composed of an array of interned strings
+    /*
+     * a key used for proxy class with 0 implemented interfaces
      */
-    private static final class Key {
-        private final String[] strings;
+    private static final Object key0 = new Object();
 
-        Key(String[] strings) {
-            this.strings = strings;
+    /*
+     * a key used for proxy class with 1 implemented interface
+     */
+    private static final class Key1 extends KeyNode {
+        private final int hash;
+
+        Key1(Class<?> intf) {
+            super(intf);
+            hash = intf.hashCode();
         }
 
         @Override
         public int hashCode() {
-            int hash = 0;
-            for (String s : strings) hash ^= System.identityHashCode(s);
             return hash;
+        }
+    }
+
+    /*
+     * a key used for proxy class with 2 or more implemented interfaces
+     */
+    private static final class KeyX extends MidKeyNode {
+        private final int hash;
+
+        KeyX(Class<?>[] interfaces) {
+            super(interfaces[0], restOf(interfaces));
+            hash = Arrays.hashCode(interfaces);
+        }
+
+        private static KeyNode restOf(Class<?>[] interfaces) {
+            int i = interfaces.length;
+            assert i > 1;
+            KeyNode node = new KeyNode(interfaces[--i]);
+            while (i > 1) {
+                node = new MidKeyNode(interfaces[--i], node);
+            }
+            return node;
         }
 
         @Override
-        public boolean equals(Object obj) {
-            if (obj == null || obj.getClass() != Key.class) return false;
-            String[] otherStrings = ((Key) obj).strings;
-            if (strings.length != otherStrings.length) return false;
-            for (int i = 0; i < strings.length; i++)
-                if (strings[i] != otherStrings[i]) return false;
+        public int hashCode() {
+            return hash;
+        }
+    }
+
+    /*
+     * final WeakReference node in chain
+     */
+    private static class KeyNode extends WeakReference<Class<?>> {
+        KeyNode(Class<?> intf) {
+            super(intf);
+        }
+
+        KeyNode next() {
+            return null;
+        }
+
+        @Override
+        public final boolean equals(Object obj) {
+            return this == obj ||
+                   obj instanceof KeyNode && equals(this, (KeyNode) obj);
+        }
+
+        private static boolean equals(KeyNode n1, KeyNode n2) {
+            do {
+                Class<?> intf;
+                if (n1 == null ||
+                    n2 == null ||
+                    (intf = n1.get()) == null ||
+                    intf != n2.get()) {
+                    return false;
+                }
+                n1 = n1.next();
+                n2 = n2.next();
+            } while (n1 != null || n2 != null);
+
             return true;
         }
     }
 
+    /*
+     * an intermediate WeakReference node with next pointer
+     */
+    private static class MidKeyNode extends KeyNode {
+        private final KeyNode next; // next in chain
+
+        MidKeyNode(Class<?> intf, KeyNode next) {
+            super(intf);
+            this.next = next;
+        }
+
+        @Override
+        final KeyNode next() {
+            return next;
+        }
+    }
+
+
     /**
-     * A function that maps an array of interfaces to a Key composed of interface names.
+     * A function that maps an array of interfaces to an optimal key where
+     * Class objects representing interfaces are weakly referenced.
      */
     private static final class KeyFactory
-        implements BiFunction<ClassLoader, Class<?>[], Key>
+        implements BiFunction<ClassLoader, Class<?>[], Object>
     {
         @Override
-        public Key apply(ClassLoader classLoader, Class<?>[] interfaces) {
-            // collect interface names to use as key for proxy class cache
-            String[] interfaceNames = new String[interfaces.length];
-            for (int i = 0; i < interfaces.length; i++) {
-                interfaceNames[i] = interfaces[i].getName();
+        public Object apply(ClassLoader classLoader, Class<?>[] interfaces) {
+            switch (interfaces.length) {
+                case 1: return new Key1(interfaces[0]); // the most frequent
+                case 0: return key0;
+                default: return new KeyX(interfaces);
             }
-            /*
-             * Using string representations of the proxy interfaces as
-             * keys in the proxy class cache (instead of their Class
-             * objects) is sufficient because we require the proxy
-             * interfaces to be resolvable by name through the supplied
-             * class loader, and it has the advantage that using a string
-             * representation of a class makes for an implicit weak
-             * reference to the class.
-             */
-            return new Key(interfaceNames);
         }
     }
 
@@ -509,6 +544,39 @@ public class Proxy implements java.io.Serializable {
 
         @Override
         public Class<?> apply(ClassLoader loader, Class<?>[] interfaces) {
+
+            Map<Class<?>, Boolean> interfaceSet = new IdentityHashMap<>(interfaces.length);
+            for (Class<?> intf : interfaces) {
+                /*
+                 * Verify that the class loader resolves the name of this
+                 * interface to the same Class object.
+                 */
+                Class<?> interfaceClass = null;
+                try {
+                    interfaceClass = Class.forName(intf.getName(), false, loader);
+                } catch (ClassNotFoundException e) {
+                }
+                if (interfaceClass != intf) {
+                    throw new IllegalArgumentException(
+                        intf + " is not visible from class loader");
+                }
+                /*
+                 * Verify that the Class object actually represents an
+                 * interface.
+                 */
+                if (!interfaceClass.isInterface()) {
+                    throw new IllegalArgumentException(
+                        interfaceClass.getName() + " is not an interface");
+                }
+                /*
+                 * Verify that this interface is not a duplicate.
+                 */
+                if (interfaceSet.put(interfaceClass, Boolean.TRUE) != null) {
+                    throw new IllegalArgumentException(
+                        "repeated interface: " + interfaceClass.getName());
+                }
+            }
+
             String proxyPkg = null;     // package to define proxy class in
             int accessFlags = Modifier.PUBLIC | Modifier.FINAL;
 
