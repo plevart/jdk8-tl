@@ -405,7 +405,6 @@ public class Proxy implements java.io.Serializable {
             throw new IllegalArgumentException("interface limit exceeded");
         }
 
-        Map<Class<?>, Boolean> interfaceSet = new IdentityHashMap<>(interfaces.length);
         for (Class<?> intf : interfaces) {
             /*
              * Verify that the class loader resolves the name of this
@@ -413,27 +412,16 @@ public class Proxy implements java.io.Serializable {
              */
             Class<?> interfaceClass = null;
             try {
-                interfaceClass = Class.forName(intf.getName(), false, loader);
+                String intfName = intf.getName();
+                interfaceClass = ClassFinder.findLoadedClass(loader, intfName);
+                if (interfaceClass == null) {
+                    interfaceClass = Class.forName(intfName, false, loader);
+                }
             } catch (ClassNotFoundException e) {
             }
             if (interfaceClass != intf) {
                 throw new IllegalArgumentException(
                     intf + " is not visible from class loader");
-            }
-            /*
-             * Verify that the Class object actually represents an
-             * interface.
-             */
-            if (!interfaceClass.isInterface()) {
-                throw new IllegalArgumentException(
-                    interfaceClass.getName() + " is not an interface");
-            }
-            /*
-             * Verify that this interface is not a duplicate.
-             */
-            if (interfaceSet.put(interfaceClass, Boolean.TRUE) != null) {
-                throw new IllegalArgumentException(
-                    "repeated interface: " + interfaceClass.getName());
             }
         }
 
@@ -509,6 +497,26 @@ public class Proxy implements java.io.Serializable {
 
         @Override
         public Class<?> apply(ClassLoader loader, Class<?>[] interfaces) {
+
+            Map<Class<?>, Boolean> interfaceSet = new IdentityHashMap<>(interfaces.length);
+            for (Class<?> intf : interfaces) {
+                /*
+                 * Verify that the Class object actually represents an
+                 * interface.
+                 */
+                if (!intf.isInterface()) {
+                    throw new IllegalArgumentException(
+                        intf.getName() + " is not an interface");
+                }
+                /*
+                 * Verify that this interface is not a duplicate.
+                 */
+                if (interfaceSet.put(intf, Boolean.TRUE) != null) {
+                    throw new IllegalArgumentException(
+                        "repeated interface: " + intf.getName());
+                }
+            }
+
             String proxyPkg = null;     // package to define proxy class in
             int accessFlags = Modifier.PUBLIC | Modifier.FINAL;
 
