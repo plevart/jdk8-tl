@@ -45,12 +45,12 @@ public class SizeOfTest {
         Class<?>[] proxyClasses = new Class[interfaces.length * classLoaders.length];
         SizeOf sizeOf = new SizeOf(SizeOf.Visitor.NULL);
 //        SizeOf sizeOfOut = new SizeOf(SizeOf.Visitor.STDOUT);
-        System.out.printf("--------------------------------------\n");
-        System.out.printf("      %s\n", newProxy ? "Patched j.l.r.Proxy" : "Original j.l.r.Proxy");
-        System.out.printf("      %d interfaces / proxy class\n", interfacesPerProxy);
         System.out.printf("\n");
-        System.out.printf("class     proxy     size of   delta to\n");
-        System.out.printf("loaders   classes   caches    prev.ln.\n");
+        System.out.printf("   ** %s\n", newProxy ? "Patched j.l.r.Proxy" : "Original j.l.r.Proxy");
+        System.out.printf("   ** %d interfaces / proxy class\n", interfacesPerProxy);
+        System.out.printf("\n");
+        System.out.printf("   class     proxy   size of  delta to\n");
+        System.out.printf(" loaders   classes    caches  prev.ln.\n");
         System.out.printf("--------  --------  --------  --------\n");
         long size = 0L;
         for (Object cache : caches)
@@ -65,18 +65,23 @@ public class SizeOfTest {
             new Class[]{null, M1.class, M2.class },
             new Class[]{null, M1.class, M2.class, M3.class }
         };
+        Class<?> prevProxyClass = null;
         for (int cli = 0; cli < classLoaders.length; cli++) {
             for (int ii = 0; ii < interfaces.length; ii++) {
                 Class<?>[] intfcs = intfcsSwitch[interfacesPerProxy];
                 if (interfacesPerProxy > 0) intfcs[0] = interfaces[ii];
-                proxyClasses[classes++] = Proxy.getProxyClass(classLoaders[cli], intfcs);
-                size = 0L;
-                for (Object cache : caches)
-                    size += sizeOf.deepSizeOf(cache);
-                System.out.printf("%8d  %8d  %8d  %8d\n", cli+1, classes, size, size - prevSize);
-                prevSize = size;
+                Class<?> proxyClass = proxyClasses[classes++] = Proxy.getProxyClass(classLoaders[cli], intfcs);
+                if (proxyClass != prevProxyClass) {
+                    size = 0L;
+                    for (Object cache : caches)
+                        size += sizeOf.deepSizeOf(cache);
+                    System.out.printf("%8d  %8d  %8d  %8d\n", cli+1, classes, size, size - prevSize);
+                    prevSize = size;
+                    prevProxyClass = proxyClass;
+                }
             }
         }
+        System.out.printf("--------  --------  --------  --------\n");
     }
 
     static void testCaches(boolean newProxy, int interfacesPerProxyClass) throws Exception {
