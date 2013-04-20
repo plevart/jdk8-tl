@@ -411,6 +411,9 @@ public class Proxy implements java.io.Serializable {
 
         for (Class<?> intf : interfaces) {
             if (!intf.isAssignableFrom(proxyClass)) {
+                // this can happen if an interface with same name but different
+                // ClassLoader is specified in the interfaces array and the
+                // proxy class for that interface name is already cached...
                 throw new IllegalArgumentException(
                     intf + " is not visible from class loader");
             }
@@ -424,7 +427,8 @@ public class Proxy implements java.io.Serializable {
      */
     private static final Object key0 = new Object();
 
-    // a key used for proxy class with 1 implemented interface is the name of the interface itself (a String)
+    // a key used for proxy class with 1 implemented interface
+    // is the name of the interface itself (a String)
 
     /*
      * a key used for proxy class with 2 implemented interfaces
@@ -490,8 +494,8 @@ public class Proxy implements java.io.Serializable {
     }
 
     /**
-     * A function that maps an array of interfaces to an optimal key where
-     * Class objects representing interfaces are weakly referenced.
+     * A function that maps an array of interfaces to an optimal key
+     * that checks interface names only...
      */
     private static final class KeyFactory
         implements BiFunction<ClassLoader, Class<?>[], Object>

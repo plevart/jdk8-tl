@@ -356,14 +356,14 @@ final class WeakCache<K, P, V> {
 
         @Override
         public boolean equals(Object obj) {
-            K thisKey;
+            K key;
             return obj == this ||
                    obj != null &&
                    obj.getClass() == this.getClass() &&
                    // cleared CacheKey is only equal to itself
-                   (thisKey = this.get()) != null &&
+                   (key = this.get()) != null &&
                    // compare key by identity
-                   thisKey == ((CacheKey<?>) obj).get();
+                   key == ((CacheKey<?>) obj).get();
         }
 
         void expungeFrom(ConcurrentMap<?, ? extends ConcurrentMap<?, ?>> map,
