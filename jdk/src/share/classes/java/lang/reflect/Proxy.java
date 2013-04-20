@@ -407,7 +407,16 @@ public class Proxy implements java.io.Serializable {
             throw new IllegalArgumentException("interface limit exceeded");
         }
 
-        return proxyClassCache.get(loader, interfaces);
+        Class<?> proxyClass = proxyClassCache.get(loader, interfaces);
+
+        for (Class<?> intf : interfaces) {
+            if (!intf.isAssignableFrom(proxyClass)) {
+                throw new IllegalArgumentException(
+                    intf + " is not visible from class loader");
+            }
+        }
+
+        return proxyClass;
     }
 
     /*
@@ -415,102 +424,70 @@ public class Proxy implements java.io.Serializable {
      */
     private static final Object key0 = new Object();
 
-    /*
-     * a key used for proxy class with 1 implemented interface
-     */
-    private static final class Key1 extends KeyNode {
-        private final int hash;
+    // a key used for proxy class with 1 implemented interface is the name of the interface itself (a String)
 
-        Key1(Class<?> intf) {
-            super(intf);
-            hash = intf.hashCode();
+    /*
+     * a key used for proxy class with 2 implemented interfaces
+     */
+    private static final class Key2 {
+        private final String name1, name2;
+
+        Key2(Class<?> intf1, Class<?> intf2) {
+            this.name1 = intf1.getName(); // interned String
+            this.name2 = intf2.getName(); // interned String
         }
 
         @Override
         public int hashCode() {
-            return hash;
+            return System.identityHashCode(name1) * 31 +
+                   System.identityHashCode(name2);
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return obj == this ||
+                   obj != null &&
+                   obj.getClass() == Key2.class &&
+                   ((Key2) obj).name1 == name1 &&
+                   ((Key2) obj).name2 == name2;
         }
     }
 
     /*
-     * a key used for proxy class with 2 or more implemented interfaces
+     * a key used for proxy class with 3 or more implemented interfaces
      */
-    private static final class KeyX extends MidKeyNode {
-        private final int hash;
+    private static final class KeyX {
+        private final String[] names;
 
         KeyX(Class<?>[] interfaces) {
-            super(interfaces[0], restOf(interfaces));
-            hash = Arrays.hashCode(interfaces);
-        }
-
-        private static KeyNode restOf(Class<?>[] interfaces) {
-            int i = interfaces.length;
-            assert i > 1;
-            KeyNode node = new KeyNode(interfaces[--i]);
-            while (i > 1) {
-                node = new MidKeyNode(interfaces[--i], node);
+            names = new String[interfaces.length];
+            for (int i = 0; i < interfaces.length; i++) {
+                names[i] = interfaces[i].getName(); // interned String
             }
-            return node;
         }
 
         @Override
         public int hashCode() {
+            int hash = 0;
+            for (String name : names) {
+                hash = hash * 31 + System.identityHashCode(name);
+            }
             return hash;
-        }
-    }
-
-    /*
-     * final WeakReference node in chain
-     */
-    private static class KeyNode extends WeakReference<Class<?>> {
-        KeyNode(Class<?> intf) {
-            super(intf);
-        }
-
-        KeyNode next() {
-            return null;
         }
 
         @Override
-        public final boolean equals(Object obj) {
-            return this == obj ||
-                   obj instanceof KeyNode && equals(this, (KeyNode) obj);
-        }
-
-        private static boolean equals(KeyNode n1, KeyNode n2) {
-            do {
-                Class<?> intf;
-                if (n1 == null ||
-                    n2 == null ||
-                    (intf = n1.get()) == null ||
-                    intf != n2.get()) {
-                    return false;
-                }
-                n1 = n1.next();
-                n2 = n2.next();
-            } while (n1 != null || n2 != null);
-
+        public boolean equals(Object obj) {
+            if (obj == this) return true;
+            if (obj == null || obj.getClass() != KeyX.class) return false;
+            String[] names1 = names;
+            String[] names2 = ((KeyX) obj).names;
+            if (names1.length != names2.length) return false;
+            for (int i = 0; i < names1.length; i++) {
+                if (names1[i] != names2[i]) return false;
+            }
             return true;
         }
     }
-
-    /*
-     * an intermediate WeakReference node with next pointer
-     */
-    private static class MidKeyNode extends KeyNode {
-        private final KeyNode next; // next in chain
-
-        MidKeyNode(Class<?> intf, KeyNode next) {
-            super(intf);
-            this.next = next;
-        }
-
-        @Override
-        final KeyNode next() {
-            return next;
-        }
-    }
-
 
     /**
      * A function that maps an array of interfaces to an optimal key where
@@ -522,7 +499,8 @@ public class Proxy implements java.io.Serializable {
         @Override
         public Object apply(ClassLoader classLoader, Class<?>[] interfaces) {
             switch (interfaces.length) {
-                case 1: return new Key1(interfaces[0]); // the most frequent
+                case 1: return interfaces[0].getName(); // the most frequent
+                case 2: return new Key2(interfaces[0], interfaces[1]);
                 case 0: return key0;
                 default: return new KeyX(interfaces);
             }

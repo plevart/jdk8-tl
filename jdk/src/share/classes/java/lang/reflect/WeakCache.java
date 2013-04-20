@@ -43,7 +43,11 @@ import java.util.function.Supplier;
  * {@code subKeyFactory} or values returned by {@code valueFactory}
  * can not be null. Sub-keys are compared using their {@link #equals} method.
  * Entries are expunged from cache lazily on each invocation to {@link #get},
- * {@link #containsValue} or {@link #size} methods.
+ * {@link #containsValue} or {@link #size} methods when the WealReferences to
+ * keys are cleared. Cleared WeakReferences to individual values don't cause
+ * expunging, but such entries are logically treated as non-existent and
+ * trigger re-evaluation of {@code valueFactory} on request for their
+ * key/subKey.
  *
  * @author Peter Levart
  * @param <K> type of keys
@@ -183,9 +187,9 @@ final class WeakCache<K, P, V> {
     }
 
     private void expungeStaleEntries() {
-        Expungable expungable;
-        while ((expungable = (Expungable) refQueue.poll()) != null) {
-            expungable.expungeFrom(map, reverseMap);
+        CacheKey<?> cacheKey;
+        while ((cacheKey = (CacheKey<?>) refQueue.poll()) != null) {
+            cacheKey.expungeFrom(map, reverseMap);
         }
     }
 
@@ -235,12 +239,7 @@ final class WeakCache<K, P, V> {
             assert value != null;
 
             // wrap value with CacheValue (WeakReference)
-            CacheValue<V> cacheValue = new CacheValue<>(
-                value,
-                refQueue,
-                subKey,
-                valuesMap
-            );
+            CacheValue<V> cacheValue = new CacheValue<>(value);
 
             // try replacing us with CacheValue (this should always succeed)
             if (valuesMap.replace(subKey, this, cacheValue)) {
@@ -259,15 +258,6 @@ final class WeakCache<K, P, V> {
     }
 
     /**
-     * An interface implemented by WeakReference subclasses with a single method
-     * {@link #expungeFrom} which is used to clean-up entry from maps.
-     */
-    private interface Expungable {
-        void expungeFrom(ConcurrentMap<?, ? extends ConcurrentMap<?, ?>> map,
-                         ConcurrentMap<?, Boolean> reverseMap);
-    }
-
-    /**
      * Common type of value suppliers that are holding a referent.
      * The {@link #equals} and {@link #hashCode} of implementations is defined
      * to compare the referent by identity.
@@ -280,7 +270,6 @@ final class WeakCache<K, P, V> {
      * constructing the whole {@link CacheValue} just to look-up the referent.
      */
     private static final class LookupValue<V> implements Value<V> {
-
         private final V value;
 
         LookupValue(V value) {
@@ -306,25 +295,16 @@ final class WeakCache<K, P, V> {
     }
 
     /**
-     * A {@link Value} that weakly references the referent and also holds a
-     * reference to {@code subKey} o that it can implement {@link Expungable}
-     * by removing the corresponding entries from the maps.
+     * A {@link Value} that weakly references the referent.
      */
     private static final class CacheValue<V>
         extends WeakReference<V>
-        implements Value<V>, Expungable {
+        implements Value<V> {
         private final int hash;
-        private final Object subKey;
-        private final ConcurrentMap<Object, Supplier<V>> valuesMap;
 
-        CacheValue(V value,
-                   ReferenceQueue<Object> refQueue,
-                   Object subKey,
-                   ConcurrentMap<Object, Supplier<V>> valuesMap) {
-            super(value, refQueue);
+        CacheValue(V value) {
+            super(value);
             this.hash = System.identityHashCode(value); // compare by identity
-            this.subKey = subKey;
-            this.valuesMap = valuesMap;
         }
 
         @Override
@@ -341,27 +321,14 @@ final class WeakCache<K, P, V> {
                    (value = get()) != null &&
                    value == ((Value<?>) obj).get(); // compare by identity
         }
-
-        @Override
-        public void expungeFrom(ConcurrentMap<?, ? extends ConcurrentMap<?, ?>> map,
-                                ConcurrentMap<?, Boolean> reverseMap) {
-            // only remove if still mapped to same Supplier
-            valuesMap.remove(subKey, this);
-            // remove from reverseMap too...
-            if (reverseMap != null) {
-                reverseMap.remove(this);
-            }
-        }
     }
 
     /**
-     * CacheKey containing a weekly referenced {@code key}. It also implements
-     * {@link Expungable} so it can clean-up when the weekly referenced key is
-     * garbage collected. The containing {@code key} is compared by identity.
+     * CacheKey containing a weekly referenced {@code key}. It registers
+     * itself with the {@code refQueue} so that it can be used to expunge
+     * the entry when the {@link WeakReference} is cleared.
      */
-    private static final class CacheKey<K>
-        extends WeakReference<K>
-        implements Expungable {
+    private static final class CacheKey<K> extends WeakReference<K> {
 
         // a replacement for null keys
         private static final Object NULL_KEY = new Object();
@@ -389,7 +356,6 @@ final class WeakCache<K, P, V> {
 
         @Override
         public boolean equals(Object obj) {
-            CacheKey other;
             K thisKey;
             return obj == this ||
                    obj != null &&
@@ -397,12 +363,11 @@ final class WeakCache<K, P, V> {
                    // cleared CacheKey is only equal to itself
                    (thisKey = this.get()) != null &&
                    // compare key by identity
-                   thisKey == (other = (CacheKey<?>) obj).get();
+                   thisKey == ((CacheKey<?>) obj).get();
         }
 
-        @Override
-        public void expungeFrom(ConcurrentMap<?, ? extends ConcurrentMap<?, ?>> map,
-                                ConcurrentMap<?, Boolean> reverseMap) {
+        void expungeFrom(ConcurrentMap<?, ? extends ConcurrentMap<?, ?>> map,
+                         ConcurrentMap<?, Boolean> reverseMap) {
             // removing just by key is always safe here because after a CacheKey
             // is cleared and enqueue-ed it is only equal to itself
             // (see equals method)...
