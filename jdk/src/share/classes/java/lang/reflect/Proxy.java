@@ -413,7 +413,7 @@ public class Proxy implements java.io.Serializable {
             if (!intf.isAssignableFrom(proxyClass)) {
                 // this can happen if an interface with same name but different
                 // ClassLoader is specified in the interfaces array and the
-                // proxy class for that interface name is already cached...
+                // proxy class for those interface names is already cached...
                 throw new IllegalArgumentException(
                     intf + " is not visible from class loader");
             }

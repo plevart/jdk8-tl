@@ -66,7 +66,7 @@ final class WeakCache<K, P, V> {
     private final BiFunction<? super K, ? super P, ? extends V> valueFactory;
 
     /**
-     * Construct an instance of {@code TwoLevelWeakCache}
+     * Construct an instance of {@code WeakCache}
      *
      * @param subKeyFactory a function mapping a pair of
      *                      {@code (key, parameter) -> sub-key}
@@ -167,7 +167,7 @@ final class WeakCache<K, P, V> {
     /**
      * Checks whether the specified non-null value is already present in this
      * {@code WeakCache}. The check is made using identity comparison regardless
-     * of whether values's class overrides {@link Object#equals} or not.
+     * of whether value's class overrides {@link Object#equals} or not.
      *
      * @param value the non-null value to check
      * @return true if given {@code value} is already cached
@@ -220,7 +220,7 @@ final class WeakCache<K, P, V> {
                 // something changed while we were waiting:
                 // might be that we were replaced by a CacheValue
                 // or were removed because of failure ->
-                // return null to signal TwoLevelWeakCache.get() to retry
+                // return null to signal WeakCache.get() to retry
                 // the loop
                 return null;
             }
@@ -243,10 +243,8 @@ final class WeakCache<K, P, V> {
 
             // try replacing us with CacheValue (this should always succeed)
             if (valuesMap.replace(subKey, this, cacheValue)) {
-                // put also in reverseMap if needed
-                if (reverseMap != null) {
-                    reverseMap.put(cacheValue, Boolean.TRUE);
-                }
+                // put also in reverseMap
+                reverseMap.put(cacheValue, Boolean.TRUE);
             } else {
                 throw new AssertionError("Replaced by ghost - should not happen");
             }
@@ -336,7 +334,7 @@ final class WeakCache<K, P, V> {
         static <K> Object valueOf(K key, ReferenceQueue<Object> refQueue) {
             return key == null
                    // null key means we can't weakly reference it,
-                   // so we substitute it with a NULL_KEY
+                   // so we use a NULL_KEY singleton as cache key
                    ? NULL_KEY
                    // non-null key requires wrapping with a WeakReference
                    : new CacheKey<>(key, refQueue);
@@ -346,7 +344,7 @@ final class WeakCache<K, P, V> {
 
         private CacheKey(K key, ReferenceQueue<Object> refQueue) {
             super(key, refQueue);
-            this.hash = System.identityHashCode(key);  // by identity
+            this.hash = System.identityHashCode(key);  // compare by identity
         }
 
         @Override
@@ -373,7 +371,7 @@ final class WeakCache<K, P, V> {
             // (see equals method)...
             ConcurrentMap<?, ?> valuesMap = map.remove(this);
             // remove also from reverseMap if needed
-            if (valuesMap != null && reverseMap != null) {
+            if (valuesMap != null) {
                 for (Object cacheValue : valuesMap.values()) {
                     reverseMap.remove(cacheValue);
                 }
