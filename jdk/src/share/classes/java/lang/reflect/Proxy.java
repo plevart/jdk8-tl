@@ -25,10 +25,8 @@
 
 package java.lang.reflect;
 
-import java.lang.ref.WeakReference;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.Arrays;
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
@@ -409,11 +407,19 @@ public class Proxy implements java.io.Serializable {
 
         Class<?> proxyClass = proxyClassCache.get(loader, interfaces);
 
-        for (Class<?> intf : interfaces) {
-            if (!intf.isAssignableFrom(proxyClass)) {
+        // post-validate if the (possibly cached) proxy class implementing
+        // interfaces with same names is actually implementing the requested
+        // interfaces...
+        Class<?>[] proxyClassInterfaces = proxyClass.getInterfaces();
+        assert proxyClassInterfaces.length == interfaces.length;
+        for (int i = 0; i < interfaces.length; i++) {
+            Class<?> intf = interfaces[i];
+            Class<?> proxyClassIntf = proxyClassInterfaces[i];
+            assert intf.getName() == proxyClassIntf.getName(); // interned strings
+            if (intf != proxyClassIntf) {
                 // this can happen if an interface with same name but different
                 // ClassLoader is specified in the interfaces array and the
-                // proxy class for those interface names is already cached...
+                // proxy class for same set of interface names is already cached...
                 throw new IllegalArgumentException(
                     intf + " is not visible from class loader");
             }
