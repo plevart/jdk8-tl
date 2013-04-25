@@ -97,10 +97,6 @@ final class WeakCache<K, P, V> {
      *                              {@code sub-key} calculated by
      *                              {@code subKeyFactory} or {@code value}
      *                              calculated by {@code valueFactory} is null.
-     * @throws RuntimeException     or subtype if {@code subKeyFactory} or
-     *                              {@code valueFactory} throws it
-     * @throws Error                or subtype if {@code subKeyFactory} or
-     *                              {@code valueFactory} throws it
      */
     public V get(K key, P parameter) {
         Objects.requireNonNull(parameter);
