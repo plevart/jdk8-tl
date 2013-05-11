@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,19 +47,18 @@ public class AnnotationType {
      * types.  This matches the return value that must be used for a
      * dynamic proxy, allowing for a simple isInstance test.
      */
-    private final Map<String, Class<?>> memberTypes = new HashMap<String,Class<?>>();
+    private final Map<String, Class<?>> memberTypes;
 
     /**
      * Member name -> default value mapping.
      */
-    private final Map<String, Object> memberDefaults =
-        new HashMap<String, Object>();
+    private final Map<String, Object> memberDefaults;
 
     /**
      * Member name -> Method object mapping. This (and its assoicated
      * accessor) are used only to generate AnnotationTypeMismatchExceptions.
      */
-    private final Map<String, Method> members = new HashMap<String, Method>();
+    private final Map<String, Method> members;
 
     /**
      * The retention policy for this annotation type.
@@ -80,11 +79,12 @@ public class AnnotationType {
     public static AnnotationType getInstance(
         Class<? extends Annotation> annotationClass)
     {
-        JavaLangAccess jlAccess = sun.misc.SharedSecrets.getJavaLangAccess();
-        AnnotationType result = jlAccess.getAnnotationType(annotationClass);
+        JavaLangAccess jla = sun.misc.SharedSecrets.getJavaLangAccess();
+        AnnotationType result = jla.getAnnotationType(annotationClass);
         if (result == null) {
-            result = new AnnotationType(annotationClass, jlAccess);
-            jlAccess.setAnnotationType(annotationClass, result);
+            result = new AnnotationType(annotationClass);
+            // multiple racy sets are idempotent (like in String.hashCode)
+            jla.setAnnotationType(annotationClass, result);
         }
 
         return result;
@@ -97,10 +97,7 @@ public class AnnotationType {
      * @throw IllegalArgumentException if the specified class object for
      *     does not represent a valid annotation type
      */
-    private AnnotationType(
-        final Class<? extends Annotation> annotationClass,
-        final JavaLangAccess jlAccess
-    ) {
+    private AnnotationType(final Class<? extends Annotation> annotationClass) {
         if (!annotationClass.isAnnotation())
             throw new IllegalArgumentException("Not an annotation type");
 
@@ -112,6 +109,9 @@ public class AnnotationType {
                 }
             });
 
+        memberTypes = new HashMap<String,Class<?>>(methods.length+1, 1.0f);
+        memberDefaults = new HashMap<String, Object>(0);
+        members = new HashMap<String, Method>(methods.length+1, 1.0f);
 
         for (Method method :  methods) {
             if (method.getParameterTypes().length != 0)
@@ -124,18 +124,17 @@ public class AnnotationType {
             Object defaultValue = method.getDefaultValue();
             if (defaultValue != null)
                 memberDefaults.put(name, defaultValue);
-
-            members.put(name, method);
         }
 
         // Initialize retention, & inherited fields.  Special treatment
         // of the corresponding annotation types breaks infinite recursion.
         if (annotationClass != Retention.class &&
             annotationClass != Inherited.class) {
+            JavaLangAccess jla = sun.misc.SharedSecrets.getJavaLangAccess();
             Map<Class<? extends Annotation>, Annotation> metaAnnotations =
                 AnnotationParser.parseAnnotations(
-                    jlAccess.getRawClassAnnotations(annotationClass),
-                    jlAccess.getConstantPool(annotationClass),
+                    jla.getRawClassAnnotations(annotationClass),
+                    jla.getConstantPool(annotationClass),
                     annotationClass,
                     Retention.class, Inherited.class
                 );
