@@ -219,11 +219,10 @@ public class AnnotationType {
      * For debugging.
      */
     public String toString() {
-        StringBuffer s = new StringBuffer("Annotation Type:" + "\n");
-        s.append("   Member types: " + memberTypes + "\n");
-        s.append("   Member defaults: " + memberDefaults + "\n");
-        s.append("   Retention policy: " + retention + "\n");
-        s.append("   Inherited: " + inherited);
-        return s.toString();
+        return "Annotation Type:\n" +
+               "   Member types: " + memberTypes + "\n" +
+               "   Member defaults: " + memberDefaults + "\n" +
+               "   Retention policy: " + retention + "\n" +
+               "   Inherited: " + inherited;
     }
 }
