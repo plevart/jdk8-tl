@@ -1011,7 +1011,7 @@ public final class String
         char v1[] = value;
         char v2[] = sb.getValue();
         int n = v1.length;
-        if (n != v2.length) {
+        if (n != sb.length()) {
             return false;
         }
         for (int i = 0; i < n; i++) {
@@ -1055,8 +1055,9 @@ public final class String
         // Argument is a generic CharSequence
         char v1[] = value;
         int n = v1.length;
-        if (n != cs.length())
+        if (n != cs.length()) {
             return false;
+        }
         for (int i = 0; i < n; i++) {
             if (v1[i] != cs.charAt(i)) {
                 return false;
