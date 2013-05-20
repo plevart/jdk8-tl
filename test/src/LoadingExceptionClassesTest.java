@@ -1,31 +1,5 @@
-/*
- * Written by Peter Levart <peter.levart@gmail.com>
- * and released to the public domain, as explained at
- * http://creativecommons.org/publicdomain/zero/1.0/
- */
 
-/**
- * @author peter
- */
 public class LoadingExceptionClassesTest {
-
-    private static class Handler {
-        static {
-            System.out.println(Handler.class.getName() + " executing static initializer");
-        }
-
-        Object lock = new Object();
-
-        void m() {
-            synchronized (lock) {
-                try {
-                    if (lock != null) {
-                        lock.wait();
-                    }
-                } catch (InterruptedException e) {}
-            }
-        }
-    }
 
     public static void main(String[] args) throws Exception {
         // wait for system background threads to load their classes
@@ -34,23 +8,26 @@ public class LoadingExceptionClassesTest {
         System.out.println("START!");
         System.out.println();
 
-        String handlerClassName = LoadingExceptionClassesTest.class.getName() + "$Handler";
+        String throwerClassName = "test.Thrower";
 
-        System.out.println(handlerClassName + " loading");
-        Class.forName(handlerClassName, false, LoadingExceptionClassesTest.class.getClassLoader());
-        System.out.println(handlerClassName + " loaded");
+        System.out.println(throwerClassName + " loading");
+        Class.forName(throwerClassName, false, LoadingExceptionClassesTest.class.getClassLoader());
+        System.out.println(throwerClassName + " loaded");
 
-        System.out.println(handlerClassName + " initializing");
-        Class.forName(handlerClassName, true, LoadingExceptionClassesTest.class.getClassLoader());
-        System.out.println(handlerClassName + " initialized");
+        System.out.println(throwerClassName + " initializing");
+        Class.forName(throwerClassName, true, LoadingExceptionClassesTest.class.getClassLoader());
+        System.out.println(throwerClassName + " initialized");
 
-        System.out.println("constructing instance of " + handlerClassName);
-        Handler h = new Handler();
-        System.out.println("constructed " + h);
+        System.out.println("constructing instance of " + throwerClassName);
+        test.Thrower thrower = new test.Thrower();
+        System.out.println("constructed " + thrower);
 
-        System.out.println("calling " + handlerClassName + ".m()");
-        Thread.currentThread().interrupt();
-        h.m();
-        System.out.println("called " + handlerClassName + ".m()");
+        System.out.println("calling " + throwerClassName + ".throwCatchExceptionA() 1st time");
+        thrower.throwCatchExceptionA();
+        System.out.println("returned from " + throwerClassName + ".throwCatchExceptionA()");
+
+        System.out.println("calling " + throwerClassName + ".throwCatchExceptionA() 2nd time");
+        thrower.throwCatchExceptionA();
+        System.out.println("returned from " + throwerClassName + ".throwCatchExceptionA()");
     }
 }
