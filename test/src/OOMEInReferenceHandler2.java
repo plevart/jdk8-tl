@@ -52,7 +52,7 @@ public class OOMEInReferenceHandler2 {
          return first;
      }
 
-     static int triggerOOME(ReferenceQueue<Object> refQueue, Thread referenceHandlerThread) throws Exception {
+     static WeakReference<Object> triggerOOME(ReferenceQueue<Object> refQueue, Thread referenceHandlerThread) throws Exception {
 
          Object referent = new Object();
          WeakReference<Object> weakRef = new WeakReference<>(referent, refQueue);
@@ -65,7 +65,10 @@ public class OOMEInReferenceHandler2 {
          Thread.sleep(500L);
 
          // make sure waste & referent are not released prematurely due to compiler re-orderings
-         return waste.hashCode() ^ referent.hashCode();
+         if (waste != null)
+             return weakRef;
+         else
+             throw new AssertionError(referent);
      }
 
      public static void main(String[] args) throws Exception {
@@ -97,7 +100,7 @@ public class OOMEInReferenceHandler2 {
          ReferenceQueue<Object> refQueue = new ReferenceQueue<>();
 
          // trigger OutOfMemoryError in referenceHandlerThread.run() method
-         triggerOOME(refQueue, referenceHandlerThread);
+         WeakReference<Object> weakRef = triggerOOME(refQueue, referenceHandlerThread);
 
          // wait at most 10 seconds for success or failure
          for (int i = 0; i < 20; i++) {
@@ -114,6 +117,6 @@ public class OOMEInReferenceHandler2 {
          }
 
          // no sure answer after 10 seconds
-         throw new IllegalStateException("Reference Handler thread stuck.");
+         throw new IllegalStateException("Reference Handler thread stuck. WeakReference.get(): " + weakRef.get());
      }
 }
