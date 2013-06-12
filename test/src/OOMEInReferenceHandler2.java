@@ -29,9 +29,10 @@
  * @author peter.levart@gmail.com
  */
 
-import java.lang.ref.*;
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
 
-public class OOMEInReferenceHandler {
+public class OOMEInReferenceHandler2 {
      static Object[] fillHeap() {
          Object[] first = null, last = null;
          int size = 1 << 20;
@@ -49,6 +50,22 @@ public class OOMEInReferenceHandler {
              }
          }
          return first;
+     }
+
+     static int triggerOOME(ReferenceQueue<Object> refQueue, Thread referenceHandlerThread) throws Exception {
+
+         Object referent = new Object();
+         WeakReference<Object> weakRef = new WeakReference<>(referent, refQueue);
+
+         Object waste = fillHeap();
+
+         referenceHandlerThread.interrupt();
+
+         // allow referenceHandlerThread some time to throw OOME
+         Thread.sleep(500L);
+
+         // make sure waste & referent are not released prematurely due to compiler re-orderings
+         return waste.hashCode() ^ referent.hashCode();
      }
 
      public static void main(String[] args) throws Exception {
@@ -78,19 +95,9 @@ public class OOMEInReferenceHandler {
          }
 
          ReferenceQueue<Object> refQueue = new ReferenceQueue<>();
-         Object referent = new Object();
-         WeakReference<Object> weakRef = new WeakReference<>(referent, refQueue);
 
-         Object waste = fillHeap();
-
-         referenceHandlerThread.interrupt();
-
-         // allow referenceHandlerThread some time to throw OOME
-         Thread.sleep(500L);
-
-         // release waste & referent
-         waste = null;
-         referent = null;
+         // trigger OutOfMemoryError in referenceHandlerThread.run() method
+         triggerOOME(refQueue, referenceHandlerThread);
 
          // wait at most 10 seconds for success or failure
          for (int i = 0; i < 20; i++) {
