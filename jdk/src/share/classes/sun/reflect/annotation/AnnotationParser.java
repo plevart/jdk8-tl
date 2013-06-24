@@ -82,10 +82,8 @@ public class AnnotationParser {
      * An overload of {@link #parseAnnotations(byte[], sun.reflect.ConstantPool, Class)}
      * with an additional parameter {@code selectAnnotationClasses} which selects the
      * annotation types to parse (other than selected are quickly skipped).<p>
-     * This method also treats selected annotations as having implicit
-     * {@link RetentionPolicy#RUNTIME RUNTIME} retention and is only used
-     * to parse select meta annotations in the construction phase of {@link AnnotationType}
-     * instances to prevent infinite recursion.
+     * This method is only used to parse select meta annotations in the construction
+     * phase of {@link AnnotationType} instances to prevent infinite recursion.
      *
      * @param selectAnnotationClasses an array of annotation types to select when parsing
      */
@@ -121,11 +119,11 @@ public class AnnotationParser {
             Annotation a = parseAnnotation(buf, constPool, container, false, selectAnnotationClasses);
             if (a != null) {
                 Class<? extends Annotation> klass = a.annotationType();
-                if (selectAnnotationClasses != null ||
-                    AnnotationType.getInstance(klass).retention() == RetentionPolicy.RUNTIME)
-                    if (result.put(klass, a) != null)
-                        throw new AnnotationFormatError(
-                            "Duplicate annotation for class: "+klass+": " + a);
+                if (AnnotationType.getInstance(klass).retention() == RetentionPolicy.RUNTIME &&
+                    result.put(klass, a) != null) {
+                    throw new AnnotationFormatError(
+                        "Duplicate annotation for class: "+klass+": " + a);
+                }
             }
         }
         return result;

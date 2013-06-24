@@ -64,13 +64,13 @@ public class AnnotationTypeDeadlockTest {
     }
 
     static void dumpState(Task task) {
-        Throwable throwable = new Throwable();
-        throwable.setStackTrace(task.getStackTrace());
         System.err.println(
             "Task[" + task.getName() + "].state: " +
             task.getState() + " ..."
         );
-        throwable.printStackTrace(System.err);
+        for (StackTraceElement ste : task.getStackTrace()) {
+            System.err.println("\tat " + ste);
+        }
         System.err.println();
     }
 
