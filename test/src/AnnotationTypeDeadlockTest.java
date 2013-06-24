@@ -24,8 +24,7 @@
 /*
  * @test
  * @bug 7122142
- * @summary Test exposing inconsistent parsing of ex RUNTIME annotations that
- *          were changed and separately compiled to have CLASS retention
+ * @summary Test deadlock situation when recursive annotations are parsed
  */
 
 import java.lang.annotation.Retention;
@@ -93,7 +92,8 @@ public class AnnotationTypeDeadlockTest {
             dumpState(taskA);
             dumpState(taskB);
             throw new IllegalStateException(
-                taskA.getState() == Thread.State.BLOCKED && taskB.getState() == Thread.State.BLOCKED
+                taskA.getState() == Thread.State.BLOCKED &&
+                taskB.getState() == Thread.State.BLOCKED
                 ? "deadlock detected"
                 : "unexpected condition");
         }
