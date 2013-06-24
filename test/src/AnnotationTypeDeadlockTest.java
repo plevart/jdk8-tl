@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug
+ * @bug 7122142
  * @summary Test exposing inconsistent parsing of ex RUNTIME annotations that
  *          were changed and separately compiled to have CLASS retention
  */
@@ -81,15 +81,21 @@ public class AnnotationTypeDeadlockTest {
         Task taskB = new Task(latch, AnnB.class);
         taskA.start();
         taskB.start();
-        while (latch.get() < 2) ; // spin-wait
-        latch.set(0); // trigger coherent start
-        taskA.join(1000L);
-        taskB.join(1000L);
+        // spin-wait for both threads to start-up
+        while (latch.get() < 2) ;
+        // trigger coherent start
+        latch.set(0);
+        // join them
+        taskA.join(500L);
+        taskB.join(500L);
 
         if (taskA.isAlive() || taskB.isAlive()) {
             dumpState(taskA);
             dumpState(taskB);
-            throw new IllegalStateException("deadlock detected");
+            throw new IllegalStateException(
+                taskA.getState() == Thread.State.BLOCKED && taskB.getState() == Thread.State.BLOCKED
+                ? "deadlock detected"
+                : "unexpected condition");
         }
     }
 }

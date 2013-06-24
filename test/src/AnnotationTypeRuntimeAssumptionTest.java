@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Test exposing inconsistent parsing of ex RUNTIME annotations that
+ * @summary Test consistent parsing of ex RUNTIME annotations that
  *          were changed and separately compiled to have CLASS retention
  */
 
