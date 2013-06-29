@@ -5,7 +5,6 @@
  */
 
 import java.math.BigInteger;
-import java.util.Arrays;
 
 /**
  * @author peter
@@ -15,49 +14,60 @@ public class BigIntegerPowerCache2 {
     private static class Node {
         final BigInteger value;
         Node next;
+
         Node(BigInteger value) { this.value = value; }
     }
 
-    private static volatile Node[][] powerCache;
+    private static final Node[] powerCache;
+    private static final BigInteger[][] powerCacheIndex;
+    private static final int POWER_CACHE_LINE_CHUNK = 16;
 
     static {
-        powerCache = new Node[Character.MAX_RADIX + 1][];
+        powerCache = new Node[Character.MAX_RADIX + 1];
         for (int i = Character.MIN_RADIX; i <= Character.MAX_RADIX; i++) {
-            powerCache[i] = new Node[]{new Node(BigInteger.valueOf(i))};
+            powerCache[i] = new Node(BigInteger.valueOf(i));
+        }
+        powerCacheIndex = new BigInteger[Character.MAX_RADIX + 1][];
+    }
+
+    static BigInteger getRadixConversionCache(int radix, int exponent) {
+        BigInteger[] cacheLine = powerCacheIndex[radix];
+        if (cacheLine != null && exponent < cacheLine.length) { // cache line is long enough
+            BigInteger value = cacheLine[exponent];
+            if (value != null) {
+                return value;
+            }
+            return fillCacheLine(cacheLine, powerCache[radix], exponent);
+        } else { // we need to extend / create cache line
+            cacheLine = new BigInteger[(exponent / POWER_CACHE_LINE_CHUNK + 1) * POWER_CACHE_LINE_CHUNK];
+            BigInteger result = fillCacheLine(cacheLine, powerCache[radix], exponent);
+            powerCacheIndex[radix] = cacheLine; // install new line
+            return result;
         }
     }
 
-    private static BigInteger getRadixConversionCache(int radix, int exponent) {
-        Node[] cacheLine = powerCache[radix]; // volatile read
-        if (exponent < cacheLine.length)
-            return cacheLine[exponent].value;
-
-        int oldLength = cacheLine.length;
-        cacheLine = Arrays.copyOf(cacheLine, exponent + 1);
-        Node prevNode = cacheLine[oldLength - 1];
-        for (int i = oldLength; i <= exponent; i++) {
-            Node node;
-            synchronized (prevNode) {
-                node = prevNode.next;
-                if (node == null) {
-                    node = new Node(prevNode.value.pow(2));
-                    prevNode.next = node;
+    private static BigInteger fillCacheLine(BigInteger[] cacheLine, Node node, int exponent) {
+        cacheLine[0] = node.value;
+        for (int i = 1; i <= exponent; i++) {
+            // not-broken (JDK5+) double-checked locking
+            Node nextNode = node.next;
+            if (nextNode == null) {
+                synchronized (node) {
+                    nextNode = node.next;
+                    if (nextNode == null) {
+                        node.next = nextNode = new Node(node.value.pow(2));
+                    }
                 }
             }
-            cacheLine[i] = prevNode = node;
+            node = nextNode;
+            cacheLine[i] = node.value;
         }
-
-        Node[][] pc = powerCache; // volatile read again
-        if (exponent >= pc[radix].length) {
-            pc = pc.clone();
-            pc[radix] = cacheLine;
-            powerCache = pc; // volatile write, publish
-        }
-        return cacheLine[exponent].value;
+        return node.value;
     }
 
 
     public static void main(String[] args) {
+
         for (int i = 4; i >= 0; i--) {
             System.out.println(i + ": " + getRadixConversionCache(2, i));
         }

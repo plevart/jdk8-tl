@@ -10,45 +10,7 @@ import java.util.Arrays;
 /**
  * @author peter
  */
-public class BigIntegerPowerCache {
-
-    private static final BigInteger[][] powerCacheMy =
-        new BigInteger[Character.MAX_RADIX + 1][];
-
-    private static BigInteger getRadixConversionCacheMy(
-        int radix,
-        int exponent
-    ) {
-        BigInteger[] cacheLine = powerCacheMy[radix];
-        int oldLength = cacheLine == null ? 0 : cacheLine.length;
-        if (exponent >= oldLength) { // needs resizing/creation?
-            // invariant: each cacheLine has length > 0
-            if (oldLength == 0) { // creation
-                cacheLine = new BigInteger[exponent + 1];
-            } else { // resizing
-                // increase by factor of 1.5 (like ArrayList)
-                int newLength = oldLength + (oldLength >> 1);
-                // if that's not enough, take exact needed length
-                if (newLength <= exponent) newLength = exponent + 1;
-                cacheLine = Arrays.copyOf(cacheLine, newLength);
-            }
-            powerCacheMy[radix] = cacheLine; // install new cacheLine
-        }
-        // search for 1st non-null power from min(oldLength - 1, exponent) backwards
-        int s;
-        BigInteger power = null;
-        for (s = Math.min(oldLength - 1, exponent); s >= 0; s--) {
-            power = cacheLine[s];
-            if (power != null) break;
-        }
-        // calculate the rest up to and including exponent
-        for (int i = s + 1; i <= exponent; i++) {
-            power = power == null ? BigInteger.valueOf(radix) : power.pow(2);
-            cacheLine[i] = power;
-        }
-        return power;
-    }
-
+public class BigIntegerPowerCache1 {
 
     private static volatile BigInteger[][] powerCache;
 
@@ -65,7 +27,7 @@ public class BigIntegerPowerCache {
         }
     }
 
-    private static BigInteger getRadixConversionCache(int radix, int exponent) {
+    static BigInteger getRadixConversionCache(int radix, int exponent) {
         BigInteger[] cacheLine = powerCache[radix]; // volatile read
         if (exponent < cacheLine.length)
             return cacheLine[exponent];
