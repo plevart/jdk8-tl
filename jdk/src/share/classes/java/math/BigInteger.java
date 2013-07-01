@@ -33,12 +33,10 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
 import sun.misc.DoubleConsts;
 import sun.misc.FloatConsts;
-import sun.misc.SharedSecrets;
 
 /**
  * Immutable arbitrary-precision integers.  All operations behave as if
@@ -1043,7 +1041,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * recalculate powers of radix^(2^n) more than once.  This speeds
      * Schoenhage recursive base conversion significantly.
      */
-    private static ArrayList<BigInteger>[] powerCache;
+    private static volatile BigInteger[][] powerCache;
 
     /** The cache of logarithms of radices for base conversion. */
     private static final double[] logCache;
@@ -1064,14 +1062,12 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
          * with just the very first value.  Additional values will be created
          * on demand.
          */
-        powerCache = (ArrayList<BigInteger>[])
-            new ArrayList[Character.MAX_RADIX+1];
+        powerCache = new BigInteger[Character.MAX_RADIX+1][];
         logCache = new double[Character.MAX_RADIX+1];
 
         for (int i=Character.MIN_RADIX; i<=Character.MAX_RADIX; i++)
         {
-            powerCache[i] = new ArrayList<BigInteger>(1);
-            powerCache[i].add(BigInteger.valueOf(i));
+            powerCache[i] = new BigInteger[] { BigInteger.valueOf(i) };
             logCache[i] = Math.log(i);
         }
     }
@@ -3359,7 +3355,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @param radix  The base to convert to.
      * @param digits The minimum number of digits to pad to.
      */
-    private StringBuilder smallNonNegaiveToString(StringBuilder sb, int radix, int digits) {
+    private StringBuilder smallNonNegativeToString(StringBuilder sb, int radix, int digits) {
 
         assert signum >= 0;
 
@@ -3446,10 +3442,10 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
         assert signum >= 0;
 
-        /* If we're smaller than a certain threshold, use the smallToString
+        /* If we're smaller than a certain threshold, use the smallNonNegativeToString
            method, padding with leading zeroes when necessary. */
         if (mag.length <= SCHOENHAGE_BASE_CONVERSION_THRESHOLD) {
-            return smallNonNegaiveToString(sb, radix, digits);
+            return smallNonNegativeToString(sb, radix, digits);
         }
 
         int b, n;
@@ -3479,22 +3475,25 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * This could be changed to a more complicated caching method using
      * <code>Future</code>.
      */
-    private static synchronized BigInteger getRadixConversionCache(int radix,
-                                                                   int exponent) {
-        BigInteger retVal = null;
-        ArrayList<BigInteger> cacheLine = powerCache[radix];
-        int oldSize = cacheLine.size();
-        if (exponent >= oldSize) {
-            cacheLine.ensureCapacity(exponent+1);
-            for (int i=oldSize; i<=exponent; i++) {
-                retVal = cacheLine.get(i-1).square();
-                cacheLine.add(i, retVal);
-            }
+    private static BigInteger getRadixConversionCache(int radix, int exponent) {
+        BigInteger[] cacheLine = powerCache[radix]; // volatile read
+        if (exponent < cacheLine.length) {
+            return cacheLine[exponent];
         }
-        else
-            retVal = cacheLine.get(exponent);
 
-        return retVal;
+        int oldLength = cacheLine.length;
+        cacheLine = Arrays.copyOf(cacheLine, exponent + 1);
+        for (int i = oldLength; i <= exponent; i++) {
+            cacheLine[i] = cacheLine[i - 1].pow(2);
+        }
+
+        BigInteger[][] pc = powerCache; // volatile read again
+        if (exponent >= pc[radix].length) {
+            pc = pc.clone();
+            pc[radix] = cacheLine;
+            powerCache = pc; // volatile write, publish
+        }
+        return cacheLine[exponent];
     }
 
     /* zero[i] is a string of i consecutive zeros. */
