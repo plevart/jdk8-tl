@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Test consistent parsing of ex RUNTIME annotations that
+ * @summary Test consistent parsing of ex-RUNTIME annotations that
  *          were changed and separately compiled to have CLASS retention
  */
 
@@ -41,7 +41,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * This test simulates a situation where there are two mutually recursive
  * {@link RetentionPolicy#RUNTIME RUNTIME} annotations {@link AnnA_v1 AnnA_v1}
  * and {@link AnnB AnnB} and then the first is changed to have {@link RetentionPolicy#CLASS CLASS}
- * retention and separately compiled. When {@link AnnA_v1 AnnA_v1} annotation si looked-up on
+ * retention and separately compiled. When {@link AnnA_v1 AnnA_v1} annotation is looked-up on
  * {@link AnnB AnnB} it still appears to have {@link RetentionPolicy#RUNTIME RUNTIME}
  * retention.
  */
@@ -52,8 +52,8 @@ public class AnnotationTypeRuntimeAssumptionTest {
     public @interface AnnA_v1 {
     }
 
-    // an alternative version of AnnA_v1 with CLASS retention instead
-    // used to simulate separate compilation (see AltClassLoader below)
+    // An alternative version of AnnA_v1 with CLASS retention instead.
+    // Used to simulate separate compilation (see AltClassLoader below).
     @Retention(CLASS)
     @AnnB
     public @interface AnnA_v2 {

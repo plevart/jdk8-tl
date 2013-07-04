@@ -79,7 +79,7 @@ public class AnnotationParser {
     }
 
     /**
-     * An overload of {@link #parseAnnotations(byte[], sun.reflect.ConstantPool, Class)}
+     * Like {@link #parseAnnotations(byte[], sun.reflect.ConstantPool, Class)}
      * with an additional parameter {@code selectAnnotationClasses} which selects the
      * annotation types to parse (other than selected are quickly skipped).<p>
      * This method is only used to parse select meta annotations in the construction
@@ -88,11 +88,11 @@ public class AnnotationParser {
      * @param selectAnnotationClasses an array of annotation types to select when parsing
      */
     @SafeVarargs
-    public static Map<Class<? extends Annotation>, Annotation> parseAnnotations(
-        byte[] rawAnnotations,
-        ConstantPool constPool,
-        Class<?> container,
-        Class<? extends Annotation> ... selectAnnotationClasses) {
+    static Map<Class<? extends Annotation>, Annotation> parseSelectAnnotations(
+                byte[] rawAnnotations,
+                ConstantPool constPool,
+                Class<?> container,
+                Class<? extends Annotation> ... selectAnnotationClasses) {
         if (rawAnnotations == null)
             return Collections.emptyMap();
 
@@ -116,7 +116,7 @@ public class AnnotationParser {
         ByteBuffer buf = ByteBuffer.wrap(rawAnnotations);
         int numAnnotations = buf.getShort() & 0xFFFF;
         for (int i = 0; i < numAnnotations; i++) {
-            Annotation a = parseAnnotation(buf, constPool, container, false, selectAnnotationClasses);
+            Annotation a = parseAnnotation2(buf, constPool, container, false, selectAnnotationClasses);
             if (a != null) {
                 Class<? extends Annotation> klass = a.annotationType();
                 if (AnnotationType.getInstance(klass).retention() == RetentionPolicy.RUNTIME &&
@@ -180,7 +180,7 @@ public class AnnotationParser {
             List<Annotation> annotations =
                 new ArrayList<Annotation>(numAnnotations);
             for (int j = 0; j < numAnnotations; j++) {
-                Annotation a = parseAnnotation(buf, constPool, container, false, null);
+                Annotation a = parseAnnotation(buf, constPool, container, false);
                 if (a != null) {
                     AnnotationType type = AnnotationType.getInstance(
                                               a.annotationType());
@@ -218,8 +218,15 @@ public class AnnotationParser {
      * TypeNotPresentException if a referenced annotation type is not
      * available at runtime
      */
-    @SuppressWarnings("unchecked")
     static Annotation parseAnnotation(ByteBuffer buf,
+                                      ConstantPool constPool,
+                                      Class<?> container,
+                                      boolean exceptionOnMissingAnnotationClass) {
+       return parseAnnotation2(buf, constPool, container, exceptionOnMissingAnnotationClass, null);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Annotation parseAnnotation2(ByteBuffer buf,
                                               ConstantPool constPool,
                                               Class<?> container,
                                               boolean exceptionOnMissingAnnotationClass,
@@ -341,7 +348,7 @@ public class AnnotationParser {
               result = parseClassValue(buf, constPool, container);
               break;
           case '@':
-              result = parseAnnotation(buf, constPool, container, true, null);
+              result = parseAnnotation(buf, constPool, container, true);
               break;
           case '[':
               return parseArray(memberType, buf, constPool, container);
@@ -754,7 +761,7 @@ public class AnnotationParser {
         for (int i = 0; i < length; i++) {
             tag = buf.get();
             if (tag == '@') {
-                result[i] = parseAnnotation(buf, constPool, container, true, null);
+                result[i] = parseAnnotation(buf, constPool, container, true);
             } else {
                 skipMemberValue(tag, buf);
                 typeMismatch = true;
@@ -834,7 +841,10 @@ public class AnnotationParser {
             skipMemberValue(buf);
     }
 
-    // utility
+    /**
+     * Searches for given {@code element} in given {@code array} by identity.
+     * Returns {@code true} if found {@code false} if not.
+     */
     private static boolean contains(Object[] array, Object element) {
         for (Object e : array)
             if (e == element)

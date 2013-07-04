@@ -28,6 +28,7 @@
  */
 
 import java.lang.annotation.Retention;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
@@ -45,20 +46,22 @@ public class AnnotationTypeDeadlockTest {
     }
 
     static class Task extends Thread {
-        final AtomicInteger latch;
+        final CountDownLatch prepareLatch;
+        final AtomicInteger goLatch;
         final Class<?> clazz;
 
-        Task(AtomicInteger latch, Class<?> clazz) {
+        Task(CountDownLatch prepareLatch, AtomicInteger goLatch, Class<?> clazz) {
             super(clazz.getSimpleName());
             setDaemon(true); // in case it deadlocks
-            this.latch = latch;
+            this.prepareLatch = prepareLatch;
+            this.goLatch = goLatch;
             this.clazz = clazz;
         }
 
         @Override
         public void run() {
-            latch.incrementAndGet();
-            while (latch.get() > 0) ; // spin-wait
+            prepareLatch.countDown();  // notify we are prepared
+            while (goLatch.get() > 0); // spin-wait before go
             clazz.getDeclaredAnnotations();
         }
     }
@@ -75,18 +78,19 @@ public class AnnotationTypeDeadlockTest {
     }
 
     public static void main(String[] args) throws Exception {
-        AtomicInteger latch = new AtomicInteger();
-        Task taskA = new Task(latch, AnnA.class);
-        Task taskB = new Task(latch, AnnB.class);
+        CountDownLatch prepareLatch = new CountDownLatch(2);
+        AtomicInteger goLatch = new AtomicInteger(1);
+        Task taskA = new Task(prepareLatch, goLatch, AnnA.class);
+        Task taskB = new Task(prepareLatch, goLatch, AnnB.class);
         taskA.start();
         taskB.start();
-        // spin-wait for both threads to start-up
-        while (latch.get() < 2) ;
-        // trigger coherent start
-        latch.set(0);
-        // join them
-        taskA.join(500L);
-        taskB.join(500L);
+        // wait until both threads start-up
+        prepareLatch.await();
+        // let them go
+        goLatch.set(0);
+        // attempt to join them
+        taskA.join(5000L);
+        taskB.join(5000L);
 
         if (taskA.isAlive() || taskB.isAlive()) {
             dumpState(taskA);

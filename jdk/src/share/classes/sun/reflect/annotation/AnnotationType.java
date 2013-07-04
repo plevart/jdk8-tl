@@ -132,7 +132,7 @@ public class AnnotationType {
             annotationClass != Inherited.class) {
             JavaLangAccess jla = sun.misc.SharedSecrets.getJavaLangAccess();
             Map<Class<? extends Annotation>, Annotation> metaAnnotations =
-                AnnotationParser.parseAnnotations(
+                AnnotationParser.parseSelectAnnotations(
                     jla.getRawClassAnnotations(annotationClass),
                     jla.getConstantPool(annotationClass),
                     annotationClass,
