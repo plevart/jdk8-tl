@@ -40,10 +40,10 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 /**
  * This test simulates a situation where there are two mutually recursive
  * {@link RetentionPolicy#RUNTIME RUNTIME} annotations {@link AnnA_v1 AnnA_v1}
- * and {@link AnnB AnnB} and then the first is changed to have {@link RetentionPolicy#CLASS CLASS}
- * retention and separately compiled. When {@link AnnA_v1 AnnA_v1} annotation is looked-up on
- * {@link AnnB AnnB} it still appears to have {@link RetentionPolicy#RUNTIME RUNTIME}
- * retention.
+ * and {@link AnnB AnnB} and then the first is changed to have
+ * {@link RetentionPolicy#CLASS CLASS} retention and separately compiled.
+ * When {@link AnnA_v1 AnnA_v1} annotation is looked-up on {@link AnnB AnnB}
+ * it still appears to have {@link RetentionPolicy#RUNTIME RUNTIME} retention.
  */
 public class AnnotationTypeRuntimeAssumptionTest {
 
@@ -70,29 +70,37 @@ public class AnnotationTypeRuntimeAssumptionTest {
         public void run() {
             AnnA_v1 ann1 = TestTask.class.getDeclaredAnnotation(AnnA_v1.class);
             if (ann1 != null) {
-                throw new IllegalStateException("@" + ann1.annotationType().getSimpleName() +
-                                                " found on: " + TestTask.class.getName() +
-                                                " should not be visible at runtime");
+                throw new IllegalStateException(
+                    "@" + ann1.annotationType().getSimpleName() +
+                    " found on: " + TestTask.class.getName() +
+                    " should not be visible at runtime");
             }
             AnnA_v1 ann2 = AnnB.class.getDeclaredAnnotation(AnnA_v1.class);
             if (ann2 != null) {
-                throw new IllegalStateException("@" + ann2.annotationType().getSimpleName() +
-                                                " found on: " + AnnB.class.getName() +
-                                                " should not be visible at runtime");
+                throw new IllegalStateException(
+                    "@" + ann2.annotationType().getSimpleName() +
+                    " found on: " + AnnB.class.getName() +
+                    " should not be visible at runtime");
             }
         }
     }
 
     public static void main(String[] args) throws Exception {
-        ClassLoader altLoader = new AltClassLoader(AnnotationTypeRuntimeAssumptionTest.class.getClassLoader());
-        Runnable altTask = (Runnable) Class.forName(TestTask.class.getName(), true, altLoader).newInstance();
+        ClassLoader altLoader = new AltClassLoader(
+            AnnotationTypeRuntimeAssumptionTest.class.getClassLoader());
+
+        Runnable altTask = (Runnable) Class.forName(
+            TestTask.class.getName(),
+            true,
+            altLoader).newInstance();
+
         altTask.run();
     }
 
     /**
-     * A ClassLoader implementation that loads alternative implementations of classes instead of original.
-     * If class name ends with "_v1" it locates instead class with name ending with "_v2" and then renames
-     * the class bytes to the original name before defining the class.
+     * A ClassLoader implementation that loads alternative implementations of
+     * classes. If class name ends with "_v1" it locates instead a class with
+     * name ending with "_v2" and loads that class instead.
      */
     static class AltClassLoader extends ClassLoader {
         AltClassLoader(ClassLoader parent) {
@@ -100,7 +108,8 @@ public class AnnotationTypeRuntimeAssumptionTest {
         }
 
         @Override
-        protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+        protected Class<?> loadClass(String name, boolean resolve)
+                throws ClassNotFoundException {
             if (name.indexOf('.') < 0) { // root package is our class
                 synchronized (getClassLoadingLock(name)) {
                     // First, check if the class has already been loaded
@@ -120,16 +129,20 @@ public class AnnotationTypeRuntimeAssumptionTest {
         }
 
         @Override
-        protected Class<?> findClass(String name) throws ClassNotFoundException {
-            if (name.endsWith("_v1")) { // special class name -> replace it with alternative name
+        protected Class<?> findClass(String name)
+                throws ClassNotFoundException {
+            // special class name -> replace it with alternative name
+            if (name.endsWith("_v1")) {
                 String altName = name.substring(0, name.length() - 3) + "_v2";
                 String altPath = altName.replace('.', '/').concat(".class");
                 try (InputStream is = getResourceAsStream(altPath)) {
                     if (is != null) {
                         byte[] bytes = IOUtils.readFully(is, -1, true);
-                        // patch class bytes to contain original (not alternative) name
+                        // patch class bytes to contain original name
                         for (int i = 0; i < bytes.length - 2; i++) {
-                            if (bytes[i] == '_' && bytes[i + 1] == 'v' && bytes[i + 2] == '2') {
+                            if (bytes[i] == '_' &&
+                                bytes[i + 1] == 'v' &&
+                                bytes[i + 2] == '2') {
                                 bytes[i + 2] = '1';
                             }
                         }
@@ -143,7 +156,7 @@ public class AnnotationTypeRuntimeAssumptionTest {
                     throw new ClassNotFoundException(name, e);
                 }
             }
-            else { // no special class name -> just load the class by original name
+            else { // not special class name -> just load the class
                 String path = name.replace('.', '/').concat(".class");
                 try (InputStream is = getResourceAsStream(path)) {
                     if (is != null) {

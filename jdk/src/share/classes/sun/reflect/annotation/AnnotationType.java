@@ -84,6 +84,9 @@ public class AnnotationType {
         if (result == null) {
             result = new AnnotationType(annotationClass);
             // multiple racy sets are idempotent (like in String.hashCode)
+            // and AnnotationType class is immutable (all fields final)
+            // so we don't need any synchronization or volatile field to
+            // safely publish AnnotationType instance to other threads
             jla.setAnnotationType(annotationClass, result);
         }
 
