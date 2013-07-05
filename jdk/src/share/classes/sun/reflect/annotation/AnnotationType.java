@@ -80,14 +80,15 @@ public class AnnotationType {
         Class<? extends Annotation> annotationClass)
     {
         JavaLangAccess jla = sun.misc.SharedSecrets.getJavaLangAccess();
-        AnnotationType result = jla.getAnnotationType(annotationClass);
+        AnnotationType result = jla.getAnnotationType(annotationClass); // volatile read
         if (result == null) {
             result = new AnnotationType(annotationClass);
-            // multiple racy sets are idempotent (like in String.hashCode)
-            // and AnnotationType class is immutable (all fields final)
-            // so we don't need any synchronization or volatile field to
-            // safely publish AnnotationType instance to other threads
-            jla.setAnnotationType(annotationClass, result);
+            // try to CAS the AnnotationType: null -> result
+            if (!jla.casAnnotationType(annotationClass, null, result)) {
+                // somebody was quicker -> read it's result
+                result = jla.getAnnotationType(annotationClass);
+                assert result != null;
+            }
         }
 
         return result;

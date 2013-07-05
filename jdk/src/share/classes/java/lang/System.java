@@ -1218,8 +1218,8 @@ public final class System {
             public sun.reflect.ConstantPool getConstantPool(Class<?> klass) {
                 return klass.getConstantPool();
             }
-            public void setAnnotationType(Class<?> klass, AnnotationType type) {
-                klass.setAnnotationType(type);
+            public boolean casAnnotationType(Class<?> klass, AnnotationType oldType, AnnotationType newType) {
+                return klass.casAnnotationType(oldType, newType);
             }
             public AnnotationType getAnnotationType(Class<?> klass) {
                 return klass.getAnnotationType();
