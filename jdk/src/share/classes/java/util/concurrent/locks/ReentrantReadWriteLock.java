@@ -34,6 +34,7 @@
  */
 
 package java.util.concurrent.locks;
+import java.lang.ref.WeakReference;
 import java.util.concurrent.TimeUnit;
 import java.util.Collection;
 
@@ -274,10 +275,11 @@ public class ReentrantReadWriteLock
          * A counter for per-thread read hold counts.
          * Maintained as a ThreadLocal; cached in cachedHoldCounter
          */
-        static final class HoldCounter {
+        static final class HoldCounter extends WeakReference<Thread> {
             int count = 0;
-            // Use id, not reference, to avoid garbage retention
-            final long tid = Thread.currentThread().getId();
+            HoldCounter() {
+                super(Thread.currentThread());
+            }
         }
 
         /**
@@ -420,7 +422,7 @@ public class ReentrantReadWriteLock
                     firstReaderHoldCount--;
             } else {
                 HoldCounter rh = cachedHoldCounter;
-                if (rh == null || rh.tid != current.getId())
+                if (rh == null || rh.get() != current)
                     rh = readHolds.get();
                 int count = rh.count;
                 if (count <= 1) {
@@ -478,7 +480,7 @@ public class ReentrantReadWriteLock
                     firstReaderHoldCount++;
                 } else {
                     HoldCounter rh = cachedHoldCounter;
-                    if (rh == null || rh.tid != current.getId())
+                    if (rh == null || rh.get() != current)
                         cachedHoldCounter = rh = readHolds.get();
                     else if (rh.count == 0)
                         readHolds.set(rh);
@@ -515,7 +517,7 @@ public class ReentrantReadWriteLock
                     } else {
                         if (rh == null) {
                             rh = cachedHoldCounter;
-                            if (rh == null || rh.tid != current.getId()) {
+                            if (rh == null || rh.get() != current) {
                                 rh = readHolds.get();
                                 if (rh.count == 0)
                                     readHolds.remove();
@@ -536,7 +538,7 @@ public class ReentrantReadWriteLock
                     } else {
                         if (rh == null)
                             rh = cachedHoldCounter;
-                        if (rh == null || rh.tid != current.getId())
+                        if (rh == null || rh.get() != current)
                             rh = readHolds.get();
                         else if (rh.count == 0)
                             readHolds.set(rh);
@@ -592,7 +594,7 @@ public class ReentrantReadWriteLock
                         firstReaderHoldCount++;
                     } else {
                         HoldCounter rh = cachedHoldCounter;
-                        if (rh == null || rh.tid != current.getId())
+                        if (rh == null || rh.get() != current)
                             cachedHoldCounter = rh = readHolds.get();
                         else if (rh.count == 0)
                             readHolds.set(rh);
@@ -643,7 +645,7 @@ public class ReentrantReadWriteLock
                 return firstReaderHoldCount;
 
             HoldCounter rh = cachedHoldCounter;
-            if (rh != null && rh.tid == current.getId())
+            if (rh != null && rh.get() == current)
                 return rh.count;
 
             int count = readHolds.get().count;
