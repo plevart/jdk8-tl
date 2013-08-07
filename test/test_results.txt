@@ -1,0 +1,54 @@
+### original j.l.Class (i7, 4 cores)
+
+#-------------------------------------------------------------
+# getAnnotationWhenPresent: run duration:  5,000 ms
+#
+# Warm up:
+#           1 threads, Tavg =     35.60 ns/op (σ =   0.00 ns/op) [    35.60]
+#           1 threads, Tavg =     35.21 ns/op (σ =   0.00 ns/op) [    35.21]
+# Measure:
+            1 threads, Tavg =     36.21 ns/op (σ =   0.00 ns/op) [    36.21]
+            2 threads, Tavg =     82.64 ns/op (σ =   3.89 ns/op) [    86.70,     78.94]
+            3 threads, Tavg =    304.75 ns/op (σ =   8.30 ns/op) [   299.86,    316.67,    298.38]
+            4 threads, Tavg =    500.78 ns/op (σ =  14.54 ns/op) [   526.14,    490.54,    495.93,    492.15]
+#
+#-------------------------------------------------------------
+# getAnnotationWhenAbsent: run duration:  5,000 ms
+#
+# Warm up:
+#           1 threads, Tavg =     33.92 ns/op (σ =   0.00 ns/op) [    33.92]
+#           1 threads, Tavg =     33.86 ns/op (σ =   0.00 ns/op) [    33.86]
+# Measure:
+            1 threads, Tavg =     35.33 ns/op (σ =   0.00 ns/op) [    35.33]
+            2 threads, Tavg =     64.06 ns/op (σ =  14.17 ns/op) [    80.82,     53.06]
+            3 threads, Tavg =    363.94 ns/op (σ =  15.83 ns/op) [   353.71,    386.97,    353.14]
+            4 threads, Tavg =    469.35 ns/op (σ =  10.10 ns/op) [   468.52,    486.36,    461.99,    461.39]
+#
+
+
+### patched j.l.Class (i7, 4 cores)
+
+#-------------------------------------------------------------
+# getAnnotationWhenPresent: run duration:  5,000 ms
+#
+# Warm up:
+#           1 threads, Tavg =      6.97 ns/op (σ =   0.00 ns/op) [     6.97]
+#           1 threads, Tavg =      7.01 ns/op (σ =   0.00 ns/op) [     7.01]
+# Measure:
+            1 threads, Tavg =      6.99 ns/op (σ =   0.00 ns/op) [     6.99]
+            2 threads, Tavg =      7.00 ns/op (σ =   0.00 ns/op) [     7.00,      7.00]
+            3 threads, Tavg =      7.04 ns/op (σ =   0.01 ns/op) [     7.05,      7.02,      7.04]
+            4 threads, Tavg =      7.02 ns/op (σ =   0.03 ns/op) [     6.99,      7.00,      7.05,      7.05]
+#
+#-------------------------------------------------------------
+# getAnnotationWhenAbsent: run duration:  5,000 ms
+#
+# Warm up:
+#           1 threads, Tavg =      5.44 ns/op (σ =   0.00 ns/op) [     5.44]
+#           1 threads, Tavg =      5.35 ns/op (σ =   0.00 ns/op) [     5.35]
+# Measure:
+            1 threads, Tavg =      5.22 ns/op (σ =   0.00 ns/op) [     5.22]
+            2 threads, Tavg =      5.22 ns/op (σ =   0.00 ns/op) [     5.22,      5.23]
+            3 threads, Tavg =      5.71 ns/op (σ =   0.84 ns/op) [     7.00,      5.24,      5.22]
+            4 threads, Tavg =      5.27 ns/op (σ =   0.05 ns/op) [     5.22,      5.22,      5.36,      5.27]
+#
