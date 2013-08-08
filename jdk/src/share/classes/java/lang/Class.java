@@ -3301,7 +3301,7 @@ public final class Class<T> implements java.io.Serializable,
                 annotationData.redefinedCount == classRedefinedCount) {
                 return annotationData;
             }
-            // null or stale annotationData -> optimistically create new
+            // null or stale annotationData -> optimistically create new instance
             AnnotationData newAnnotationData = createAnnotationData(classRedefinedCount);
             // try to install it
             if (Atomic.casAnnotationData(this, annotationData, newAnnotationData)) {
