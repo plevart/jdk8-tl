@@ -3280,9 +3280,9 @@ public final class Class<T> implements java.io.Serializable,
         // Value of classRedefinedCount when we created this AnnotationData instance
         final int redefinedCount;
 
-        private AnnotationData(Map<Class<? extends Annotation>, Annotation> annotations,
-                               Map<Class<? extends Annotation>, Annotation> declaredAnnotations,
-                               int redefinedCount) {
+        AnnotationData(Map<Class<? extends Annotation>, Annotation> annotations,
+                       Map<Class<? extends Annotation>, Annotation> declaredAnnotations,
+                       int redefinedCount) {
             this.annotations = annotations;
             this.declaredAnnotations = declaredAnnotations;
             this.redefinedCount = redefinedCount;
@@ -3294,59 +3294,49 @@ public final class Class<T> implements java.io.Serializable,
     private volatile transient AnnotationData annotationData;
 
     private AnnotationData annotationData() {
-        AnnotationData annotationData = this.annotationData;
-        int classRedefinedCount = this.classRedefinedCount;
-        if (annotationData != null &&
-            annotationData.redefinedCount == classRedefinedCount) {
-            return annotationData;
-        }
-        return newAnnotationData(annotationData, classRedefinedCount);
-    }
-
-    private AnnotationData newAnnotationData(AnnotationData annotationData,
-                                             int classRedefinedCount) {
-        // retry loop
-        while (true) {
-            Map<Class<? extends Annotation>, Annotation> declaredAnnotations =
-                AnnotationParser.parseAnnotations(getRawAnnotations(), getConstantPool(), this);
-            Class<?> superClass = getSuperclass();
-            Map<Class<? extends Annotation>, Annotation> superAnnotations =
-                superClass == null
-                ? Collections.emptyMap()
-                : superClass.annotationData().annotations;
-            Map<Class<? extends Annotation>, Annotation> annotations = null;
-            for (Map.Entry<Class<? extends Annotation>, Annotation> e : superAnnotations.entrySet()) {
-                Class<? extends Annotation> annotationClass = e.getKey();
-                if (AnnotationType.getInstance(annotationClass).isInherited()) {
-                    if (annotations == null) { // lazy construction
-                        annotations = new HashMap<>();
-                    }
-                    annotations.put(annotationClass, e.getValue());
-                }
+        while (true) { // retry loop
+            AnnotationData annotationData = this.annotationData;
+            int classRedefinedCount = this.classRedefinedCount;
+            if (annotationData != null &&
+                annotationData.redefinedCount == classRedefinedCount) {
+                return annotationData;
             }
-            if (annotations == null) {
-                // no inherited annotations -> share the Map with declaredAnnotations
-                annotations = declaredAnnotations;
-            } else {
-                // at least one inherited annotation -> declared may override inherited
-                annotations.putAll(declaredAnnotations);
-            }
-            AnnotationData newAnnotationData = new AnnotationData(
-                annotations, declaredAnnotations, classRedefinedCount
-            );
+            // null or stale annotationData -> optimistically create new
+            AnnotationData newAnnotationData = createAnnotationData(classRedefinedCount);
+            // try to install it
             if (Atomic.casAnnotationData(this, annotationData, newAnnotationData)) {
                 // successfully installed new AnnotationData
                 return newAnnotationData;
-            } else {
-                annotationData = this.annotationData;
-                classRedefinedCount = this.classRedefinedCount;
-                // a concurrent thread installed new AnnotationData before us and
-                // that data is still relevant -> just return it
-                if (annotationData.redefinedCount == classRedefinedCount) {
-                    return annotationData;
-                }
             }
         }
+    }
+
+    private AnnotationData createAnnotationData(int classRedefinedCount) {
+        Map<Class<? extends Annotation>, Annotation> declaredAnnotations =
+            AnnotationParser.parseAnnotations(getRawAnnotations(), getConstantPool(), this);
+        Class<?> superClass = getSuperclass();
+        Map<Class<? extends Annotation>, Annotation> superAnnotations =
+            superClass == null
+            ? Collections.emptyMap()
+            : superClass.annotationData().annotations;
+        Map<Class<? extends Annotation>, Annotation> annotations = null;
+        for (Map.Entry<Class<? extends Annotation>, Annotation> e : superAnnotations.entrySet()) {
+            Class<? extends Annotation> annotationClass = e.getKey();
+            if (AnnotationType.getInstance(annotationClass).isInherited()) {
+                if (annotations == null) { // lazy construction
+                    annotations = new HashMap<>();
+                }
+                annotations.put(annotationClass, e.getValue());
+            }
+        }
+        if (annotations == null) {
+            // no inherited annotations -> share the Map with declaredAnnotations
+            annotations = declaredAnnotations;
+        } else {
+            // at least one inherited annotation -> declared may override inherited
+            annotations.putAll(declaredAnnotations);
+        }
+        return new AnnotationData(annotations, declaredAnnotations, classRedefinedCount);
     }
 
     // Annotation types cache their internal (AnnotationType) form
