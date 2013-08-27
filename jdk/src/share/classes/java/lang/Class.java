@@ -47,8 +47,8 @@ import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
 import java.util.Map;
@@ -3315,18 +3315,22 @@ public final class Class<T> implements java.io.Serializable,
         Map<Class<? extends Annotation>, Annotation> declaredAnnotations =
             AnnotationParser.parseAnnotations(getRawAnnotations(), getConstantPool(), this);
         Class<?> superClass = getSuperclass();
-        Map<Class<? extends Annotation>, Annotation> superAnnotations =
-            superClass == null
-            ? Collections.emptyMap()
-            : superClass.annotationData().annotations;
         Map<Class<? extends Annotation>, Annotation> annotations = null;
-        for (Map.Entry<Class<? extends Annotation>, Annotation> e : superAnnotations.entrySet()) {
-            Class<? extends Annotation> annotationClass = e.getKey();
-            if (AnnotationType.getInstance(annotationClass).isInherited()) {
-                if (annotations == null) { // lazy construction
-                    annotations = new HashMap<>();
+        if (superClass != null) {
+            Map<Class<? extends Annotation>, Annotation> superAnnotations =
+                superClass.annotationData().annotations;
+            for (Map.Entry<Class<? extends Annotation>, Annotation> e : superAnnotations.entrySet()) {
+                Class<? extends Annotation> annotationClass = e.getKey();
+                if (AnnotationType.getInstance(annotationClass).isInherited()) {
+                    if (annotations == null) { // lazy construction
+                        annotations = new LinkedHashMap<>((Math.max(
+                                declaredAnnotations.size(),
+                                Math.min(12, declaredAnnotations.size() + superAnnotations.size())
+                            ) * 4 + 2) / 3
+                        );
+                    }
+                    annotations.put(annotationClass, e.getValue());
                 }
-                annotations.put(annotationClass, e.getValue());
             }
         }
         if (annotations == null) {
@@ -3373,8 +3377,16 @@ public final class Class<T> implements java.io.Serializable,
      * @since 1.8
      */
     public AnnotatedType getAnnotatedSuperclass() {
-         return TypeAnnotationParser.buildAnnotatedSuperclass(getRawTypeAnnotations(), getConstantPool(), this);
-}
+        if (this == Object.class ||
+                isInterface() ||
+                isArray() ||
+                isPrimitive() ||
+                this == Void.TYPE) {
+            return null;
+        }
+
+        return TypeAnnotationParser.buildAnnotatedSuperclass(getRawTypeAnnotations(), getConstantPool(), this);
+    }
 
     /**
      * Returns an array of AnnotatedType objects that represent the use of types to
