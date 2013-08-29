@@ -42,23 +42,21 @@ import java.lang.reflect.Type;
 import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.Spliterator;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
-import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 import java.util.function.DoubleBinaryOperator;
 import java.util.function.Function;
@@ -3251,13 +3249,44 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         int baseLimit;          // index bound for initial table
         final int baseSize;     // initial table size
 
+        // a stack frame used for backtracking when traversing to nextTable
+        private static class Frame<K, V> {
+            final Node<K,V>[] tab;
+            final int index;
+            final Frame<K, V> next;
+
+            Frame(Node<K, V>[] tab, int index, Frame<K, V> next) {
+                this.tab = tab;
+                this.index = index;
+                this.next = next;
+            }
+        }
+
+        private Frame<K, V> stack;
+
         Traverser(Node<K,V>[] tab, int size, int index, int limit) {
             this.tab = tab;
             this.baseSize = size;
             this.baseIndex = this.index = index;
             this.baseLimit = limit;
-            this.next = null;
         }
+
+        private static class Trace {
+            final Node<?, ?>[] tab;
+            final int index;
+
+            private Trace(Node<?, ?>[] tab, int index) {
+                this.tab = tab;
+                this.index = index;
+            }
+
+            @Override
+            public String toString() {
+                return "" + tab.length + '[' + index + ']';
+            }
+        }
+
+        List<Object> trace = new LinkedList<>();
 
         /**
          * Advances if possible, returning next valid node, or null if none.
@@ -3267,26 +3296,62 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             if ((e = next) != null)
                 e = e.next;
             for (;;) {
-                Node<K,V>[] t; int i, n; K ek;  // must use locals in checks
-                if (e != null)
+                if (e != null) {
                     return next = e;
-                if (baseIndex >= baseLimit || (t = tab) == null ||
-                    (n = t.length) <= (i = index) || i < 0)
+                }
+                if (baseIndex >= baseLimit || tab == null ||
+                    tab.length <= index || index < 0) {
                     return next = null;
-                if ((e = tabAt(t, index)) != null && e.hash < 0) {
+                }
+
+//                trace.add(tab);
+//                trace.add(index);
+
+                if ((e = tabAt(tab, index)) != null && e.hash < 0) {
                     if (e instanceof ForwardingNode) {
-                        tab = ((ForwardingNode<K,V>)e).nextTable;
-                        e = null;
-                        continue;
+                        Node<K,V>[] t = ((ForwardingNode<K,V>)e).nextTable;
+                        if (t != null && t.length < tab.length) {
+                            // backward link is only possible when forward link had
+                            // already been installed (by CAS: null -> fwdLink)
+                            // but backward links have not been overwritten with null yet,
+                            // so we pretend we had a null Node and...
+                            e = null; // ...fall-through
+                        }
+                        else {
+                            stack = new Frame<>(tab, index, stack); // push on stack
+                            tab = t;
+                            e = null;
+                            continue;
+                        }
                     }
                     else if (e instanceof TreeBin)
                         e = ((TreeBin<K,V>)e).first;
                     else
                         e = null;
                 }
-                if ((index += baseSize) >= n)
-                    index = ++baseIndex;    // visit upper slots if present
+                // see the other "half" of entries or backtrack
+                while (stack != null && (index += stack.tab.length) >= tab.length) {
+                    tab = stack.tab;
+                    index = stack.index;
+                    stack = stack.next;
+                }
+                if (stack == null) { // initial table in effect
+                    index = ++baseIndex;
+                }
             }
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            for (Object o : trace) {
+                if (o instanceof Object[]) {
+                    sb.append(" ").append(((Object[]) o).length);
+                } else {
+                    sb.append("[").append(o).append("]");
+                }
+            }
+            return sb.toString();
         }
     }
 
