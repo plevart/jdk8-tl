@@ -46,8 +46,6 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -3274,8 +3272,6 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             this.map = map;
         }
 
-        List<Object> trace = new LinkedList<>();
-
         /**
          * Advances if possible, returning next valid node, or null if none.
          */
@@ -3291,10 +3287,6 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                     tab.length <= index || index < 0) {
                     return next = null;
                 }
-
-//                trace.add(tab);
-//                trace.add(index);
-
                 if ((e = tabAt(tab, index)) != null && e.hash < 0) {
                     if (e instanceof ForwardingNode) {
                         Node<K,V>[] t = ((ForwardingNode<K,V>)e).nextTable;
@@ -3339,11 +3331,6 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                     index = ++baseIndex;
                 }
             }
-        }
-
-        @Override
-        public String toString() {
-            return "tab.length=" + tab.length;
         }
     }
 
