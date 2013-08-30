@@ -958,7 +958,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             throw new NullPointerException();
         Node<K,V>[] t;
         if ((t = table) != null) {
-            Traverser<K,V> it = new Traverser<K,V>(t, t.length, 0, t.length);
+            Traverser<K,V> it = new Traverser<K,V>(t, t.length, 0, t.length, this);
             for (Node<K,V> p; (p = it.advance()) != null; ) {
                 V v;
                 if ((v = p.val) == value || (v != null && value.equals(v)))
@@ -1266,7 +1266,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         int h = 0;
         Node<K,V>[] t;
         if ((t = table) != null) {
-            Traverser<K,V> it = new Traverser<K,V>(t, t.length, 0, t.length);
+            Traverser<K,V> it = new Traverser<K,V>(t, t.length, 0, t.length, this);
             for (Node<K,V> p; (p = it.advance()) != null; )
                 h += p.key.hashCode() ^ p.val.hashCode();
         }
@@ -1287,7 +1287,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     public String toString() {
         Node<K,V>[] t;
         int f = (t = table) == null ? 0 : t.length;
-        Traverser<K,V> it = new Traverser<K,V>(t, f, 0, f);
+        Traverser<K,V> it = new Traverser<K,V>(t, f, 0, f, this);
         StringBuilder sb = new StringBuilder();
         sb.append('{');
         Node<K,V> p;
@@ -1323,7 +1323,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             Map<?,?> m = (Map<?,?>) o;
             Node<K,V>[] t;
             int f = (t = table) == null ? 0 : t.length;
-            Traverser<K,V> it = new Traverser<K,V>(t, f, 0, f);
+            Traverser<K,V> it = new Traverser<K,V>(t, f, 0, f, this);
             for (Node<K,V> p; (p = it.advance()) != null; ) {
                 V val = p.val;
                 Object v = m.get(p.key);
@@ -1385,7 +1385,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
 
         Node<K,V>[] t;
         if ((t = table) != null) {
-            Traverser<K,V> it = new Traverser<K,V>(t, t.length, 0, t.length);
+            Traverser<K,V> it = new Traverser<K,V>(t, t.length, 0, t.length, this);
             for (Node<K,V> p; (p = it.advance()) != null; ) {
                 s.writeObject(p.key);
                 s.writeObject(p.val);
@@ -1568,7 +1568,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         if (action == null) throw new NullPointerException();
         Node<K,V>[] t;
         if ((t = table) != null) {
-            Traverser<K,V> it = new Traverser<K,V>(t, t.length, 0, t.length);
+            Traverser<K,V> it = new Traverser<K,V>(t, t.length, 0, t.length, this);
             for (Node<K,V> p; (p = it.advance()) != null; ) {
                 action.accept(p.key, p.val);
             }
@@ -1579,7 +1579,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         if (function == null) throw new NullPointerException();
         Node<K,V>[] t;
         if ((t = table) != null) {
-            Traverser<K,V> it = new Traverser<K,V>(t, t.length, 0, t.length);
+            Traverser<K,V> it = new Traverser<K,V>(t, t.length, 0, t.length, this);
             for (Node<K,V> p; (p = it.advance()) != null; ) {
                 V oldValue = p.val;
                 for (K key = p.key;;) {
@@ -3248,6 +3248,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         int baseIndex;          // current index of initial table
         int baseLimit;          // index bound for initial table
         final int baseSize;     // initial table size
+        final ConcurrentHashMap<K,V> map; // the Map
 
         // a stack frame used for backtracking when traversing to nextTable
         private static class Frame<K, V> {
@@ -3264,11 +3265,13 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
 
         private Frame<K, V> stack;
 
-        Traverser(Node<K,V>[] tab, int size, int index, int limit) {
+        Traverser(Node<K,V>[] tab, int size, int index, int limit,
+                  ConcurrentHashMap<K,V> map) {
             this.tab = tab;
             this.baseSize = size;
             this.baseIndex = this.index = index;
             this.baseLimit = limit;
+            this.map = map;
         }
 
         List<Object> trace = new LinkedList<>();
@@ -3303,7 +3306,18 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                             e = null; // ...fall-through
                         }
                         else {
-                            stack = new Frame<>(tab, index, stack); // push on stack
+                            if (t == map.table) {
+                                // if nextTable link navigated to Map's current table
+                                // then it means that we can clear the stack because
+                                // previous tables are guaranteed to hold only forward
+                                // links since all entries have already been transferred
+                                // from them to Map's current table (and possibly beyond)
+                                // so we need not backtrack to those tables any more
+                                stack = null;
+                            } else {
+                                // else we push current table and index on stack
+                                stack = new Frame<>(tab, index, stack);
+                            }
                             tab = t;
                             e = null;
                             continue;
@@ -3320,7 +3334,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                     index = stack.index;
                     stack = stack.next;
                 }
-                if (stack == null) { // initial table in effect
+                // initial/top table in effect?
+                if (stack == null && (index += baseSize) >= tab.length) {
                     index = ++baseIndex;
                 }
             }
@@ -3328,15 +3343,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
 
         @Override
         public String toString() {
-            StringBuilder sb = new StringBuilder();
-            for (Object o : trace) {
-                if (o instanceof Object[]) {
-                    sb.append(" ").append(((Object[]) o).length);
-                } else {
-                    sb.append("[").append(o).append("]");
-                }
-            }
-            return sb.toString();
+            return "tab.length=" + tab.length;
         }
     }
 
@@ -3345,12 +3352,10 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * Traverser to support iterator.remove.
      */
     static class BaseIterator<K,V> extends Traverser<K,V> {
-        final ConcurrentHashMap<K,V> map;
         Node<K,V> lastReturned;
         BaseIterator(Node<K,V>[] tab, int size, int index, int limit,
                     ConcurrentHashMap<K,V> map) {
-            super(tab, size, index, limit);
-            this.map = map;
+            super(tab, size, index, limit, map);
             advance();
         }
 
@@ -3472,8 +3477,9 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         implements Spliterator<K> {
         long est;               // size estimate
         KeySpliterator(Node<K,V>[] tab, int size, int index, int limit,
+                       ConcurrentHashMap<K,V> map,
                        long est) {
-            super(tab, size, index, limit);
+            super(tab, size, index, limit, map);
             this.est = est;
         }
 
@@ -3481,7 +3487,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             int i, f, h;
             return (h = ((i = baseIndex) + (f = baseLimit)) >>> 1) <= i ? null :
                 new KeySpliterator<K,V>(tab, baseSize, baseLimit = h,
-                                        f, est >>>= 1);
+                                        f, map, est >>>= 1);
         }
 
         public void forEachRemaining(Consumer<? super K> action) {
@@ -3511,8 +3517,9 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         implements Spliterator<V> {
         long est;               // size estimate
         ValueSpliterator(Node<K,V>[] tab, int size, int index, int limit,
+                         ConcurrentHashMap<K,V> map,
                          long est) {
-            super(tab, size, index, limit);
+            super(tab, size, index, limit, map);
             this.est = est;
         }
 
@@ -3520,7 +3527,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             int i, f, h;
             return (h = ((i = baseIndex) + (f = baseLimit)) >>> 1) <= i ? null :
                 new ValueSpliterator<K,V>(tab, baseSize, baseLimit = h,
-                                          f, est >>>= 1);
+                                          f, map, est >>>= 1);
         }
 
         public void forEachRemaining(Consumer<? super V> action) {
@@ -3547,12 +3554,11 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
 
     static final class EntrySpliterator<K,V> extends Traverser<K,V>
         implements Spliterator<Map.Entry<K,V>> {
-        final ConcurrentHashMap<K,V> map; // To export MapEntry
         long est;               // size estimate
         EntrySpliterator(Node<K,V>[] tab, int size, int index, int limit,
-                         long est, ConcurrentHashMap<K,V> map) {
-            super(tab, size, index, limit);
-            this.map = map;
+                         ConcurrentHashMap<K,V> map,
+                         long est) {
+            super(tab, size, index, limit, map);
             this.est = est;
         }
 
@@ -3560,7 +3566,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             int i, f, h;
             return (h = ((i = baseIndex) + (f = baseLimit)) >>> 1) <= i ? null :
                 new EntrySpliterator<K,V>(tab, baseSize, baseLimit = h,
-                                          f, est >>>= 1, map);
+                                          f, map, est >>>= 1);
         }
 
         public void forEachRemaining(Consumer<? super Map.Entry<K,V>> action) {
@@ -4598,14 +4604,14 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             ConcurrentHashMap<K,V> m = map;
             long n = m.sumCount();
             int f = (t = m.table) == null ? 0 : t.length;
-            return new KeySpliterator<K,V>(t, f, 0, f, n < 0L ? 0L : n);
+            return new KeySpliterator<K,V>(t, f, 0, f, m, n < 0L ? 0L : n);
         }
 
         public void forEach(Consumer<? super K> action) {
             if (action == null) throw new NullPointerException();
             Node<K,V>[] t;
             if ((t = map.table) != null) {
-                Traverser<K,V> it = new Traverser<K,V>(t, t.length, 0, t.length);
+                Traverser<K,V> it = new Traverser<K,V>(t, t.length, 0, t.length, map);
                 for (Node<K,V> p; (p = it.advance()) != null; )
                     action.accept(p.key);
             }
@@ -4656,14 +4662,14 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             ConcurrentHashMap<K,V> m = map;
             long n = m.sumCount();
             int f = (t = m.table) == null ? 0 : t.length;
-            return new ValueSpliterator<K,V>(t, f, 0, f, n < 0L ? 0L : n);
+            return new ValueSpliterator<K,V>(t, f, 0, f, m, n < 0L ? 0L : n);
         }
 
         public void forEach(Consumer<? super V> action) {
             if (action == null) throw new NullPointerException();
             Node<K,V>[] t;
             if ((t = map.table) != null) {
-                Traverser<K,V> it = new Traverser<K,V>(t, t.length, 0, t.length);
+                Traverser<K,V> it = new Traverser<K,V>(t, t.length, 0, t.length, map);
                 for (Node<K,V> p; (p = it.advance()) != null; )
                     action.accept(p.val);
             }
@@ -4724,7 +4730,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             int h = 0;
             Node<K,V>[] t;
             if ((t = map.table) != null) {
-                Traverser<K,V> it = new Traverser<K,V>(t, t.length, 0, t.length);
+                Traverser<K,V> it = new Traverser<K,V>(t, t.length, 0, t.length, map);
                 for (Node<K,V> p; (p = it.advance()) != null; ) {
                     h += p.hashCode();
                 }
@@ -4744,14 +4750,14 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             ConcurrentHashMap<K,V> m = map;
             long n = m.sumCount();
             int f = (t = m.table) == null ? 0 : t.length;
-            return new EntrySpliterator<K,V>(t, f, 0, f, n < 0L ? 0L : n, m);
+            return new EntrySpliterator<K,V>(t, f, 0, f, m, n < 0L ? 0L : n);
         }
 
         public void forEach(Consumer<? super Map.Entry<K,V>> action) {
             if (action == null) throw new NullPointerException();
             Node<K,V>[] t;
             if ((t = map.table) != null) {
-                Traverser<K,V> it = new Traverser<K,V>(t, t.length, 0, t.length);
+                Traverser<K,V> it = new Traverser<K,V>(t, t.length, 0, t.length, map);
                 for (Node<K,V> p; (p = it.advance()) != null; )
                     action.accept(new MapEntry<K,V>(p.key, p.val, map));
             }
