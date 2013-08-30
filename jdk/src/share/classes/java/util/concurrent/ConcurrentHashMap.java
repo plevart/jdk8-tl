@@ -2322,17 +2322,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                 return;
             }
             nextTable = nextTab;
-            transferOrigin = n;
+            transferOrigin = 0; // should already be 0 here
             transferIndex = n;
-            ForwardingNode<K,V> rev = new ForwardingNode<K,V>(tab);
-            for (int k = n; k > 0;) {    // progressively reveal ready slots
-                int nextk = (k > stride) ? k - stride : 0;
-                for (int m = nextk; m < k; ++m)
-                    nextTab[m] = rev;
-                for (int m = n + nextk; m < n + k; ++m)
-                    nextTab[m] = rev;
-                U.putOrderedInt(this, TRANSFERORIGIN, k = nextk);
-            }
         }
         int nextn = nextTab.length;
         ForwardingNode<K,V> fwd = new ForwardingNode<K,V>(nextTab);
@@ -2375,8 +2366,6 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             }
             else if ((f = tabAt(tab, i)) == null) {
                 if (casTabAt(tab, i, null, fwd)) {
-                    setTabAt(nextTab, i, null);
-                    setTabAt(nextTab, i + n, null);
                     advance = true;
                 }
             }
@@ -3290,30 +3279,21 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                 if ((e = tabAt(tab, index)) != null && e.hash < 0) {
                     if (e instanceof ForwardingNode) {
                         Node<K,V>[] t = ((ForwardingNode<K,V>)e).nextTable;
-                        if (t != null && t.length < tab.length) {
-                            // backward link is only possible when forward link had
-                            // already been installed (by CAS: null -> fwdLink)
-                            // but backward links have not been overwritten with null yet,
-                            // so we pretend we had a null Node and...
-                            e = null; // ...fall-through
+                        if (t == map.table) {
+                            // if nextTable link navigated to Map's current table
+                            // then it means that we can clear the stack because
+                            // previous tables are guaranteed to hold only forward
+                            // links since all entries have already been transferred
+                            // from them to Map's current table (and possibly beyond)
+                            // so we need not backtrack to those tables any more
+                            stack = null;
+                        } else {
+                            // else we push current table and index on stack
+                            stack = new Frame<>(tab, index, stack);
                         }
-                        else {
-                            if (t == map.table) {
-                                // if nextTable link navigated to Map's current table
-                                // then it means that we can clear the stack because
-                                // previous tables are guaranteed to hold only forward
-                                // links since all entries have already been transferred
-                                // from them to Map's current table (and possibly beyond)
-                                // so we need not backtrack to those tables any more
-                                stack = null;
-                            } else {
-                                // else we push current table and index on stack
-                                stack = new Frame<>(tab, index, stack);
-                            }
-                            tab = t;
-                            e = null;
-                            continue;
-                        }
+                        tab = t;
+                        e = null;
+                        continue;
                     }
                     else if (e instanceof TreeBin)
                         e = ((TreeBin<K,V>)e).first;
