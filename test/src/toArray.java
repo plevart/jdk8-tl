@@ -10,7 +10,7 @@ import java.util.stream.IntStream;
 public class toArray {
 
     public static void main(String[] args) throws Throwable {
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 1000; i++) {
             main();
         }
     }
@@ -34,7 +34,7 @@ public class toArray {
                 m.put(i, i);
         };
 
-        final int nWorkers = 6;
+        final int nWorkers = 4;
         final int sizePerWorker = 1024;
         final int maxSize = nWorkers * sizePerWorker;
         List<Thread> workers = IntStream.range(0, nWorkers).

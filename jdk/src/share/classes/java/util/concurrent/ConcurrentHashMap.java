@@ -3271,21 +3271,6 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             this.baseLimit = limit;
         }
 
-        private static class Trace {
-            final Node<?, ?>[] tab;
-            final int index;
-
-            private Trace(Node<?, ?>[] tab, int index) {
-                this.tab = tab;
-                this.index = index;
-            }
-
-            @Override
-            public String toString() {
-                return "" + tab.length + '[' + index + ']';
-            }
-        }
-
         List<Object> trace = new LinkedList<>();
 
         /**
