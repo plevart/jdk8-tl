@@ -1,0 +1,83 @@
+*** Original j.l.Class (-XX:+UseCompressedOops)
+
+SpaceTest$Unannotated:
+   pre: 480 bytes
+  post: 568 (480+88) bytes
+
+SpaceTest$JpaEntity:
+   pre: 480 bytes
+  post: 2080 (480+1600) bytes
+
+SpaceTest$AnnotatedSuper:
+   pre: 480 bytes
+  post: 1672 (480+1192) bytes
+
+SpaceTest$AnnotatedSub:
+   pre: 480 bytes
+  post: 1224 (480+744) bytes
+
+
+*** Original j.l.Class (-XX:-UseCompressedOops)
+
+SpaceTest$Unannotated:
+   pre: 480 bytes
+  post: 608 (480+128) bytes
+
+SpaceTest$JpaEntity:
+   pre: 480 bytes
+  post: 3064 (480+2584) bytes
+
+SpaceTest$AnnotatedSuper:
+   pre: 480 bytes
+  post: 2392 (480+1912) bytes
+
+SpaceTest$AnnotatedSub:
+   pre: 480 bytes
+  post: 1696 (480+1216) bytes
+
+
+*** Patched j.l.Class (-XX:+UseCompressedOops)
+
+SpaceTest$Unannotated:
+   pre: 480 bytes
+  post: 504 (480+24) bytes
+
+SpaceTest$JpaEntity:
+   pre: 480 bytes
+  post: 1888 (480+1408) bytes
+
+SpaceTest$AnnotatedSuper:
+   pre: 480 bytes
+  post: 1480 (480+1000) bytes
+
+SpaceTest$AnnotatedSub:
+   pre: 480 bytes
+  post: 1064 (480+584) bytes
+
+
+*** Patched j.l.Class (-XX:-UseCompressedOops)
+
+SpaceTest$Unannotated:
+   pre: 480 bytes
+  post: 520 (480+40) bytes
+
+SpaceTest$JpaEntity:
+   pre: 480 bytes
+  post: 2752 (480+2272) bytes
+
+SpaceTest$AnnotatedSuper:
+   pre: 480 bytes
+  post: 2080 (480+1600) bytes
+
+SpaceTest$AnnotatedSub:
+   pre: 480 bytes
+  post: 1432 (480+952) bytes
+
+
+
+              Unannotated        JpaEntity   AnnotatedSuper     AnnotatedSub
+           ==============   ==============   ==============   ==============
+Original         88 / 128      1600 / 2584      1192 / 1912       744 / 1216
+Patched          24 /  40      1408 / 2272      1000 / 1600       584 /  952
+           ==============   ==============   ==============   ==============
+diff            -64 / -88      -192 / -312      -192 / -312      -160 / -264
