@@ -28,6 +28,7 @@ package java.io;
 import java.io.ObjectStreamClass.WeakClassKey;
 import java.lang.ref.ReferenceQueue;
 import java.lang.reflect.Array;
+import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.security.AccessControlContext;
@@ -39,8 +40,10 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicBoolean;
+
 import static java.io.ObjectStreamClass.processQueue;
+
+import sun.misc.Unsafe;
 import sun.reflect.misc.ReflectUtil;
 
 /**
@@ -377,7 +380,12 @@ public class ObjectInputStream
             if (depth == 0) {
                 vlist.doCallbacks();
             }
-            return obj;
+            // if readObject() is called nested while in the middle of reading an object
+            // with readResolve() method and a TC_REFERENCE pointing to that
+            // object is encountered, the unresolved object is returned to the client...
+            return obj instanceof Unresolved
+                   ? ((Unresolved) obj).unresolvedValue
+                   : obj;
         } finally {
             passHandle = outerHandle;
             if (closed && depth == 0) {
@@ -467,6 +475,8 @@ public class ObjectInputStream
             if (depth == 0) {
                 vlist.doCallbacks();
             }
+            // unshared objects should never be returned as Unresolved from readObject0()
+            assert !(obj instanceof Unresolved);
             return obj;
         } finally {
             passHandle = outerHandle;
@@ -1702,7 +1712,14 @@ public class ObjectInputStream
         } else {
             Object[] oa = (Object[]) array;
             for (int i = 0; i < len; i++) {
-                oa[i] = readObject0(false);
+                Object value = readObject0(false);
+                if (value instanceof Unresolved) {
+                    // register array slot if still unresolved
+                    ((Unresolved) value).addObjectArraySlot(oa, i);
+                }
+                else {
+                    oa[i] = value;
+                }
                 handles.markDependency(arrayHandle, passHandle);
             }
         }
@@ -1787,7 +1804,10 @@ public class ObjectInputStream
                 "unable to create instance").initCause(ex);
         }
 
-        passHandle = handles.assign(unshared ? unsharedMarker : obj);
+        boolean hasReadResolve = desc.hasReadResolveMethod();
+        Unresolved unresolved = null;
+        passHandle = handles.assign(unshared ? unsharedMarker
+                                             : (hasReadResolve ? unresolved = new Unresolved(obj) : obj));
         ClassNotFoundException resolveEx = desc.getResolveException();
         if (resolveEx != null) {
             handles.markException(passHandle, resolveEx);
@@ -1801,17 +1821,21 @@ public class ObjectInputStream
 
         handles.finish(passHandle);
 
-        if (obj != null &&
-            handles.lookupException(passHandle) == null &&
-            desc.hasReadResolveMethod())
+        if (hasReadResolve &&
+            handles.lookupException(passHandle) == null)
         {
-            Object rep = desc.invokeReadResolve(obj);
-            if (unshared && rep.getClass().isArray()) {
-                rep = cloneArray(rep);
+            // no need to readResolve or process delayed puts for null value
+            if (obj != null) {
+                obj = desc.invokeReadResolve(obj);
+                if (obj != null && unshared && obj.getClass().isArray()) {
+                    obj = cloneArray(obj);
+                }
+                // process delayed puts
+                if (unresolved != null) {
+                    unresolved.apply(obj);
+                }
             }
-            if (rep != obj) {
-                handles.setObject(passHandle, obj = rep);
-            }
+            handles.setObject(passHandle, obj);
         }
 
         return obj;
@@ -2152,8 +2176,13 @@ public class ObjectInputStream
             ObjectStreamField[] fields = desc.getFields(false);
             int numPrimFields = fields.length - objVals.length;
             for (int i = 0; i < objVals.length; i++) {
-                objVals[i] =
-                    readObject0(fields[numPrimFields + i].isUnshared());
+                Object obj = readObject0(fields[numPrimFields + i].isUnshared());
+                // if readFields() is called nested while in the middle of reading an object
+                // with readResolve() method and a TC_REFERENCE pointing to that
+                // object is encountered, the unresolved object is stored in GetField...
+                objVals[i] = obj instanceof Unresolved
+                       ? ((Unresolved) obj).unresolvedValue
+                       : obj;
                 objHandles[i] = passHandle;
             }
             passHandle = oldHandle;
@@ -2267,6 +2296,97 @@ public class ObjectInputStream
          */
         public void clear() {
             list = null;
+        }
+    }
+
+    /**
+     * A holder for unresolved object and a list of targets
+     * (object fields, object array slots) that are waiting for the
+     * unresolved object to be readResolve()d before it's
+     * result is written to those targets.
+     */
+    static final class Unresolved {
+
+        final Object unresolvedValue;
+
+        Unresolved(Object unresolvedValue) {
+            this.unresolvedValue = unresolvedValue;
+        }
+
+        // a linked list node with abstract method to apply the resolved object
+        private static abstract class Put {
+            final Put next;
+
+            protected Put(Put next) {
+                this.next = next;
+            }
+
+            protected abstract void apply(Object resolvedValue);
+        }
+
+        // a put to object field
+        private static final class ObjectFieldPut extends Put {
+            private static final Unsafe unsafe = Unsafe.getUnsafe();
+
+            private final Object obj;
+            private final long key;
+            private final Class<?> type;
+            private final Field field;
+
+            ObjectFieldPut(Put next, Object obj, long key, Class<?> type, Field field) {
+                super(next);
+                this.obj = obj;
+                this.key = key;
+                this.type = type;
+                this.field = field;
+            }
+
+            @Override
+            protected void apply(Object resolvedValue) {
+                if (resolvedValue != null && !type.isInstance(resolvedValue)) {
+                    throw new ClassCastException(
+                        "cannot assign instance of " +
+                        resolvedValue.getClass().getName() + " to field " +
+                        field.getDeclaringClass().getName() + "." +
+                        field.getName() + " of type " +
+                        field.getType().getName() + " in instance of " +
+                        obj.getClass().getName());
+                }
+                unsafe.putObject(obj, key, resolvedValue);
+            }
+        }
+
+        // a put to array slot
+        private static final class ObjectArraySlotPut extends Put {
+            private final Object[] array;
+            private int index;
+
+            private ObjectArraySlotPut(Put next, Object[] array, int index) {
+                super(next);
+                this.array = array;
+                this.index = index;
+            }
+
+            @Override
+            protected void apply(Object resolvedValue) {
+                array[index] = resolvedValue;
+            }
+        }
+
+        private Put head;
+
+        void addObjectField(Object obj, long key, Class<?> type, Field field) {
+            head = new ObjectFieldPut(head, obj, key, type, field);
+        }
+
+        void addObjectArraySlot(Object[] array, int index) {
+            head = new ObjectArraySlotPut(head, array, index);
+        }
+
+        void apply(Object resolvedValue) {
+            for (Put put = head; put != null; put = put.next) {
+                put.apply(resolvedValue);
+            }
         }
     }
 

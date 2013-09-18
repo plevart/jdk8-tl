@@ -2076,7 +2076,13 @@ public class ObjectStreamClass implements Serializable {
                     case 'L':
                     case '[':
                         Object val = vals[offsets[i]];
-                        if (val != null &&
+                        if (val instanceof ObjectInputStream.Unresolved) {
+                            // register a field that will be set when object is resolved
+                            ((ObjectInputStream.Unresolved) val).addObjectField(
+                                obj, key, types[i - numPrimFields],
+                                fields[i].getField());
+                        }
+                        else if (val != null &&
                             !types[i - numPrimFields].isInstance(val))
                         {
                             Field f = fields[i].getField();
@@ -2088,7 +2094,9 @@ public class ObjectStreamClass implements Serializable {
                                 f.getType().getName() + " in instance of " +
                                 obj.getClass().getName());
                         }
-                        unsafe.putObject(obj, key, val);
+                        else {
+                            unsafe.putObject(obj, key, val);
+                        }
                         break;
 
                     default:

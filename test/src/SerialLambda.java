@@ -22,15 +22,15 @@ public class SerialLambda implements Serializable {
 
     void go() throws Exception {
         supplier = this::hashCode;
-        System.out.println(serialCopy(this).supplier.getAsInt());
-        System.out.println(serialCopy(this.supplier).getAsInt());
+        System.err.println("go1 root=this: " + serialCopy(this).supplier.getAsInt());
+        System.err.println("go1 root=lambda: " + serialCopy(this.supplier).getAsInt());
     }
 
     static void go2() throws Exception {
         List<SerializableIntSupplier> list = new ArrayList<>();
         list.add(() -> list.get(0).hashCode());
-        System.out.println(serialCopy(list).get(0).getAsInt());
-        System.out.println(serialCopy(list.get(0)).getAsInt());
+        System.err.println("go2 root=list: " + serialCopy(list).get(0).getAsInt());
+        System.err.println("go2 root=lambda: " + serialCopy(list.get(0)).getAsInt());
     }
 
     @SuppressWarnings("unchecked")

@@ -25,8 +25,6 @@ public class SerTest implements Serializable {
         }
 
         Object writeReplace() throws ObjectStreamException {
-            System.out.println("Limbda.writeReplace()");
-            new Throwable().printStackTrace(System.out);
             return new SerializedFoo(args);
         }
 
@@ -45,8 +43,6 @@ public class SerTest implements Serializable {
         }
 
         Object readResolve() throws ObjectStreamException {
-            System.out.println("SerializedLimbda.readResolve()");
-            new Throwable().printStackTrace(System.out);
             return new Foo(args);
         }
 
@@ -57,11 +53,13 @@ public class SerTest implements Serializable {
         }
     }
 
-    Object foo;
+    Foo foo;
 
     @Override
     public String toString() {
-        return getClass().getName() + "{foo=" + foo.getClass().getName() + '@' + Integer.toHexString(System.identityHashCode(foo)) +
+        return getClass().getName() + "{foo=" +
+               foo.getClass().getName() + '@' +
+               Integer.toHexString(System.identityHashCode(foo)) +
                '}';
     }
 
@@ -70,7 +68,7 @@ public class SerTest implements Serializable {
         test.foo = new Foo(test);
 
         System.out.println(test.foo);
-        Foo foo2 = (Foo)serialCopy(test.foo);
+        Foo foo2 = serialCopy(test.foo);
         System.out.println(foo2);
         System.out.println();
     }
