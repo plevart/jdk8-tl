@@ -39,7 +39,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicBoolean;
+
 import static java.io.ObjectStreamClass.processQueue;
 import sun.reflect.misc.ReflectUtil;
 
@@ -1461,7 +1461,10 @@ public class ObjectInputStream
         }
 
         Object obj = handles.lookupObject(passHandle);
-        if (obj == unsharedMarker) {
+        // is readResolve still pending?
+        if (obj instanceof LazyReadResolve) {
+            obj = ((LazyReadResolve) obj).readResolve(passHandle);
+        } else if (obj == unsharedMarker) {
             // REMIND: what type of exception to throw here?
             throw new InvalidObjectException(
                 "cannot read back reference to unshared object");
@@ -1787,7 +1790,11 @@ public class ObjectInputStream
                 "unable to create instance").initCause(ex);
         }
 
-        passHandle = handles.assign(unshared ? unsharedMarker : obj);
+        passHandle = handles.assign(unshared
+                                    ? unsharedMarker
+                                    : (obj != null && desc.hasReadResolveMethod()
+                                       ? new LazyReadResolve(obj, desc)
+                                       :obj));
         ClassNotFoundException resolveEx = desc.getResolveException();
         if (resolveEx != null) {
             handles.markException(passHandle, resolveEx);
@@ -1805,12 +1812,23 @@ public class ObjectInputStream
             handles.lookupException(passHandle) == null &&
             desc.hasReadResolveMethod())
         {
-            Object rep = desc.invokeReadResolve(obj);
-            if (unshared && rep.getClass().isArray()) {
-                rep = cloneArray(rep);
-            }
-            if (rep != obj) {
-                handles.setObject(passHandle, obj = rep);
+            if (unshared) {
+                // unshared is always resolved after reading
+                Object rep = desc.invokeReadResolve(obj);
+                if (rep.getClass().isArray()) {
+                    rep = cloneArray(rep);
+                }
+                if (rep != obj) {
+                    handles.setObject(passHandle, obj = rep);
+                }
+            } else {
+                // check if it has already been resolved during reading or not
+                Object res = handles.lookupObject(passHandle);
+                if (res instanceof LazyReadResolve) { // no -> resolve it now
+                    obj = ((LazyReadResolve) res).readResolve(passHandle);
+                } else { // yes
+                    obj = res;
+                }
             }
         }
 
@@ -2178,6 +2196,32 @@ public class ObjectInputStream
                 throw new IllegalArgumentException("no such field " + name +
                                                    " with type " + type);
             }
+        }
+    }
+
+    /**
+     * A placeholder assigned in the HandleTable during reading of an object
+     * which declares a readResolve() method. When a TC_REFERENCE with
+     * a handle of the object being read is detected in the stream while reading
+     * the same object, readResolve() is called on the half-read object
+     * to obtain a resolved reference which is incorporated into the de-serialized
+     * graph, thus forming a cycle.
+     */
+    private class LazyReadResolve
+    {
+        private final Object obj;
+        private final ObjectStreamClass desc;
+
+        LazyReadResolve(Object obj, ObjectStreamClass desc)
+        {
+            this.obj = obj;
+            this.desc = desc;
+        }
+
+        Object readResolve(int handle) throws IOException {
+            Object rep = desc.invokeReadResolve(obj);
+            handles.setObject(handle, rep);
+            return rep;
         }
     }
 

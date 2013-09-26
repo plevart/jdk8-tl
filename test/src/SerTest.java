@@ -6,6 +6,7 @@
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamException;
@@ -18,11 +19,14 @@ import java.util.Arrays;
 public class SerTest implements Serializable {
 
     public static class Foo implements Serializable {
-        final Object[] args;
+        Object[] args;
 
         public Foo(Object... args) {
             this.args = args;
         }
+
+        Foo() {}
+
 
         Object writeReplace() throws ObjectStreamException {
             System.out.println("Limbda.writeReplace()");
@@ -44,10 +48,21 @@ public class SerTest implements Serializable {
             this.args = args;
         }
 
+        private transient Foo resolved;
+
         Object readResolve() throws ObjectStreamException {
             System.out.println("SerializedLimbda.readResolve()");
             new Throwable().printStackTrace(System.out);
-            return new Foo(args);
+            return resolved = new Foo();
+        }
+
+        private void writeObject(java.io.ObjectOutputStream out) throws IOException {
+            out.defaultWriteObject();
+        }
+
+        private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+            in.defaultReadObject();
+            resolved.args = args;
         }
 
         @Override
