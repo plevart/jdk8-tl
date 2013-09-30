@@ -25,6 +25,7 @@
 
 package java.lang;
 
+import java.lang.annotation.Repeatable;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Array;
 import java.lang.reflect.GenericArrayType;
@@ -3282,9 +3283,51 @@ public final class Class<T> implements java.io.Serializable,
      */
     @Override
     public <A extends Annotation> A[] getAnnotationsByType(Class<A> annotationClass) {
-        Objects.requireNonNull(annotationClass);
 
-        return AnnotationSupport.getMultipleAnnotations(annotationData().annotations, annotationClass);
+        Repeatable repeatable = annotationClass.getDeclaredAnnotation(Repeatable.class);
+        if (repeatable == null) { // not a repeating annotation
+            A[] array = (A[])Array.newInstance(annotationClass, 1);
+            array[0] = getAnnotation(annotationClass);
+            return array;
+        }
+
+        List<A> anns = addAnnotationsByType(
+            annotationClass,
+            repeatable.value(),
+            AnnotationType.getInstance(annotationClass).isInherited(),
+            new ArrayList<>()
+        );
+        @SuppressWarnings("unchecked")
+        A[] array = anns.toArray((A[])Array.newInstance(annotationClass, anns.size()));
+        return array;
+    }
+
+    private  <A extends Annotation> List<A> addAnnotationsByType(
+        Class<A> annotationClass,
+        Class<? extends Annotation> containerClass,
+        boolean includeSuperclasses,
+        List<A> resultList
+    ) {
+
+        Class<?> superClass = null;
+        if (includeSuperclasses && (superClass = getSuperclass()) != null) {
+            superClass.addAnnotationsByType(
+                annotationClass,
+                containerClass,
+                includeSuperclasses,
+                resultList
+            );
+        }
+
+        // append declared
+        AnnotationSupport.addMultipleAnnotations(
+            annotationData().declaredAnnotations,
+            annotationClass,
+            containerClass,
+            resultList
+        );
+
+        return resultList;
     }
 
     /**
@@ -3312,9 +3355,23 @@ public final class Class<T> implements java.io.Serializable,
      */
     @Override
     public <A extends Annotation> A[] getDeclaredAnnotationsByType(Class<A> annotationClass) {
-        Objects.requireNonNull(annotationClass);
 
-        return AnnotationSupport.getMultipleAnnotations(annotationData().declaredAnnotations, annotationClass);
+        Repeatable repeatable = annotationClass.getDeclaredAnnotation(Repeatable.class);
+        if (repeatable == null) { // not a repeating annotation
+            A[] array = (A[])Array.newInstance(annotationClass, 1);
+            array[0] = getDeclaredAnnotation(annotationClass);
+            return array;
+        }
+
+        List<A> anns = addAnnotationsByType(
+            annotationClass,
+            repeatable.value(),
+            false,
+            new ArrayList<>()
+        );
+        @SuppressWarnings("unchecked")
+        A[] array = anns.toArray((A[])Array.newInstance(annotationClass, anns.size()));
+        return array;
     }
 
     /**

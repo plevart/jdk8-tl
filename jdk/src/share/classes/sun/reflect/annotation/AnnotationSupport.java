@@ -34,37 +34,46 @@ import java.util.Map;
 
 public final class AnnotationSupport {
     /**
-     * Finds and returns all annotation of the type indicated by
-     * {@code annotationClass} from the {@code Map} {@code
-     * annotationMap}. Looks into containers of the {@code
-     * annotationClass} (as specified by an the {@code
-     * annotationClass} type being meta-annotated with an {@code
-     * Repeatable} annotation).
+     * Finds and adds to {@code resultList} all annotations
+     * of the type indicated by {@code annotationClass} from the
+     * {@code Map} {@code annotationMap}. Also Looks into container
+     * specified by {@code containerClass} for additional annotations.
      *
      * @param annotationMap the {@code Map} used to store annotations indexed by their type
      * @param annotationClass the type of annotation to search for
+     * @param containerClass the type of the container annotation that contains annotations to be found
+     * @param resultList the list where found annotations are added to
      *
      * @return an array of instances of {@code annotationClass} or an empty array if none were found
      */
-    public static  <A extends Annotation> A[] getMultipleAnnotations(
-            final Map<Class<? extends Annotation>, Annotation> annotationMap,
-            final Class<A> annotationClass) {
-        final List<A> res = new ArrayList<A>();
-
+    public static  <A extends Annotation> List<A> addMultipleAnnotations(
+        final Map<Class<? extends Annotation>, Annotation> annotationMap,
+        final Class<A> annotationClass,
+        final Class<? extends Annotation> containerClass,
+        final List<A> resultList
+    ) {
         @SuppressWarnings("unchecked")
         final A candidate = (A)annotationMap.get(annotationClass);
         if (candidate != null) {
-            res.add(candidate);
+            resultList.add(candidate);
         }
 
-        final Class<? extends Annotation> containerClass = getContainer(annotationClass);
-        if (containerClass != null) {
-            res.addAll(unpackAll(annotationMap.get(containerClass), annotationClass));
+        final Annotation containerInstance = annotationMap.get(containerClass);
+        if (containerInstance != null) {
+            try {
+                A[] a = getValueArray(containerInstance);
+                for (int i  = 0; i < a.length; i++)
+                    resultList.add(annotationClass.cast(a[i]));
+            } catch (ClassCastException |
+                NullPointerException e) {
+                throw new AnnotationFormatError(
+                    String.format("%s is an invalid container for repeating annotations of type: %s",
+                                  containerInstance, annotationClass),
+                    e);
+            }
         }
 
-        @SuppressWarnings("unchecked") // should be safe annotationClass is a token for A
-        final A[] emptyTemplateArray = (A[])Array.newInstance(annotationClass, 0);
-        return res.isEmpty() ? emptyTemplateArray : res.toArray(emptyTemplateArray);
+        return resultList;
     }
 
     /** Helper to get the container, or null if none, of an annotation. */
@@ -105,31 +114,6 @@ public final class AnnotationSupport {
                  ClassCastException e) { // well, a cast failed ...
             throw new AnnotationFormatError(
                     containerInstance + " is an invalid container for repeating annotations",
-                    e);
-        }
-    }
-
-    /* Sanity check type of and return a list of all the annotation
-     * instances of type {@code annotationClass} from {@code
-     * containerInstance}.
-     */
-    private static <A extends Annotation> List<A> unpackAll(Annotation containerInstance,
-                                                            Class<A> annotationClass) {
-        if (containerInstance == null) {
-            return Collections.emptyList(); // container not present
-        }
-
-        try {
-            A[] a = getValueArray(containerInstance);
-            List<A> l = new ArrayList<>(a.length);
-            for (int i  = 0; i < a.length; i++)
-                l.add(annotationClass.cast(a[i]));
-            return l;
-        } catch (ClassCastException |
-                 NullPointerException e) {
-            throw new AnnotationFormatError(
-                    String.format("%s is an invalid container for repeating annotations of type: %s",
-                        containerInstance, annotationClass),
                     e);
         }
     }
