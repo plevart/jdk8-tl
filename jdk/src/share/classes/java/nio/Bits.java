@@ -669,7 +669,6 @@ class Bits {                            // package-private
             reservedMemory -= size;
             totalCapacity -= cap;
             count--;
-            Bits.class.notifyAll();
             assert (reservedMemory > -1);
         }
     }
