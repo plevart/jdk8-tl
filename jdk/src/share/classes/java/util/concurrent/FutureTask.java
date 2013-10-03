@@ -74,7 +74,9 @@ public class FutureTask<V> implements RunnableFuture<V> {
      */
 
     /**
-     * The run state of this task, initially NEW.  The run state
+     * The run state of this task, initially NEW.  The state
+     * transitions to RUNNING state when the task is optionally run or
+     * runAndReset. NEW or optional RUNNING state
      * transitions to a terminal state only in methods set,
      * setException, and cancel.  During completion, state may take on
      * transient values of COMPLETING (while outcome is being set) or
@@ -84,19 +86,20 @@ public class FutureTask<V> implements RunnableFuture<V> {
      * and cannot be further modified.
      *
      * Possible state transitions:
-     * NEW -> COMPLETING -> NORMAL
-     * NEW -> COMPLETING -> EXCEPTIONAL
-     * NEW -> CANCELLED
-     * NEW -> INTERRUPTING -> INTERRUPTED
+     * NEW (-> RUNNING) -> COMPLETING -> NORMAL
+     * NEW (-> RUNNING) -> COMPLETING -> EXCEPTIONAL
+     * NEW (-> RUNNING) -> CANCELLED
+     * NEW -> RUNNING -> INTERRUPTING -> INTERRUPTED
      */
     private volatile int state;
     private static final int NEW          = 0;
-    private static final int COMPLETING   = 1;
-    private static final int NORMAL       = 2;
-    private static final int EXCEPTIONAL  = 3;
-    private static final int CANCELLED    = 4;
-    private static final int INTERRUPTING = 5;
-    private static final int INTERRUPTED  = 6;
+    private static final int RUNNING      = 1;
+    private static final int COMPLETING   = 2;
+    private static final int NORMAL       = 3;
+    private static final int EXCEPTIONAL  = 4;
+    private static final int CANCELLED    = 5;
+    private static final int INTERRUPTING = 6;
+    private static final int INTERRUPTED  = 7;
 
     /** The underlying callable; nulled out after running */
     private Callable<V> callable;
@@ -158,20 +161,28 @@ public class FutureTask<V> implements RunnableFuture<V> {
     }
 
     public boolean isDone() {
-        return state != NEW;
+        return state >= COMPLETING;
     }
 
     public boolean cancel(boolean mayInterruptIfRunning) {
-        if (!(state == NEW &&
-              UNSAFE.compareAndSwapInt(this, stateOffset, NEW,
+        if (state == NEW &&
+            UNSAFE.compareAndSwapInt(this, stateOffset, NEW, CANCELLED)) {
+            finishCompletion();
+            return true;
+        }
+        if (!(state == RUNNING &&
+              UNSAFE.compareAndSwapInt(this, stateOffset, RUNNING,
                   mayInterruptIfRunning ? INTERRUPTING : CANCELLED)))
             return false;
         try {    // in case call to interrupt throws exception
             if (mayInterruptIfRunning) {
                 try {
-                    Thread t = runner;
-                    if (t != null)
-                        t.interrupt();
+                    Thread t;
+                    // wait for runner to be set by run/runAndReset
+                    while ((t = runner) == null) {
+                        Thread.yield();
+                    }
+                    t.interrupt();
                 } finally { // final state
                     UNSAFE.putOrderedInt(this, stateOffset, INTERRUPTED);
                 }
@@ -227,7 +238,9 @@ public class FutureTask<V> implements RunnableFuture<V> {
      * @param v the value
      */
     protected void set(V v) {
-        if (UNSAFE.compareAndSwapInt(this, stateOffset, NEW, COMPLETING)) {
+        // order of CASes is important
+        if (UNSAFE.compareAndSwapInt(this, stateOffset, NEW, COMPLETING) ||
+            UNSAFE.compareAndSwapInt(this, stateOffset, RUNNING, COMPLETING)) {
             outcome = v;
             UNSAFE.putOrderedInt(this, stateOffset, NORMAL); // final state
             finishCompletion();
@@ -245,7 +258,9 @@ public class FutureTask<V> implements RunnableFuture<V> {
      * @param t the cause of failure
      */
     protected void setException(Throwable t) {
-        if (UNSAFE.compareAndSwapInt(this, stateOffset, NEW, COMPLETING)) {
+        // order of CASes is important
+        if (UNSAFE.compareAndSwapInt(this, stateOffset, NEW, COMPLETING) ||
+            UNSAFE.compareAndSwapInt(this, stateOffset, RUNNING, COMPLETING)) {
             outcome = t;
             UNSAFE.putOrderedInt(this, stateOffset, EXCEPTIONAL); // final state
             finishCompletion();
@@ -254,12 +269,14 @@ public class FutureTask<V> implements RunnableFuture<V> {
 
     public void run() {
         if (state != NEW ||
-            !UNSAFE.compareAndSwapObject(this, runnerOffset,
-                                         null, Thread.currentThread()))
+            runner != null ||
+            !UNSAFE.compareAndSwapInt(this, stateOffset,
+                                      NEW, RUNNING))
             return;
+        runner = Thread.currentThread();
         try {
             Callable<V> c = callable;
-            if (c != null && state == NEW) {
+            if (c != null && state == RUNNING) {
                 V result;
                 boolean ran;
                 try {
@@ -274,14 +291,14 @@ public class FutureTask<V> implements RunnableFuture<V> {
                     set(result);
             }
         } finally {
-            // runner must be non-null until state is settled to
-            // prevent concurrent calls to run()
-            runner = null;
-            // state must be re-read after nulling runner to prevent
-            // leaked interrupts
-            int s = state;
-            if (s >= INTERRUPTING)
-                handlePossibleCancellationInterrupt(s);
+            try {
+                int s = state;
+                if (s >= INTERRUPTING)
+                    handlePossibleCancellationInterrupt(s);
+            } finally {
+                // null-out runner at the end
+                runner = null;
+            }
         }
     }
 
@@ -296,32 +313,36 @@ public class FutureTask<V> implements RunnableFuture<V> {
      */
     protected boolean runAndReset() {
         if (state != NEW ||
-            !UNSAFE.compareAndSwapObject(this, runnerOffset,
-                                         null, Thread.currentThread()))
+            runner != null ||
+            !UNSAFE.compareAndSwapInt(this, stateOffset,
+                                      NEW, RUNNING))
             return false;
+        runner = Thread.currentThread();
         boolean ran = false;
         int s = state;
         try {
             Callable<V> c = callable;
-            if (c != null && s == NEW) {
+            if (c != null && s == RUNNING) {
                 try {
                     c.call(); // don't set result
-                    ran = true;
+                    ran = UNSAFE.compareAndSwapInt(this, stateOffset,
+                                                   RUNNING, NEW);
                 } catch (Throwable ex) {
                     setException(ex);
                 }
             }
         } finally {
-            // runner must be non-null until state is settled to
-            // prevent concurrent calls to run()
-            runner = null;
-            // state must be re-read after nulling runner to prevent
-            // leaked interrupts
-            s = state;
-            if (s >= INTERRUPTING)
-                handlePossibleCancellationInterrupt(s);
+            try {
+                s = state;
+                if (s >= INTERRUPTING)
+                    handlePossibleCancellationInterrupt(s);
+            } finally {
+                // null-out runner at the end
+                // this finally enables next call to runAndReset() or run()
+                runner = null;
+            }
         }
-        return ran && s == NEW;
+        return ran;
     }
 
     /**
