@@ -178,11 +178,15 @@ public class Cleaner
         return add(new Cleaner(ob, thunk));
     }
 
-    // a counter of cleans so far
     private static final AtomicInteger cleanCount = new AtomicInteger();
 
     /**
      * Assist with cleaning up the enqueued/pending Cleaners.
+     * This method returns the accumulated number of cleans performed so far.
+     * If two consecutive invocations of this method return the same value,
+     * it indicates that no cleaning progress can be made for the time being.
+     *
+     * @return the number of cleaned Cleaners so far
      */
     public static int assistCleanup() {
         Cleaner cleaner;
