@@ -103,22 +103,17 @@ public class ReferenceQueue<T> {
      */
     public Reference<? extends T> poll() {
         Reference<? extends T> r = head;
-        do {
-            // help ReferenceHandler thread with enqueue-ing until we get at least one
-            // Reference in this queue or there are no more pending References
-            while (r == null && Reference.enqueueNext(false)) {
-                r = head;
-            }
-            // not a single one in this queue after all pending have been enqueue-ed?
-            if (r == null) {
-                break;
-            }
+        // help ReferenceHandler thread with enqueue-ing until we get at least one
+        // Reference in this queue or there are no more pending References
+        while (r == null && Reference.enqueueNext(false)) {
+            r = head;
+        }
+        if (r != null) {
             // de-queueing must be performed under lock
             synchronized (lock) {
                 r = reallyPoll();
             }
-            // has someone stolen all enqueue-ed references?
-        } while (r == null);
+        }
 
         return r;
     }
