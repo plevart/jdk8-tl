@@ -633,18 +633,17 @@ class Bits {                            // package-private
     // which a process may access.  All sizes are specified in bytes.
     static void reserveMemory(long size, int cap) {
 
-        boolean assisted = true;
-        for(;;) {
+        int cleans = 0, oldCleans;
+        do {
+            oldCleans = cleans;
             // -XX:MaxDirectMemorySize limits the total capacity rather than the
             // actual memory usage, which will differ when buffers are page
             // aligned.
             if (tryReserveMemory(size, cap)) return;
 
-            if (!assisted) break;
-
             System.gc();
-            assisted = Cleaner.assistCleanup();
-        }
+            cleans = Cleaner.assistCleanup();
+        } while (cleans != oldCleans);
 
         throw new OutOfMemoryError("Direct buffer memory");
     }

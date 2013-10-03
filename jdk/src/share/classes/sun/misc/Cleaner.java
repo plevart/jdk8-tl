@@ -28,6 +28,7 @@ package sun.misc;
 import java.lang.ref.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 /**
@@ -177,17 +178,18 @@ public class Cleaner
         return add(new Cleaner(ob, thunk));
     }
 
+    // a counter of cleans so far
+    private static final AtomicInteger cleanCount = new AtomicInteger();
+
     /**
      * Assist with cleaning up the enqueued/pending Cleaners.
      */
-    public static boolean assistCleanup() {
+    public static int assistCleanup() {
         Cleaner cleaner;
-        boolean assisted = false;
         while ((cleaner = (Cleaner) cleanersQueue.poll()) != null) {
             cleaner.clean();
-            assisted = true;
         }
-        return assisted;
+        return cleanCount.get();
     }
 
     /**
@@ -198,6 +200,7 @@ public class Cleaner
             return;
         try {
             thunk.run();
+            cleanCount.incrementAndGet();
         } catch (final Throwable x) {
             AccessController.doPrivileged(new PrivilegedAction<Void>() {
                     public Void run() {

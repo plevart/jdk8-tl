@@ -1,7 +1,7 @@
 import java.nio.ByteBuffer;
 
 public class DirectBufferTest {
-    private static int NUM_THREADS = 4;
+    private static int NUM_THREADS = 8;
 
     public static void main(String[] args) throws InterruptedException {
         for (int i = 0; i < NUM_THREADS; i++) {
