@@ -632,73 +632,37 @@ class Bits {                            // package-private
     // freed.  They allow the user to control the amount of direct memory
     // which a process may access.  All sizes are specified in bytes.
     static void reserveMemory(long size, int cap) {
-        synchronized (Bits.class) {
-            if (!memoryLimitSet && VM.isBooted()) {
-                maxMemory = VM.maxDirectMemory();
-                memoryLimitSet = true;
-            }
+
+        boolean assisted = true;
+        for(;;) {
             // -XX:MaxDirectMemorySize limits the total capacity rather than the
             // actual memory usage, which will differ when buffers are page
             // aligned.
-            if (cap <= maxMemory - totalCapacity) {
-                reservedMemory += size;
-                totalCapacity += cap;
-                count++;
-                return;
-            }
-        }
+            if (tryReserveMemory(size, cap)) return;
 
-        // try to clean up
-        for (int t = 0; t < 10; t++) {
-            Cleaner.assistCleanup();
-
-            synchronized (Bits.class) {
-                if (cap <= maxMemory - totalCapacity) {
-                    // successfully cleaned up
-                    reservedMemory += size;
-                    totalCapacity += cap;
-                    count++;
-                    return;
-                }
-            }
+            if (!assisted) break;
 
             System.gc();
-
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException x) {
-                // Restore interrupt status
-                Thread.currentThread().interrupt();
-                return;
-            }
-        }
-
-        // try something more aggressive
-        for (int t = 0; t < 10; t++) {
-            Cleaner.assistCleanupSlow();
-
-            synchronized (Bits.class) {
-                if (cap <= maxMemory - totalCapacity) {
-                    // successfully cleaned up
-                    reservedMemory += size;
-                    totalCapacity += cap;
-                    count++;
-                    return;
-                }
-            }
-
-            System.gc();
-
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException x) {
-                // Restore interrupt status
-                Thread.currentThread().interrupt();
-                return;
-            }
+            assisted = Cleaner.assistCleanup();
         }
 
         throw new OutOfMemoryError("Direct buffer memory");
+    }
+
+    private static synchronized boolean tryReserveMemory(long size, int cap) {
+        if (!memoryLimitSet && VM.isBooted()) {
+            maxMemory = VM.maxDirectMemory();
+            memoryLimitSet = true;
+        }
+
+        if (cap <= maxMemory - totalCapacity) {
+            reservedMemory += size;
+            totalCapacity += cap;
+            count++;
+            return true;
+        } else {
+            return false;
+        }
     }
 
     static synchronized void unreserveMemory(long size, int cap) {
@@ -706,6 +670,7 @@ class Bits {                            // package-private
             reservedMemory -= size;
             totalCapacity -= cap;
             count--;
+            Bits.class.notifyAll();
             assert (reservedMemory > -1);
         }
     }

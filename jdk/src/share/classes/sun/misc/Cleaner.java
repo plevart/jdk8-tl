@@ -28,11 +28,6 @@ package sun.misc;
 import java.lang.ref.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
@@ -59,112 +54,110 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  *
  * @author Mark Reinhold
- * @author Aleksey Shipilev
  */
 
-public class Cleaner extends WeakReference<Object> {
+public class Cleaner
+    extends PhantomReference<Object>
+{
 
-    /*
-     * Implementation notes:
-     *
-     * Cleaner has multiple ways to trigger the cleanup:
-     *
-     * a) CleanupHandler blocking-waits on the reference queue, and triggers cleanups
-     *    as soon as it gets enqueued on the QUEUE; this limits the speed of deallocation
-     *    by the performance of both CleanupHandler thread, and also the ReferenceHandler
-     *    thread.
-     *
-     * b) Allocators can call assistCleanup() to help with draining the reference queue.
-     *    It is usually not required to call assistCleanup() from anywhere except create()
-     *    here.  This decouples us from CleanupHandler, but still takes us at the mercy of
-     *    ReferenceHandler thread.
-     *
-     * c) The housekeeping code may invoke assistCleanupSlow() to force traversal of our Cleaner
-     *    storage, and figure out if we need to clean up something else. This decouples us
-     *    from both CleanupHandler and ReferenceHandler threads. Note that assistCleanupSlow()
-     *    requires the detection if we had been cleared. That is why Cleaner is WeakReference,
-     *    not the PhantomReference: we need (referent == null) as the signal we are cleared.
-     */
+    // Reference queue for cleaners.
+    //
+    private static final ReferenceQueue<Object> cleanersQueue = new ReferenceQueue<>();
 
-    private static final ReferenceQueue<Object> QUEUE = new ReferenceQueue<>();
-    private static final Set<Cleaner> CLEANERS = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    // Doubly-linked list of live cleaners, which prevents the cleaners
+    // themselves from being GC'd before their referents
+    //
+    static private Cleaner first = null;
+
+    // High-priority thread to clean enqueue-ed Cleaners
+    //
+    private static class CleanerHandler extends Thread {
+
+        CleanerHandler(ThreadGroup g, String name) {
+            super(g, name);
+        }
+
+        public void run() {
+            for (;;) {
+                // The waiting on the lock may cause an OOME because it may try to allocate
+                // exception objects, so also catch OOME here to avoid silent exit of the
+                // cleaner handler thread.
+                //
+                // Explicitly define the order of the two exceptions we catch here
+                // when waiting for the lock.
+                //
+                // We do not want to try to potentially load the InterruptedException class
+                // (which would be done if this was its first use, and InterruptedException
+                // were checked first) in this situation.
+                //
+                // This may lead to the VM not ever trying to load the InterruptedException
+                // class again.
+                try {
+                    try {
+                        Cleaner cleaner = (Cleaner) cleanersQueue.remove();
+                        cleaner.clean();
+                    } catch (OutOfMemoryError x) { }
+                } catch (InterruptedException x) { }
+            }
+        }
+    }
 
     static {
-        Thread handler = new Thread(new CleanupHandler());
-        handler.setName("CleanupHandler");
+        ThreadGroup tg = Thread.currentThread().getThreadGroup();
+        for (ThreadGroup tgn = tg;
+             tgn != null;
+             tg = tgn, tgn = tg.getParent());
+        Thread handler = new CleanerHandler(tg, "Cleaner Handler");
+        /* If there were a special system-only priority greater than
+         * MAX_PRIORITY, it would be used here
+         */
         handler.setPriority(Thread.MAX_PRIORITY);
         handler.setDaemon(true);
         handler.start();
     }
 
-    /**
-     * CleanupHandler thread pumps up the queue when no one is present
-     * to assist the cleanup.
-     */
-    public static class CleanupHandler implements Runnable {
-        @Override
-        public void run() {
-            try {
-                Reference ref;
-                while ((ref = QUEUE.remove()) != null) {
-                    Cleaner h = (Cleaner) ref;
-                    h.clean();
-                }
-            } catch (InterruptedException e) {
-                // Restore interrupt status and exit
-                Thread.currentThread().interrupt();
-            }
+    private Cleaner
+        next = null,
+        prev = null;
+
+    private static synchronized Cleaner add(Cleaner cl) {
+        if (first != null) {
+            cl.next = first;
+            first.prev = cl;
         }
+        first = cl;
+        return cl;
     }
 
-    /**
-     * Assist the cleanup
-     */
-    public static void assistCleanup() {
-        Reference ref;
-        while ((ref = QUEUE.poll()) != null) {
-            Cleaner h = (Cleaner) ref;
-            h.clean();
+    private static synchronized boolean remove(Cleaner cl) {
+
+        // If already removed, do nothing
+        if (cl.next == cl)
+            return false;
+
+        // Update list
+        if (first == cl) {
+            if (cl.next != null)
+                first = cl.next;
+            else
+                first = cl.prev;
         }
+        if (cl.next != null)
+            cl.next.prev = cl.prev;
+        if (cl.prev != null)
+            cl.prev.next = cl.next;
+
+        // Indicate removal by pointing the cleaner to itself
+        cl.next = cl;
+        cl.prev = cl;
+        return true;
+
     }
 
-    /**
-     * Assist the cleanup
-     * @param max max elements to clean up
-     */
-    public static void assistCleanup(int max) {
-        int budget = max;
-        Reference ref;
-        while ((budget-- > 0) && (ref = QUEUE.poll()) != null) {
-            Cleaner h = (Cleaner) ref;
-            h.clean();
-        }
-    }
-
-    /**
-     * Do the slower cleanup.
-     */
-    public static void assistCleanupSlow() {
-        Collection<Cleaner> toPurge = new ArrayList<>();
-        for (Cleaner c : CLEANERS) {
-            if (c.get() == null) {
-                toPurge.add(c);
-            }
-        }
-
-        for (Cleaner c : toPurge) {
-            c.clean();
-        }
-    }
-
-    /**
-     * Cleanup handler
-     */
     private final Runnable thunk;
 
     private Cleaner(Object referent, Runnable thunk) {
-        super(referent, QUEUE);
-        CLEANERS.add(this);
+        super(referent, cleanersQueue);
         this.thunk = thunk;
     }
 
@@ -179,28 +172,30 @@ public class Cleaner extends WeakReference<Object> {
      * @return  The new cleaner
      */
     public static Cleaner create(Object ob, Runnable thunk) {
-        // Clean up the slot for us, and also do some charity work;
-        // the additional charity work will help to converge even
-        // when the CleanupHandler is stuck
-
-        if (thunk == null) {
-            assistCleanup(1);
+        if (thunk == null)
             return null;
-        } else {
-            assistCleanup(2);
-            return new Cleaner(ob, thunk);
+        return add(new Cleaner(ob, thunk));
+    }
+
+    /**
+     * Assist with cleaning up the enqueued/pending Cleaners.
+     */
+    public static boolean assistCleanup() {
+        Cleaner cleaner;
+        boolean assisted = false;
+        while ((cleaner = (Cleaner) cleanersQueue.poll()) != null) {
+            cleaner.clean();
+            assisted = true;
         }
+        return assisted;
     }
 
     /**
      * Runs this cleaner, if it has not been run before.
      */
     public void clean() {
-        if (!CLEANERS.remove(this)) {
-            // already cleaned up
+        if (!remove(this))
             return;
-        }
-
         try {
             thunk.run();
         } catch (final Throwable x) {

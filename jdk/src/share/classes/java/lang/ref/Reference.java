@@ -130,37 +130,7 @@ public abstract class Reference<T> {
 
         public void run() {
             for (;;) {
-                Reference<Object> r;
-                synchronized (lock) {
-                    if (pending != null) {
-                        r = pending;
-                        pending = r.discovered;
-                        r.discovered = null;
-                    } else {
-                        // The waiting on the lock may cause an OOME because it may try to allocate
-                        // exception objects, so also catch OOME here to avoid silent exit of the
-                        // reference handler thread.
-                        //
-                        // Explicitly define the order of the two exceptions we catch here
-                        // when waiting for the lock.
-                        //
-                        // We do not want to try to potentially load the InterruptedException class
-                        // (which would be done if this was its first use, and InterruptedException
-                        // were checked first) in this situation.
-                        //
-                        // This may lead to the VM not ever trying to load the InterruptedException
-                        // class again.
-                        try {
-                            try {
-                                lock.wait();
-                            } catch (OutOfMemoryError x) { }
-                        } catch (InterruptedException x) { }
-                        continue;
-                    }
-                }
-
-                ReferenceQueue<Object> q = r.queue;
-                if (q != ReferenceQueue.NULL) q.enqueue(r);
+                enqueueNext(true);
             }
         }
     }
@@ -179,6 +149,52 @@ public abstract class Reference<T> {
         handler.start();
     }
 
+    /**
+     * Enqueue next pending Reference if there is one
+     *
+     * @param waitForNotifyIfNonePending if true and no Reference is pending it
+     *                          waits to be notified from VM before returning false.
+     *                          Should only be specified as true when guaranteed to be
+     *                          called again (from a loop in ReferenceHandler thread)
+     * @return true if next pending Reference has been enqueue-ed
+     *         or false if there was no pending Reference
+     */
+    static boolean enqueueNext(boolean waitForNotifyIfNonePending) {
+        Reference<Object> r;
+        synchronized (lock) {
+            r = pending;
+            if (r != null) {
+                pending = r.discovered;
+                r.discovered = null;
+            } else if (waitForNotifyIfNonePending) {
+                // The waiting on the lock may cause an OOME because it may try to allocate
+                // exception objects, so also catch OOME here to avoid silent exit of the
+                // reference handler thread.
+                //
+                // Explicitly define the order of the two exceptions we catch here
+                // when waiting for the lock.
+                //
+                // We do not want to try to potentially load the InterruptedException class
+                // (which would be done if this was its first use, and InterruptedException
+                // were checked first) in this situation.
+                //
+                // This may lead to the VM not ever trying to load the InterruptedException
+                // class again.
+                try {
+                    try {
+                        lock.wait();
+                    } catch (OutOfMemoryError x) { }
+                } catch (InterruptedException x) { }
+            }
+        }
+        if (r != null) {
+            ReferenceQueue<Object> q = r.queue;
+            if (q != ReferenceQueue.NULL) q.enqueue(r);
+            return true;
+        } else {
+            return false;
+        }
+    }
 
     /* -- Referent accessor and setters -- */
 
