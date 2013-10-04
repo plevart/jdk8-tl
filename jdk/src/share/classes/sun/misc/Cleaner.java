@@ -29,6 +29,7 @@ import java.lang.ref.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 
 /**
@@ -79,27 +80,7 @@ public class Cleaner
         }
 
         public void run() {
-            for (;;) {
-                // The waiting on the lock may cause an OOME because it may try to allocate
-                // exception objects, so also catch OOME here to avoid silent exit of the
-                // cleaner handler thread.
-                //
-                // Explicitly define the order of the two exceptions we catch here
-                // when waiting for the lock.
-                //
-                // We do not want to try to potentially load the InterruptedException class
-                // (which would be done if this was its first use, and InterruptedException
-                // were checked first) in this situation.
-                //
-                // This may lead to the VM not ever trying to load the InterruptedException
-                // class again.
-                try {
-                    try {
-                        Cleaner cleaner = (Cleaner) cleanersQueue.remove();
-                        cleaner.clean();
-                    } catch (OutOfMemoryError x) { }
-                } catch (InterruptedException x) { }
-            }
+            cleanersQueue.drainLoop(cleanConsumer);
         }
     }
 
@@ -108,7 +89,7 @@ public class Cleaner
         for (ThreadGroup tgn = tg;
              tgn != null;
              tg = tgn, tgn = tg.getParent());
-        Thread handler = new CleanerHandler(tg, "Cleaner Handler");
+        CleanerHandler handler = new CleanerHandler(tg, "Cleaner Handler");
         /* If there were a special system-only priority greater than
          * MAX_PRIORITY, it would be used here
          */
@@ -181,7 +162,7 @@ public class Cleaner
     private static final AtomicInteger cleanCount = new AtomicInteger();
 
     /**
-     * Assist with cleaning up the enqueued/pending Cleaners.
+     * Assist with cleaning up the enqueue-ed/pending Cleaners.
      * This method returns the accumulated number of cleans performed so far.
      * If two consecutive invocations of this method return the same value,
      * it indicates that no cleaning progress can be made for the time being.
@@ -189,12 +170,17 @@ public class Cleaner
      * @return the number of cleaned Cleaners so far
      */
     public static int assistCleanup() {
-        Cleaner cleaner;
-        while ((cleaner = (Cleaner) cleanersQueue.poll()) != null) {
-            cleaner.clean();
-        }
+        cleanersQueue.drain(cleanConsumer);
         return cleanCount.get();
     }
+
+    static final Consumer<Reference<?>> cleanConsumer = new Consumer<Reference<?>>() {
+        @Override
+        public void accept(Reference<?> reference)
+        {
+            ((Cleaner) reference).clean();
+        }
+    };
 
     /**
      * Runs this cleaner, if it has not been run before.

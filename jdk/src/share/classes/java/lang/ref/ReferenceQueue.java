@@ -25,6 +25,8 @@
 
 package java.lang.ref;
 
+import java.util.function.Consumer;
+
 /**
  * Reference queues, to which registered reference objects are appended by the
  * garbage collector after the appropriate reachability changes are detected.
@@ -94,6 +96,60 @@ public class ReferenceQueue<T> {
     }
 
     /**
+     * Drains this queue serially to given {@code consumer} and at the same
+     * time helps ReferenceHandler thread to enqueue pending references.
+     * It makes sure that all enqueue-ed and (almost) all pending References
+     * that are destined for this queue are consumed.
+     * At most one reference can be left behind - the one that has already been
+     * unlinked from the pending list by ReferenceHandler thread
+     * and not yet enqueue-ed into this queue.
+     *
+     * @param consumer a {@link Consumer} that will be invoked serially with
+     *                 all enqueue-ed and (almost) all pending references destined
+     *                 for this queue
+     */
+    public void drain(Consumer<Reference<? extends T>> consumer) {
+        synchronized (lock) {
+            Reference<? extends T> r;
+            do {
+                do {
+                    r = reallyPoll();
+                } while (r == null && Reference.enqueueNext(false));
+                if (r != null) {
+                    consumer.accept(r);
+                }
+            } while (r != null);
+        }
+    }
+
+    /**
+     * Drains this queue serially to given {@code consumer} and then
+     * waits to be notified when more references are enqueue-ed.
+     * This method does not help ReferenceHandler thread to enqueue references.
+     * This is a never-ending loop, used mostly in situations where a background
+     * thread is created to constantly process references as they are enqueue-ed.
+     *
+     * @param consumer a {@link Consumer} that will be invoked serially with
+     *                 references as they are enqueue-d into this queue.
+     */
+    public void drainLoop(Consumer<Reference<? extends T>> consumer) {
+        synchronized (lock) {
+            for (;;) {
+                Reference<? extends T> r = reallyPoll();
+                if (r != null) {
+                    consumer.accept(r);
+                } else {
+                    try {
+                        try {
+                            lock.wait();
+                        } catch (OutOfMemoryError x) {}
+                    } catch (InterruptedException x) {}
+                }
+            }
+        }
+    }
+
+    /**
      * Polls this queue to see if a reference object is available.  If one is
      * available without further delay then it is removed from the queue and
      * returned.  Otherwise this method immediately returns <tt>null</tt>.
@@ -102,20 +158,11 @@ public class ReferenceQueue<T> {
      *          otherwise <code>null</code>
      */
     public Reference<? extends T> poll() {
-        Reference<? extends T> r = head;
-        // help ReferenceHandler thread with enqueue-ing until we get at least one
-        // Reference in this queue or there are no more pending References
-        while (r == null && Reference.enqueueNext(false)) {
-            r = head;
+        if (head == null)
+            return null;
+        synchronized (lock) {
+            return reallyPoll();
         }
-        if (r != null) {
-            // de-queueing must be performed under lock
-            synchronized (lock) {
-                r = reallyPoll();
-            }
-        }
-
-        return r;
     }
 
     /**
@@ -144,15 +191,8 @@ public class ReferenceQueue<T> {
         if (timeout < 0) {
             throw new IllegalArgumentException("Negative timeout value");
         }
-        Reference<? extends T> r = head;
-        // help ReferenceHandler thread with enqueue-ing until we get at least one
-        // Reference in this queue or there are no more pending References
-        while (r == null && Reference.enqueueNext(false)) {
-            r = head;
-        }
-        // de-queueing must be performed under lock
         synchronized (lock) {
-            r = reallyPoll();
+            Reference<? extends T> r = reallyPoll();
             if (r != null) return r;
             for (;;) {
                 lock.wait(timeout);
