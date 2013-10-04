@@ -28,8 +28,8 @@ package sun.misc;
 import java.lang.ref.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
 
 
 /**
@@ -62,15 +62,6 @@ public class Cleaner
     extends PhantomReference<Object>
 {
 
-    // Reference queue for cleaners.
-    //
-    private static final ReferenceQueue<Object> cleanersQueue = new ReferenceQueue<>();
-
-    // Doubly-linked list of live cleaners, which prevents the cleaners
-    // themselves from being GC'd before their referents
-    //
-    static private Cleaner first = null;
-
     // High-priority thread to clean enqueue-ed Cleaners
     //
     private static class CleanerHandler extends Thread {
@@ -79,17 +70,41 @@ public class Cleaner
             super(g, name);
         }
 
+        // a lock for pausing normal background cleaning while
+        // some other thread is assisting
+        final Object assistCleanupLock = new Object();
+
         public void run() {
-            cleanersQueue.drainLoop(cleanConsumer);
+            for (;;) {
+                try {
+                    try {
+                        Cleaner c = (Cleaner) cleanersQueue.remove();
+                        c.clean();
+                    } catch (OutOfMemoryError x) {
+                        // if there's heap memory pressure and InterruptedException
+                        // can not be allocated, we get OutOfMemoryError instead
+                        synchronized (assistCleanupLock) {
+                            cleanersQueue.getClass();
+                        }
+                    }
+                } catch (InterruptedException x) {
+                    // when interrupted, we park here until assistance
+                    // from other threads is finished
+                    synchronized (assistCleanupLock) {
+                        cleanersQueue.getClass();
+                    }
+                }
+            }
         }
     }
 
+    private static final CleanerHandler handler;
     static {
         ThreadGroup tg = Thread.currentThread().getThreadGroup();
         for (ThreadGroup tgn = tg;
              tgn != null;
              tg = tgn, tgn = tg.getParent());
-        CleanerHandler handler = new CleanerHandler(tg, "Cleaner Handler");
+        handler = new CleanerHandler(tg, "Cleaner Handler");
         /* If there were a special system-only priority greater than
          * MAX_PRIORITY, it would be used here
          */
@@ -97,6 +112,15 @@ public class Cleaner
         handler.setDaemon(true);
         handler.start();
     }
+
+    // Reference queue for cleaners.
+    //
+    private static final ReferenceQueue<Object> cleanersQueue = new ReferenceQueue<>();
+
+    // Doubly-linked list of live cleaners, which prevents the cleaners
+    // themselves from being GC'd before their referents
+    //
+    static private Cleaner first = null;
 
     private Cleaner
         next = null,
@@ -165,22 +189,41 @@ public class Cleaner
      * Assist with cleaning up the enqueue-ed/pending Cleaners.
      * This method returns the accumulated number of cleans performed so far.
      * If two consecutive invocations of this method return the same value,
-     * it indicates that no cleaning progress can be made for the time being.
+     * it indicates that, for the time being, there's nothing more to clean.
      *
      * @return the number of cleaned Cleaners so far
      */
     public static int assistCleanup() {
-        cleanersQueue.drain(cleanConsumer);
+        synchronized (handler.assistCleanupLock) {
+            // CleanerHandler should not interfere while we're assisting, but the cleanersQueue
+            // should not be locked either so that we don't block ReferenceHandler thread.
+            // so we pause CleanerHandler by interrupting it...
+            handler.interrupt();
+            Cleaner c;
+            boolean didSomeWork;
+            do {
+                didSomeWork = false;
+                // 1st drain the cleanersQueue
+                while ((c = (Cleaner) cleanersQueue.poll()) != null) {
+                    c.clean();
+                    didSomeWork = true;
+                }
+                // then steal any pending cleaners that are not yet enqueue-ed
+                // (helping ReferenceHandler thread but bypassing enqueue-ing)
+                Iterator<Reference<Object>> stolenCleaners =
+                    Reference.stealPendingReferencesForQueue(cleanersQueue);
+                // and process stolen cleaners too, if any
+                if (stolenCleaners != null) {
+                    while (stolenCleaners.hasNext()) {
+                        ((Cleaner) stolenCleaners.next()).clean();
+                    }
+                    didSomeWork = true;
+                }
+            } while (didSomeWork);
+        }
+        // return accumulated clean count
         return cleanCount.get();
     }
-
-    static final Consumer<Reference<?>> cleanConsumer = new Consumer<Reference<?>>() {
-        @Override
-        public void accept(Reference<?> reference)
-        {
-            ((Cleaner) reference).clean();
-        }
-    };
 
     /**
      * Runs this cleaner, if it has not been run before.

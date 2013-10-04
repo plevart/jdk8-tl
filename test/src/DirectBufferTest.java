@@ -1,7 +1,7 @@
 import java.nio.ByteBuffer;
 
 public class DirectBufferTest {
-    private static int NUM_THREADS = 256;
+    private static int NUM_THREADS = 128;
 
     public static void main(String[] args) throws InterruptedException {
         for (int i = 0; i < NUM_THREADS; i++) {
@@ -24,7 +24,7 @@ public class DirectBufferTest {
             thread.start();
         }
 
-        Thread.sleep(60 * 1000);
+        Thread.sleep(300 * 1000);
         System.out.println("No errors after 60 seconds.");
         System.exit(0);
     }

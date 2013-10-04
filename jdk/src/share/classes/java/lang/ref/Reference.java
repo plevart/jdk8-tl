@@ -25,6 +25,9 @@
 
 package java.lang.ref;
 
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+
 /**
  * Abstract base class for reference objects.  This class defines the
  * operations common to all reference objects.  Because reference objects are
@@ -110,7 +113,7 @@ public abstract class Reference<T> {
      * as possible, allocate no new objects, and avoid calling user code.
      */
     static private class Lock { };
-    private static Lock lock = new Lock();
+    private static final Lock lock = new Lock();
 
 
     /* List of References waiting to be enqueued.  The collector adds
@@ -130,7 +133,37 @@ public abstract class Reference<T> {
 
         public void run() {
             for (;;) {
-                enqueueNext(true);
+                Reference<Object> r;
+                synchronized (lock) {
+                    if (pending != null) {
+                        r = pending;
+                        pending = r.discovered;
+                        r.discovered = null;
+                    } else {
+                        // The waiting on the lock may cause an OOME because it may try to allocate
+                        // exception objects, so also catch OOME here to avoid silent exit of the
+                        // reference handler thread.
+                        //
+                        // Explicitly define the order of the two exceptions we catch here
+                        // when waiting for the lock.
+                        //
+                        // We do not want to try to potentially load the InterruptedException class
+                        // (which would be done if this was its first use, and InterruptedException
+                        // were checked first) in this situation.
+                        //
+                        // This may lead to the VM not ever trying to load the InterruptedException
+                        // class again.
+                        try {
+                            try {
+                                lock.wait();
+                            } catch (OutOfMemoryError x) { }
+                        } catch (InterruptedException x) { }
+                        continue;
+                    }
+                }
+
+                ReferenceQueue<Object> q = r.queue;
+                if (q != ReferenceQueue.NULL) q.enqueue(r);
             }
         }
     }
@@ -150,49 +183,83 @@ public abstract class Reference<T> {
     }
 
     /**
-     * Enqueue next pending Reference if there is one
+     * Steal pending references destined for given {@code queue} and return them
+     * as an {@link Iterator}.
+     * TODO: this method is currently public, but should be hidden from non-system use.
      *
-     * @param waitForNotifyIfNonePending if true and no Reference is pending it
-     *                          waits to be notified from VM before returning false.
-     *                          Should only be specified as true when guaranteed to be
-     *                          called again (from a loop in ReferenceHandler thread)
-     * @return true if next pending Reference has been enqueue-ed
-     *         or false if there was no pending Reference
+     * @param queue a {@link ReferenceQueue} for which to steal pending references
+     * @param <T> the type of referents contained in stolen references
+     * @return an {@link Iterator} of stolen references or {@code null} if there was nothing to steal
      */
-    static boolean enqueueNext(boolean waitForNotifyIfNonePending) {
-        Reference<Object> r;
+    @SuppressWarnings("unchecked")
+    public static <T> Iterator<Reference<T>> stealPendingReferencesForQueue(ReferenceQueue<T> queue) {
+        // result
+        Reference<T> head = null;
         synchronized (lock) {
-            r = pending;
-            if (r != null) {
-                pending = r.discovered;
-                r.discovered = null;
-            } else if (waitForNotifyIfNonePending) {
-                // The waiting on the lock may cause an OOME because it may try to allocate
-                // exception objects, so also catch OOME here to avoid silent exit of the
-                // reference handler thread.
-                //
-                // Explicitly define the order of the two exceptions we catch here
-                // when waiting for the lock.
-                //
-                // We do not want to try to potentially load the InterruptedException class
-                // (which would be done if this was its first use, and InterruptedException
-                // were checked first) in this situation.
-                //
-                // This may lead to the VM not ever trying to load the InterruptedException
-                // class again.
-                try {
-                    try {
-                        lock.wait();
-                    } catch (OutOfMemoryError x) { }
-                } catch (InterruptedException x) { }
+            Reference r = pending;
+            Reference prev = null;
+            while (r != null) {
+                // is it destined for given queue?
+                if (r.queue == queue) {
+                    // 1st unlink it from pending chain
+                    Reference next = r.discovered;
+                    if (prev == null) {
+                        pending = next;
+                    } else {
+                        prev.discovered = next;
+                    }
+                    r.discovered = null;
+                    // link it into head (same logic as in ReferenceQueue.enqueue)
+                    r.queue = ReferenceQueue.ENQUEUED;
+                    r.next = (head == null) ? r : head;
+                    head = (Reference<T>) r; // unchecked due to r having raw type
+                    // prev is still the same
+                    r = next;
+                } else {
+                    // not destined for given queue -> just skip over
+                    prev = r;
+                    r = r.discovered;
+                }
             }
         }
-        if (r != null) {
-            ReferenceQueue<Object> q = r.queue;
-            if (q != ReferenceQueue.NULL) q.enqueue(r);
-            return true;
-        } else {
-            return false;
+        // return the stolen chain as an Iterator
+        return (head == null) ? null : new StolenReferencesIterator<>(head);
+    }
+
+    /**
+     * An {@link Iterator} of stolen references.
+     */
+    private static final class StolenReferencesIterator<T> implements Iterator<Reference<T>> {
+        private Reference<T> head;
+
+        StolenReferencesIterator(Reference<T> head) {
+            this.head = head;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return head != null;
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public Reference<T> next() {
+            // The code for   StolenReferencesIterator.next()
+            // is stolen from ReferenceQueue.reallyPoll()
+            Reference<T> r = head;
+            if (r != null) {
+                head = (r.next == r) ?
+                       null :
+                       r.next; // Unchecked due to the next field having a raw type in Reference
+                r.queue = ReferenceQueue.NULL;
+                r.next = r;
+                // we don't need this really, since we won't be stealing FinalReferences
+                // if (r instanceof FinalReference) {
+                //     sun.misc.VM.addFinalRefCount(-1);
+                // }
+                return r;
+            }
+            throw new NoSuchElementException();
         }
     }
 
