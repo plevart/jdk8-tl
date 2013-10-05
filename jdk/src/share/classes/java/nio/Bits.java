@@ -26,8 +26,6 @@
 package java.nio;
 
 import java.security.AccessController;
-
-import sun.misc.Cleaner;
 import sun.misc.Unsafe;
 import sun.misc.VM;
 
@@ -627,40 +625,57 @@ class Bits {                            // package-private
     private static volatile long totalCapacity;
     private static volatile long count;
     private static boolean memoryLimitSet = false;
+    private static final long reserveMemoryTimeout = 100L; // ms
 
     // These methods should be called whenever direct memory is allocated or
     // freed.  They allow the user to control the amount of direct memory
     // which a process may access.  All sizes are specified in bytes.
-    static void reserveMemory(long size, int cap) {
+    static synchronized void reserveMemory(long size, int cap) {
 
-        int cleans = 0, oldCleans, tries = 0;
-        do {
-            oldCleans = cleans;
-            // -XX:MaxDirectMemorySize limits the total capacity rather than the
-            // actual memory usage, which will differ when buffers are page
-            // aligned.
-            if (tryReserveMemory(size, cap)) return;
-
-            System.gc();
-            cleans = Cleaner.assistCleanup();
-        } while (cleans != oldCleans || ++tries < 3);
-
-        throw new OutOfMemoryError("Direct buffer memory");
-    }
-
-    private static synchronized boolean tryReserveMemory(long size, int cap) {
         if (!memoryLimitSet && VM.isBooted()) {
             maxMemory = VM.maxDirectMemory();
             memoryLimitSet = true;
         }
 
-        if (cap <= maxMemory - totalCapacity) {
-            reservedMemory += size;
-            totalCapacity += cap;
-            count++;
-            return true;
-        } else {
-            return false;
+        boolean interrupted = false;
+        for (;;) {
+            // -XX:MaxDirectMemorySize limits the total capacity rather than the
+            // actual memory usage, which will differ when buffers are page
+            // aligned.
+            if (cap <= maxMemory - totalCapacity) {
+                reservedMemory += size;
+                totalCapacity += cap;
+                count++;
+                if (interrupted) {
+                    // don't swallow interrupts
+                    Thread.currentThread().interrupt();
+                }
+                return;
+            }
+
+            // initiate Reference processing
+            System.gc();
+
+            // wait at most reserveMemoryTimeout ms for some memory to be unreserved
+            long deadline = System.currentTimeMillis() + reserveMemoryTimeout;
+            try {
+                Bits.class.wait(reserveMemoryTimeout + 1L);
+            } catch (InterruptedException e) {
+                interrupted = true;
+            }
+
+            // if the time is out and still not enough memory then throw OOME
+            if (cap > maxMemory - totalCapacity &&
+                System.currentTimeMillis() > deadline) {
+                if (interrupted) {
+                    // don't swallow interrupts
+                    Thread.currentThread().interrupt();
+                }
+                throw new OutOfMemoryError("Direct buffer memory");
+            }
+            // retry until the rate of (un)reserve-ing
+            // drops below 1/reserveMemoryTimeout Hz. That is the lowest
+            // slowdown that we tolerate.
         }
     }
 
@@ -670,6 +685,7 @@ class Bits {                            // package-private
             totalCapacity -= cap;
             count--;
             assert (reservedMemory > -1);
+            Bits.class.notifyAll();
         }
     }
 
