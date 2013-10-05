@@ -102,20 +102,11 @@ public class ReferenceQueue<T> {
      *          otherwise <code>null</code>
      */
     public Reference<? extends T> poll() {
-        Reference<? extends T> r = head;
-        // help ReferenceHandler thread with enqueue-ing until we get at least one
-        // Reference in this queue or there are no more pending References
-        while (r == null && Reference.enqueueNext(false)) {
-            r = head;
+        if (head == null)
+            return null;
+        synchronized (lock) {
+            return reallyPoll();
         }
-        if (r != null) {
-            // de-queueing must be performed under lock
-            synchronized (lock) {
-                r = reallyPoll();
-            }
-        }
-
-        return r;
     }
 
     /**
@@ -144,15 +135,8 @@ public class ReferenceQueue<T> {
         if (timeout < 0) {
             throw new IllegalArgumentException("Negative timeout value");
         }
-        Reference<? extends T> r = head;
-        // help ReferenceHandler thread with enqueue-ing until we get at least one
-        // Reference in this queue or there are no more pending References
-        while (r == null && Reference.enqueueNext(false)) {
-            r = head;
-        }
-        // de-queueing must be performed under lock
         synchronized (lock) {
-            r = reallyPoll();
+            Reference<? extends T> r = reallyPoll();
             if (r != null) return r;
             for (;;) {
                 lock.wait(timeout);
