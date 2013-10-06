@@ -25,7 +25,6 @@
 
 package java.nio;
 
-import java.lang.ref.Reference;
 import java.security.AccessController;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -629,7 +628,7 @@ class Bits {                            // package-private
     private static final AtomicLong totalCapacity = new AtomicLong();
     private static final AtomicLong count = new AtomicLong();
     private static volatile boolean memoryLimitSet = false;
-    private static final long reserveTimeout = 3000L; // ms
+    private static final int maxSleeps = 9;
 
     // These methods should be called whenever direct memory is allocated or
     // freed.  They allow the user to control the amount of direct memory
@@ -647,8 +646,6 @@ class Bits {                            // package-private
             }
           // retry while helping enqueue pending Reference objects
           // and executing pending Cleaner(s)
-          // (this deallocates and unreserves native memory
-          // occupied by GC-ed direct buffers)
         } while (SharedSecrets.getJavaLangRefAccess()
                               .tryHandlePendingReference());
 
@@ -659,23 +656,25 @@ class Bits {                            // package-private
         // (this gives VM some time to do it's job)
         boolean interrupted = false;
         try {
-            long sleep = 4;
-            do {
+            long sleepTime = 1;
+            int sleeps = 1;
+            while (sleeps <= maxSleeps) {
                 if (tryReserveMemory(size, cap)) {
                     return;
                 }
                 if (!SharedSecrets.getJavaLangRefAccess()
                                   .tryHandlePendingReference()) {
                     try {
-                        Thread.sleep(sleep);
+                        Thread.sleep(sleepTime);
                     } catch (InterruptedException e) {
                         interrupted = true;
                     }
-                    sleep <<= 1;
+                    sleepTime <<= 1;
+                    sleeps++;
                 }
-            } while (sleep < 512);
+            }
 
-            // no luck after sleeping for 4+8+16+...+256 = 508 ms
+            // no luck
             throw new OutOfMemoryError("Direct buffer memory");
         }
         finally {
