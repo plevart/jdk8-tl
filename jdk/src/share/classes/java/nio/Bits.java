@@ -646,14 +646,17 @@ class Bits {                            // package-private
                 return;
             }
           // retry while helping enqueue pending Reference objects
-          // (this also executes pending Cleaner(s))
+          // and executing pending Cleaner(s)
+          // (this deallocates and unreserves native memory
+          // occupied by GC-ed direct buffers)
         } while (SharedSecrets.getJavaLangRefAccess()
                               .tryHandlePendingReference());
 
         // trigger VM's Reference processing
         System.gc();
 
-        // once more with exponential backoff
+        // a retry loop with exponential backoff
+        // (this gives VM some time to do it's job)
         boolean interrupted = false;
         try {
             long sleep = 4;
@@ -665,12 +668,14 @@ class Bits {                            // package-private
                                   .tryHandlePendingReference()) {
                     try {
                         Thread.sleep(sleep);
-                    } catch (InterruptedException e) { }
+                    } catch (InterruptedException e) {
+                        interrupted = true;
+                    }
                     sleep <<= 1;
                 }
-            } while (sleep < 256);
+            } while (sleep < 512);
 
-            // no luck
+            // no luck after sleeping for 4+8+16+...+256 = 508 ms
             throw new OutOfMemoryError("Direct buffer memory");
         }
         finally {

@@ -26,26 +26,33 @@
  * @bug 6857566
  * @summary DirectByteBuffer garbage creation can outpace reclamation
  *
- * @run main/othervm
+ * @run main/othervm -XX:MaxDirectMemorySize=128m DirectBufferAllocTest
  */
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class DirectBufferAllocTest {
-    static final int MIN_THREADS = 32;
-    static final int ALLOC_CAPACITY_MIN = 256 * 1024;
-    static final int ALLOC_CAPACITY_MAX = 1024 * 1024;
-    static final int TIME_MEASURE_CHUNK = 500;
-    static final boolean PRINT_ALLOC_TIMES = true;
+    static final int MIN_THREADS = 16;
+    static final int MAX_THREADS = 128;
+    static final int MIN_ALLOC_CAPACITY = 256 * 1024;
+    static final int MAX_ALLOC_CAPACITY = 1024 * 1024;
+    static final int TIME_MEASURE_BATCH = 10000;
+    static final boolean PRINT_ALLOC_TIMES = false;
 
     public static void main(String[] args) throws InterruptedException {
         // saturate the CPUs!!!
-        int threads = Math.max(Runtime.getRuntime().availableProcessors() * 2, MIN_THREADS);
+        int threads = Math.max(
+            Math.min(
+                Runtime.getRuntime().availableProcessors() * 2,
+                MAX_THREADS
+            ),
+            MIN_THREADS
+        );
 
         System.out.println(
             "Allocating direct ByteBuffers with random capacities from " +
-            ALLOC_CAPACITY_MIN + " to " + ALLOC_CAPACITY_MAX + " bytes, " +
+            MIN_ALLOC_CAPACITY + " to " + MAX_ALLOC_CAPACITY + " bytes, " +
             "using " + threads + " threads..."
         );
 
@@ -56,10 +63,10 @@ public class DirectBufferAllocTest {
                     try {
                         long t0 = System.nanoTime();
                         for (; ; ) {
-                            for (int i = 0; i < TIME_MEASURE_CHUNK; i++) {
+                            for (int i = 0; i < TIME_MEASURE_BATCH; i++) {
                                 ByteBuffer.allocateDirect(
                                     ThreadLocalRandom.current()
-                                                     .nextInt(ALLOC_CAPACITY_MIN, ALLOC_CAPACITY_MAX + 1)
+                                                     .nextInt(MIN_ALLOC_CAPACITY, MAX_ALLOC_CAPACITY + 1)
                                 );
                                 it++;
                             }
@@ -68,7 +75,7 @@ public class DirectBufferAllocTest {
                                 System.out.printf(
                                     "%10s: %5.2f ms/op\n",
                                     getName(),
-                                    ((double) (t1 - t0) / (1_000_000d * TIME_MEASURE_CHUNK))
+                                    ((double) (t1 - t0) / (1_000_000d * TIME_MEASURE_BATCH))
                                 );
                             }
                             t0 = t1;

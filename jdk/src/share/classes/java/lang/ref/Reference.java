@@ -161,14 +161,14 @@ public abstract class Reference<T> {
         });
     }
 
-    private static boolean tryHandlePending(boolean waitForNotifyIfNonePending) {
+    private static boolean tryHandlePending(boolean waitForNotify) {
         Reference<Object> r;
         synchronized (lock) {
             if (pending != null) {
                 r = pending;
                 pending = r.discovered;
                 r.discovered = null;
-            } else if (waitForNotifyIfNonePending) {
+            } else if (waitForNotify) {
                 // The waiting on the lock may cause an OOME because it may try to allocate
                 // exception objects, so also catch OOME here to avoid silent exit of the
                 // reference handler thread.
