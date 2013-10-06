@@ -653,16 +653,32 @@ class Bits {                            // package-private
         // trigger VM's Reference processing
         System.gc();
 
-        // once more
-        do {
-            if (tryReserveMemory(size, cap)) {
-                return;
-            }
-        } while (SharedSecrets.getJavaLangRefAccess()
-                              .tryHandlePendingReference());
+        // once more with exponential backoff
+        boolean interrupted = false;
+        try {
+            long sleep = 4;
+            do {
+                if (tryReserveMemory(size, cap)) {
+                    return;
+                }
+                if (!SharedSecrets.getJavaLangRefAccess()
+                                  .tryHandlePendingReference()) {
+                    try {
+                        Thread.sleep(sleep);
+                    } catch (InterruptedException e) { }
+                    sleep <<= 1;
+                }
+            } while (sleep < 256);
 
-        // no luck
-        throw new OutOfMemoryError("Direct buffer memory");
+            // no luck
+            throw new OutOfMemoryError("Direct buffer memory");
+        }
+        finally {
+            if (interrupted) {
+                // don't swallow interrupts
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 
     private static boolean tryReserveMemory(long size, int cap) {
