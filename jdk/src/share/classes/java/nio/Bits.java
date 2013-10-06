@@ -25,7 +25,11 @@
 
 package java.nio;
 
+import java.lang.ref.Reference;
 import java.security.AccessController;
+import java.util.concurrent.atomic.AtomicLong;
+
+import sun.misc.SharedSecrets;
 import sun.misc.Unsafe;
 import sun.misc.VM;
 
@@ -621,72 +625,69 @@ class Bits {                            // package-private
     // direct buffer memory.  This value may be changed during VM
     // initialization if it is launched with "-XX:MaxDirectMemorySize=<size>".
     private static volatile long maxMemory = VM.maxDirectMemory();
-    private static volatile long reservedMemory;
-    private static volatile long totalCapacity;
-    private static volatile long count;
-    private static boolean memoryLimitSet = false;
-    private static final long reserveMemoryTimeout = 100L; // ms
+    private static final AtomicLong reservedMemory = new AtomicLong();
+    private static final AtomicLong totalCapacity = new AtomicLong();
+    private static final AtomicLong count = new AtomicLong();
+    private static volatile boolean memoryLimitSet = false;
+    private static final long reserveTimeout = 3000L; // ms
 
     // These methods should be called whenever direct memory is allocated or
     // freed.  They allow the user to control the amount of direct memory
     // which a process may access.  All sizes are specified in bytes.
-    static synchronized void reserveMemory(long size, int cap) {
+    static void reserveMemory(long size, int cap) {
 
         if (!memoryLimitSet && VM.isBooted()) {
             maxMemory = VM.maxDirectMemory();
             memoryLimitSet = true;
         }
 
-        boolean interrupted = false;
-        for (;;) {
-            // -XX:MaxDirectMemorySize limits the total capacity rather than the
-            // actual memory usage, which will differ when buffers are page
-            // aligned.
-            if (cap <= maxMemory - totalCapacity) {
-                reservedMemory += size;
-                totalCapacity += cap;
-                count++;
-                if (interrupted) {
-                    // don't swallow interrupts
-                    Thread.currentThread().interrupt();
-                }
+        do {
+            if (tryReserveMemory(size, cap)) {
                 return;
             }
+          // retry while helping enqueue pending Reference objects
+          // (this also executes pending Cleaner(s))
+        } while (SharedSecrets.getJavaLangRefAccess()
+                              .tryHandlePendingReference());
 
-            // initiate Reference processing
-            System.gc();
+        // trigger VM's Reference processing
+        System.gc();
 
-            // wait at most reserveMemoryTimeout ms for some memory to be unreserved
-            long deadline = System.currentTimeMillis() + reserveMemoryTimeout;
-            try {
-                Bits.class.wait(reserveMemoryTimeout + 1L);
-            } catch (InterruptedException e) {
-                interrupted = true;
+        // once more
+        do {
+            if (tryReserveMemory(size, cap)) {
+                return;
             }
+        } while (SharedSecrets.getJavaLangRefAccess()
+                              .tryHandlePendingReference());
 
-            // if the time is out and still not enough memory then throw OOME
-            if (cap > maxMemory - totalCapacity &&
-                System.currentTimeMillis() > deadline) {
-                if (interrupted) {
-                    // don't swallow interrupts
-                    Thread.currentThread().interrupt();
-                }
-                throw new OutOfMemoryError("Direct buffer memory");
-            }
-            // retry until the rate of (un)reserve-ing
-            // drops below 1/reserveMemoryTimeout Hz. That is the lowest
-            // slowdown that we tolerate.
-        }
+        // no luck
+        throw new OutOfMemoryError("Direct buffer memory");
     }
 
-    static synchronized void unreserveMemory(long size, int cap) {
-        if (reservedMemory > 0) {
-            reservedMemory -= size;
-            totalCapacity -= cap;
-            count--;
-            assert (reservedMemory > -1);
-            Bits.class.notifyAll();
+    private static boolean tryReserveMemory(long size, int cap) {
+
+        // -XX:MaxDirectMemorySize limits the total capacity rather than the
+        // actual memory usage, which will differ when buffers are page
+        // aligned.
+        long totalCap;
+        while (cap <= maxMemory - (totalCap = totalCapacity.get())) {
+            if (totalCapacity.compareAndSet(totalCap, totalCap + cap)) {
+                reservedMemory.addAndGet(size);
+                count.incrementAndGet();
+                return true;
+            }
         }
+
+        return false;
+    }
+
+
+    static void unreserveMemory(long size, int cap) {
+        long cnt = count.decrementAndGet();
+        long reservedMem = reservedMemory.addAndGet(-size);
+        long totalCap = totalCapacity.addAndGet(-cap);
+        assert cnt >= 0 && reservedMem >= 0 && totalCap >= 0;
     }
 
     // -- Monitoring of direct buffer usage --
@@ -704,15 +705,15 @@ class Bits {                            // package-private
                         }
                         @Override
                         public long getCount() {
-                            return Bits.count;
+                            return Bits.count.get();
                         }
                         @Override
                         public long getTotalCapacity() {
-                            return Bits.totalCapacity;
+                            return Bits.totalCapacity.get();
                         }
                         @Override
                         public long getMemoryUsed() {
-                            return Bits.reservedMemory;
+                            return Bits.reservedMemory.get();
                         }
                     };
                 }
