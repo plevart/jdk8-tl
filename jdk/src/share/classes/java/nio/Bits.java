@@ -27,6 +27,7 @@ package java.nio;
 
 import java.security.AccessController;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.LongAdder;
 
 import sun.misc.SharedSecrets;
 import sun.misc.Unsafe;
@@ -629,6 +630,12 @@ class Bits {                            // package-private
     private static final AtomicLong count = new AtomicLong();
     private static volatile boolean memoryLimitSet = false;
     private static final int maxSleeps = 9;
+    private static final LongAdder[] reserveCounts = new LongAdder[maxSleeps + 3];
+    static {
+        for (int i = 0; i < reserveCounts.length; i++) {
+            reserveCounts[i] = new LongAdder();
+        }
+    }
 
     // These methods should be called whenever direct memory is allocated or
     // freed.  They allow the user to control the amount of direct memory
@@ -640,14 +647,21 @@ class Bits {                            // package-private
             memoryLimitSet = true;
         }
 
-        do {
+        // optimist!
+        if (tryReserveMemory(size, cap)) {
+            reserveCounts[0].increment();
+            return;
+        }
+
+        // retry while helping enqueue pending Reference objects
+        // and executing pending Cleaner(s)
+        while (SharedSecrets.getJavaLangRefAccess()
+            .tryHandlePendingReference()) {
             if (tryReserveMemory(size, cap)) {
+                reserveCounts[1].increment();
                 return;
             }
-          // retry while helping enqueue pending Reference objects
-          // and executing pending Cleaner(s)
-        } while (SharedSecrets.getJavaLangRefAccess()
-                              .tryHandlePendingReference());
+        }
 
         // trigger VM's Reference processing
         System.gc();
@@ -657,20 +671,24 @@ class Bits {                            // package-private
         boolean interrupted = false;
         try {
             long sleepTime = 1;
-            int sleeps = 1;
-            while (sleeps <= maxSleeps) {
+            int sleeps = 0;
+            while (true) {
                 if (tryReserveMemory(size, cap)) {
+                    reserveCounts[sleeps + 2].increment();
                     return;
                 }
+                if (sleeps >= maxSleeps) {
+                    break;
+                }
                 if (!SharedSecrets.getJavaLangRefAccess()
-                                  .tryHandlePendingReference()) {
+                    .tryHandlePendingReference()) {
                     try {
                         Thread.sleep(sleepTime);
+                        sleepTime <<= 1;
+                        sleeps++;
                     } catch (InterruptedException e) {
                         interrupted = true;
                     }
-                    sleepTime <<= 1;
-                    sleeps++;
                 }
             }
 

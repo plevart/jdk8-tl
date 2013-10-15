@@ -8,9 +8,12 @@ import sun.misc.Unsafe;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;
-import java.util.concurrent.*;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 /**
  * @author peter
@@ -25,8 +28,7 @@ public class AllocTest {
             Field f = Unsafe.class.getDeclaredField("theUnsafe");
             f.setAccessible(true);
             u = (Unsafe) f.get(null);
-        }
-        catch (Exception x) { }
+        } catch (Exception x) { }
         unsafe = u;
     }
 
@@ -52,8 +54,7 @@ public class AllocTest {
                     freeMemory(addr);
                     sumTime += System.nanoTime() - t0;
                 }
-            }
-            catch (InterruptedException e) { }
+            } catch (InterruptedException e) { }
             return sumTime;
         }
     }
@@ -77,8 +78,7 @@ public class AllocTest {
                     sumTime += System.nanoTime() - t0;
                     addrsQueue.put(addr);
                 }
-            }
-            catch (InterruptedException e) { }
+            } catch (InterruptedException e) { }
             return sumTime;
         }
     }
@@ -95,18 +95,18 @@ public class AllocTest {
         double allocTime = 0;
         double allocTimes[] = new double[allocators];
         for (int i = 0; i < allocators; i++) {
-            allocTime += (allocTimes[i] = allocTimesF[i].get().doubleValue()/1000_000d);
+            allocTime += (allocTimes[i] = allocTimesF[i].get().doubleValue() / 1000_000d);
         }
         addrsQueue.put(0L); // signal end
-        deallocTime = deallocTimeF.get().doubleValue()/1000_000d;
+        deallocTime = deallocTimeF.get().doubleValue() / 1000_000d;
         if (print) {
-        System.out.println("allocators: " + allocators +
-                           ", blocks per allocator: " + blocks +
-                           ", total blocks: " + (allocators*blocks) +
-                           ", block size: " + blockSize);
-        System.out.println("  deallocation time: " + deallocTime + " ms");
-        System.out.println("    allocation time: " + allocTime + " ms - " + Arrays.toString(allocTimes));
-        System.out.println("-----------");
+            System.out.println("allocators: " + allocators +
+                               ", blocks per allocator: " + blocks +
+                               ", total blocks: " + (allocators * blocks) +
+                               ", block size: " + blockSize);
+            System.out.println("  deallocation time: " + deallocTime + " ms");
+            System.out.println("    allocation time: " + allocTime + " ms - " + Arrays.toString(allocTimes));
+            System.out.println("-----------");
         }
     }
 

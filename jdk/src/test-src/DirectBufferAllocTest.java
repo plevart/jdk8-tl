@@ -29,8 +29,11 @@
  * @run main/othervm -XX:MaxDirectMemorySize=128m DirectBufferAllocTest
  */
 
+import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.LongAdder;
 
 public class DirectBufferAllocTest {
     static final int MIN_THREADS = 16;
@@ -38,17 +41,29 @@ public class DirectBufferAllocTest {
     static final int MIN_ALLOC_CAPACITY = 256 * 1024;
     static final int MAX_ALLOC_CAPACITY = 1024 * 1024;
     static final int TIME_MEASURE_BATCH = 10000;
-    static final boolean PRINT_ALLOC_TIMES = false;
+    static final boolean PRINT_ALLOC_TIMES = true;
 
-    public static void main(String[] args) throws InterruptedException {
-        // saturate the CPUs!!!
-        int threads = Math.max(
-            Math.min(
-                Runtime.getRuntime().availableProcessors() * 2,
-                MAX_THREADS
-            ),
-            MIN_THREADS
-        );
+    public static void main(String[] args) throws Exception {
+        int threads = args.length > 0
+                      ? Integer.parseInt(args[0])
+                      // saturate the CPUs!!!
+                      : Math.max(
+                          Math.min(
+                              Runtime.getRuntime().availableProcessors() * 2,
+                              MAX_THREADS
+                          ),
+                          MIN_THREADS
+                      );
+
+        LongAdder[] reserveCounts;
+        try {
+            Class bitsClass = Class.forName("java.nio.Bits");
+            Field reserveCountsField = bitsClass.getDeclaredField("reserveCounts");
+            reserveCountsField.setAccessible(true);
+            reserveCounts = (LongAdder[]) reserveCountsField.get(null);
+        } catch (NoSuchFieldException e) {
+            reserveCounts = new LongAdder[0];
+        }
 
         System.out.println(
             "Allocating direct ByteBuffers with random capacities from " +
@@ -66,7 +81,7 @@ public class DirectBufferAllocTest {
                             for (int i = 0; i < TIME_MEASURE_BATCH; i++) {
                                 ByteBuffer.allocateDirect(
                                     ThreadLocalRandom.current()
-                                                     .nextInt(MIN_ALLOC_CAPACITY, MAX_ALLOC_CAPACITY + 1)
+                                        .nextInt(MIN_ALLOC_CAPACITY, MAX_ALLOC_CAPACITY + 1)
                                 );
                                 it++;
                             }
@@ -80,8 +95,7 @@ public class DirectBufferAllocTest {
                             }
                             t0 = t1;
                         }
-                    }
-                    catch (OutOfMemoryError t) {
+                    } catch (OutOfMemoryError t) {
                         System.err.println(
                             Thread.currentThread().getName() +
                             " got an OOM on iteration " + it
@@ -95,6 +109,7 @@ public class DirectBufferAllocTest {
 
         Thread.sleep(60 * 1000);
         System.out.println("No errors after 60 seconds.");
+        System.out.println("Reserve counts: " + Arrays.toString(reserveCounts));
         System.exit(0);
     }
 }
