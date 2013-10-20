@@ -630,10 +630,10 @@ class Bits {                            // package-private
     private static final AtomicLong count = new AtomicLong();
     private static volatile boolean memoryLimitSet = false;
     private static final int maxSleeps = 9;
-    private static final LongAdder[] reserveCounts = new LongAdder[maxSleeps + 3];
+    private static final LongAdder[] reserveCounters = new LongAdder[maxSleeps + 3];
     static {
-        for (int i = 0; i < reserveCounts.length; i++) {
-            reserveCounts[i] = new LongAdder();
+        for (int i = 0; i < reserveCounters.length; i++) {
+            reserveCounters[i] = new LongAdder();
         }
     }
 
@@ -649,7 +649,7 @@ class Bits {                            // package-private
 
         // optimist!
         if (tryReserveMemory(size, cap)) {
-            reserveCounts[0].increment();
+            reserveCounters[0].increment();
             return;
         }
 
@@ -658,7 +658,7 @@ class Bits {                            // package-private
         while (SharedSecrets.getJavaLangRefAccess()
             .tryHandlePendingReference()) {
             if (tryReserveMemory(size, cap)) {
-                reserveCounts[1].increment();
+                reserveCounters[1].increment();
                 return;
             }
         }
@@ -670,11 +670,11 @@ class Bits {                            // package-private
         // (this gives VM some time to do it's job)
         boolean interrupted = false;
         try {
-            long sleepTime = 1;
+            long sleepTime = 0;
             int sleeps = 0;
             while (true) {
                 if (tryReserveMemory(size, cap)) {
-                    reserveCounts[sleeps + 2].increment();
+                    reserveCounters[sleeps + 2].increment();
                     return;
                 }
                 if (sleeps >= maxSleeps) {
@@ -682,12 +682,19 @@ class Bits {                            // package-private
                 }
                 if (!SharedSecrets.getJavaLangRefAccess()
                     .tryHandlePendingReference()) {
-                    try {
-                        Thread.sleep(sleepTime);
-                        sleepTime <<= 1;
+                    if (sleepTime == 0) {
+                        Thread.yield();
+                        sleepTime = 1;
                         sleeps++;
-                    } catch (InterruptedException e) {
-                        interrupted = true;
+                    }
+                    else {
+                        try {
+                            Thread.sleep(sleepTime);
+                            sleepTime <<= 1;
+                            sleeps++;
+                        } catch (InterruptedException e) {
+                            interrupted = true;
+                        }
                     }
                 }
             }

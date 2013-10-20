@@ -32,70 +32,99 @@
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.LongAdder;
 
 public class DirectBufferAllocTest {
-    static final int MIN_THREADS = 16;
-    static final int MAX_THREADS = 128;
-    static final int MIN_ALLOC_CAPACITY = 256 * 1024;
-    static final int MAX_ALLOC_CAPACITY = 1024 * 1024;
-    static final int TIME_MEASURE_BATCH = 10000;
-    static final boolean PRINT_ALLOC_TIMES = true;
+    // defaults
+    static final int RUN_TIME_SECONDS = 10;
+    static final int MIN_THREADS = 4;
+    static final int MAX_THREADS = 64;
+    static final int CAPACITY = 1024 * 1024; // bytes
 
     public static void main(String[] args) throws Exception {
-        int threads = args.length > 0
-                      ? Integer.parseInt(args[0])
-                      // saturate the CPUs!!!
-                      : Math.max(
-                          Math.min(
-                              Runtime.getRuntime().availableProcessors() * 2,
-                              MAX_THREADS
-                          ),
-                          MIN_THREADS
-                      );
+        int runTimeSeconds = RUN_TIME_SECONDS;
+        int threads = Math.max(
+            Math.min(
+                Runtime.getRuntime().availableProcessors() * 2,
+                MAX_THREADS
+            ),
+            MIN_THREADS
+        );
+        int capacity = CAPACITY;
+        int printTimeBatchSize = 0;
 
-        LongAdder[] reserveCounts;
+        // override with command line arguments
+        for (int i = 0; i < args.length; i++) {
+            switch (args[i]) {
+                case "-r":
+                    runTimeSeconds = Integer.parseInt(args[++i]);
+                    break;
+                case "-t":
+                    threads = Integer.parseInt(args[++i]);
+                    break;
+                case "-c":
+                    capacity = Integer.parseInt(args[++i]);
+                    break;
+                case "-p":
+                    printTimeBatchSize = Integer.parseInt(args[++i]);
+                    break;
+                default:
+                    System.err.println(
+                        "Usage: java" +
+                        " [-XX:MaxDirectMemorySize=XXXm]" +
+                        " DirectBufferAllocTest" +
+                        " [-r run-time-seconds]" +
+                        " [-t threads]" +
+                        " [-c direct-buffer-capacity]" +
+                        " [-p print-time-batch-size]"
+                    );
+                    System.exit(-1);
+            }
+        }
+
+        // in case java.nio.Bits is instrumented, we want to access the counters...
+        LongAdder[] reserveCounters;
         try {
             Class bitsClass = Class.forName("java.nio.Bits");
-            Field reserveCountsField = bitsClass.getDeclaredField("reserveCounts");
-            reserveCountsField.setAccessible(true);
-            reserveCounts = (LongAdder[]) reserveCountsField.get(null);
-        } catch (NoSuchFieldException e) {
-            reserveCounts = new LongAdder[0];
+            Field reserveCountersField = bitsClass.getDeclaredField("reserveCounters");
+            reserveCountersField.setAccessible(true);
+            reserveCounters = (LongAdder[]) reserveCountersField.get(null);
+        }
+        catch (NoSuchFieldException e) {
+            reserveCounters = null;
         }
 
         System.out.println(
-            "Allocating direct ByteBuffers with random capacities from " +
-            MIN_ALLOC_CAPACITY + " to " + MAX_ALLOC_CAPACITY + " bytes, " +
-            "using " + threads + " threads..."
+            "Allocating direct ByteBuffers with capacity " +
+            CAPACITY + " bytes, " +
+            "using " + threads + " threads for " + runTimeSeconds + " seconds..."
         );
 
         for (int i = 0; i < threads; i++) {
+            final int ptbs = printTimeBatchSize;
+            final int cap = capacity;
             new Thread("thread-" + i) {
                 public void run() {
                     int it = 0;
                     try {
                         long t0 = System.nanoTime();
                         for (; ; ) {
-                            for (int i = 0; i < TIME_MEASURE_BATCH; i++) {
-                                ByteBuffer.allocateDirect(
-                                    ThreadLocalRandom.current()
-                                        .nextInt(MIN_ALLOC_CAPACITY, MAX_ALLOC_CAPACITY + 1)
-                                );
+                            for (int i = 0; ptbs == 0 || i < ptbs; i++) {
+                                ByteBuffer.allocateDirect(cap);
                                 it++;
                             }
                             long t1 = System.nanoTime();
-                            if (PRINT_ALLOC_TIMES) {
+                            if (ptbs > 0) {
                                 System.out.printf(
                                     "%10s: %5.2f ms/op\n",
                                     getName(),
-                                    ((double) (t1 - t0) / (1_000_000d * TIME_MEASURE_BATCH))
+                                    ((double) (t1 - t0) / (1_000_000d * ptbs))
                                 );
                             }
                             t0 = t1;
                         }
-                    } catch (OutOfMemoryError t) {
+                    }
+                    catch (OutOfMemoryError t) {
                         System.err.println(
                             Thread.currentThread().getName() +
                             " got an OOM on iteration " + it
@@ -107,9 +136,11 @@ public class DirectBufferAllocTest {
             }.start();
         }
 
-        Thread.sleep(60 * 1000);
-        System.out.println("No errors after 60 seconds.");
-        System.out.println("Reserve counts: " + Arrays.toString(reserveCounts));
+        Thread.sleep(1000L * runTimeSeconds);
+        System.out.println("No errors after " + runTimeSeconds + " seconds.");
+        if (reserveCounters != null) {
+            System.out.println("Reserve counters: " + Arrays.toString(reserveCounters));
+        }
         System.exit(0);
     }
 }
