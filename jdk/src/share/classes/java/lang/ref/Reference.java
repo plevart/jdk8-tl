@@ -133,10 +133,54 @@ public abstract class Reference<T> {
         }
 
         public void run() {
-            for (;;) {
+            while (true) {
                 tryHandlePending(true);
             }
         }
+    }
+
+    static boolean tryHandlePending(boolean waitForNotify) {
+        Reference<Object> r;
+        synchronized (lock) {
+            if (pending != null) {
+                r = pending;
+                pending = r.discovered;
+                r.discovered = null;
+            } else {
+                if (waitForNotify) {
+                    // The waiting on the lock may cause an OOME because it may try to allocate
+                    // exception objects, so also catch OOME here to avoid silent exit of the
+                    // reference handler thread.
+                    //
+                    // Explicitly define the order of the two exceptions we catch here
+                    // when waiting for the lock.
+                    //
+                    // We do not want to try to potentially load the InterruptedException class
+                    // (which would be done if this was its first use, and InterruptedException
+                    // were checked first) in this situation.
+                    //
+                    // This may lead to the VM not ever trying to load the InterruptedException
+                    // class again.
+                    try {
+                        try {
+                            lock.wait();
+                        } catch (OutOfMemoryError x) { }
+                    } catch (InterruptedException x) { }
+                }
+                return false;
+            }
+        }
+
+        // Fast path for cleaners
+        if (r instanceof Cleaner) {
+            ((Cleaner)r).clean();
+            return true;
+        }
+
+        @SuppressWarnings("unchecked")
+        ReferenceQueue<Object> q = (ReferenceQueue) r.queue;
+        if (q != ReferenceQueue.NULL) q.enqueue(r);
+        return true;
     }
 
     static {
@@ -159,51 +203,6 @@ public abstract class Reference<T> {
                 return tryHandlePending(false);
             }
         });
-    }
-
-    private static boolean tryHandlePending(boolean waitForNotify) {
-        Reference<Object> r;
-        synchronized (lock) {
-            if (pending != null) {
-                r = pending;
-                pending = r.discovered;
-                r.discovered = null;
-            } else if (waitForNotify) {
-                // The waiting on the lock may cause an OOME because it may try to allocate
-                // exception objects, so also catch OOME here to avoid silent exit of the
-                // reference handler thread.
-                //
-                // Explicitly define the order of the two exceptions we catch here
-                // when waiting for the lock.
-                //
-                // We do not want to try to potentially load the InterruptedException class
-                // (which would be done if this was its first use, and InterruptedException
-                // were checked first) in this situation.
-                //
-                // This may lead to the VM not ever trying to load the InterruptedException
-                // class again.
-                try {
-                    try {
-                        lock.wait();
-                    } catch (OutOfMemoryError x) { }
-                } catch (InterruptedException x) { }
-                return false;
-            }
-            else {
-                return false;
-            }
-        }
-
-        // Fast path for cleaners
-        if (r instanceof Cleaner) {
-            ((Cleaner)r).clean();
-        } else {
-            @SuppressWarnings("unchecked")
-            ReferenceQueue<Object> q = (ReferenceQueue) r.queue;
-            if (q != ReferenceQueue.NULL) q.enqueue(r);
-        }
-
-        return true;
     }
 
     /* -- Referent accessor and setters -- */

@@ -629,13 +629,11 @@ class Bits {                            // package-private
     private static final AtomicLong totalCapacity = new AtomicLong();
     private static final AtomicLong count = new AtomicLong();
     private static volatile boolean memoryLimitSet = false;
-    private static final int maxSleeps = 9;
-    private static final LongAdder[] reserveCounters = new LongAdder[maxSleeps + 3];
-    static {
-        for (int i = 0; i < reserveCounters.length; i++) {
-            reserveCounters[i] = new LongAdder();
-        }
-    }
+    // max. number of sleeps during try-reserving with exponentially
+    // increasing delay before throwing OutOfMemoryError:
+    // 1, 2, 4, 8, 16, 32, 64, 128, 256 (total 511 ms ~ 0.5 s)
+    // which means that OOME will be thrown after 0.5 s of trying
+    private static final int MAX_SLEEPS = 9;
 
     // These methods should be called whenever direct memory is allocated or
     // freed.  They allow the user to control the amount of direct memory
@@ -649,7 +647,6 @@ class Bits {                            // package-private
 
         // optimist!
         if (tryReserveMemory(size, cap)) {
-            reserveCounters[0].increment();
             return;
         }
 
@@ -658,7 +655,6 @@ class Bits {                            // package-private
         while (SharedSecrets.getJavaLangRefAccess()
             .tryHandlePendingReference()) {
             if (tryReserveMemory(size, cap)) {
-                reserveCounters[1].increment();
                 return;
             }
         }
@@ -666,43 +662,35 @@ class Bits {                            // package-private
         // trigger VM's Reference processing
         System.gc();
 
-        // a retry loop with exponential backoff
+        // a retry loop with exponential back-off delays
         // (this gives VM some time to do it's job)
         boolean interrupted = false;
         try {
-            long sleepTime = 0;
+            long sleepTime = 1;
             int sleeps = 0;
             while (true) {
                 if (tryReserveMemory(size, cap)) {
-                    reserveCounters[sleeps + 2].increment();
                     return;
                 }
-                if (sleeps >= maxSleeps) {
+                if (sleeps >= MAX_SLEEPS) {
                     break;
                 }
                 if (!SharedSecrets.getJavaLangRefAccess()
                     .tryHandlePendingReference()) {
-                    if (sleepTime == 0) {
-                        Thread.yield();
-                        sleepTime = 1;
+                    try {
+                        Thread.sleep(sleepTime);
+                        sleepTime <<= 1;
                         sleeps++;
-                    }
-                    else {
-                        try {
-                            Thread.sleep(sleepTime);
-                            sleepTime <<= 1;
-                            sleeps++;
-                        } catch (InterruptedException e) {
-                            interrupted = true;
-                        }
+                    } catch (InterruptedException e) {
+                        interrupted = true;
                     }
                 }
             }
 
             // no luck
             throw new OutOfMemoryError("Direct buffer memory");
-        }
-        finally {
+
+        } finally {
             if (interrupted) {
                 // don't swallow interrupts
                 Thread.currentThread().interrupt();

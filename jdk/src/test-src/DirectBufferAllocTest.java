@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,11 +36,34 @@ import java.util.concurrent.atomic.LongAdder;
 
 public class DirectBufferAllocTest {
     // defaults
-    static final int RUN_TIME_SECONDS = 10;
+    static final int RUN_TIME_SECONDS = 5;
     static final int MIN_THREADS = 4;
     static final int MAX_THREADS = 64;
     static final int CAPACITY = 1024 * 1024; // bytes
 
+    /**
+     * This test spawns multiple threads that constantly allocate direct
+     * {@link ByteBuffer}s in a loop, trying to provoke {@link OutOfMemoryError}.<p>
+     * When run without command-line arguments, it runs as a regression test
+     * for at most 5 seconds.<p>
+     *
+     * Command line arguments:
+     *
+     * <pre>
+     * -r run-time-seconds <i>(duration of successful test - default 5 s)</i>
+     * -t threads <i>(default is 2 * # of CPUs, at least 4 but no more than 64)</i>
+     * -c capacity <i>(of direct buffers in bytes - default is 1MB)</i>
+     * -p print-alloc-time-batch-size <i>(every "batch size" iterations,
+     *                                 average time per allocation is printed)</i>
+     * </pre>
+     *
+     * Use something like the following to run a 10 minute stress test and
+     * print allocation times as it goes:
+     *
+     * <pre>
+     * java -XX:MaxDirectMemorySize=128m DirectBufferAllocTest -r 600 -t 32 -p 5000
+     * </pre>
+     */
     public static void main(String[] args) throws Exception {
         int runTimeSeconds = RUN_TIME_SECONDS;
         int threads = Math.max(
@@ -51,7 +74,7 @@ public class DirectBufferAllocTest {
             MIN_THREADS
         );
         int capacity = CAPACITY;
-        int printTimeBatchSize = 0;
+        int printBatchSize = 0;
 
         // override with command line arguments
         for (int i = 0; i < args.length; i++) {
@@ -66,7 +89,7 @@ public class DirectBufferAllocTest {
                     capacity = Integer.parseInt(args[++i]);
                     break;
                 case "-p":
-                    printTimeBatchSize = Integer.parseInt(args[++i]);
+                    printBatchSize = Integer.parseInt(args[++i]);
                     break;
                 default:
                     System.err.println(
@@ -75,23 +98,11 @@ public class DirectBufferAllocTest {
                         " DirectBufferAllocTest" +
                         " [-r run-time-seconds]" +
                         " [-t threads]" +
-                        " [-c direct-buffer-capacity]" +
-                        " [-p print-time-batch-size]"
+                        " [-c capacity-of-direct-buffers]" +
+                        " [-p print-alloc-time-batch-size]"
                     );
                     System.exit(-1);
             }
-        }
-
-        // in case java.nio.Bits is instrumented, we want to access the counters...
-        LongAdder[] reserveCounters;
-        try {
-            Class bitsClass = Class.forName("java.nio.Bits");
-            Field reserveCountersField = bitsClass.getDeclaredField("reserveCounters");
-            reserveCountersField.setAccessible(true);
-            reserveCounters = (LongAdder[]) reserveCountersField.get(null);
-        }
-        catch (NoSuchFieldException e) {
-            reserveCounters = null;
         }
 
         System.out.println(
@@ -101,30 +112,29 @@ public class DirectBufferAllocTest {
         );
 
         for (int i = 0; i < threads; i++) {
-            final int ptbs = printTimeBatchSize;
+            final int pbs = printBatchSize;
             final int cap = capacity;
             new Thread("thread-" + i) {
                 public void run() {
                     int it = 0;
                     try {
                         long t0 = System.nanoTime();
-                        for (; ; ) {
-                            for (int i = 0; ptbs == 0 || i < ptbs; i++) {
+                        while (true) {
+                            for (int i = 0; pbs == 0 || i < pbs; i++) {
                                 ByteBuffer.allocateDirect(cap);
                                 it++;
                             }
                             long t1 = System.nanoTime();
-                            if (ptbs > 0) {
+                            if (pbs > 0) {
                                 System.out.printf(
-                                    "%10s: %5.2f ms/op\n",
+                                    "%10s: %5.2f ms/allocation\n",
                                     getName(),
-                                    ((double) (t1 - t0) / (1_000_000d * ptbs))
+                                    ((double) (t1 - t0) / (1_000_000d * pbs))
                                 );
                             }
                             t0 = t1;
                         }
-                    }
-                    catch (OutOfMemoryError t) {
+                    } catch (OutOfMemoryError t) {
                         System.err.println(
                             Thread.currentThread().getName() +
                             " got an OOM on iteration " + it
@@ -138,9 +148,6 @@ public class DirectBufferAllocTest {
 
         Thread.sleep(1000L * runTimeSeconds);
         System.out.println("No errors after " + runTimeSeconds + " seconds.");
-        if (reserveCounters != null) {
-            System.out.println("Reserve counters: " + Arrays.toString(reserveCounters));
-        }
         System.exit(0);
     }
 }
