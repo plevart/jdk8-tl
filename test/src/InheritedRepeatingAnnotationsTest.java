@@ -17,14 +17,21 @@ import java.util.Arrays;
  */
 public class InheritedRepeatingAnnotationsTest
 {
-
-    static final Class<?>[] classes = { A1.class, A2.class, A1X.class, A2X.class };
+    static void dump(Class<?> clazz) {
+        System.out.println(clazz + ": " + Arrays.toString(clazz.getAnnotationsByType(Ann.class)));
+    }
 
     public static void main(String[] args)
     {
-        for (Class<?> clazz : classes) {
-            System.out.println(clazz + ": " + Arrays.toString(clazz.getDeclaredAnnotations()));
-        }
+        dump(A2.class);
+        dump(B2.class);
+        dump(C2.class);
+        dump(D2.class);
+        System.out.println();
+        dump(A3.class);
+        dump(B3.class);
+        dump(C3.class);
+        dump(D3.class);
     }
 }
 
@@ -43,14 +50,38 @@ public class InheritedRepeatingAnnotationsTest
     Ann[] value();
 }
 
-@Ann(1)
+
+@Ann(10)
 class A1 {}
 
-@Ann(1) @Ann(2)
-class A2 {}
+@Ann(20)
+class A2 extends A1 {}
 
-@AnnCont(@Ann(1))
-class A1X {}
+class A3 extends A2 {}
 
-@AnnCont({@Ann(1), @Ann(2)})
-class A2X {}
+
+@Ann(10) @Ann(11)
+class B1 {}
+
+@Ann(20)
+class B2 extends B1 {}
+
+class B3 extends B2 {}
+
+
+@Ann(10)
+class C1 {}
+
+@Ann(20) @Ann(21)
+class C2 extends C1 {}
+
+class C3 extends C2 {}
+
+
+@Ann(10) @Ann(11)
+class D1 {}
+
+@Ann(20) @Ann(21)
+class D2 extends D1 {}
+
+class D3 extends D2 {}
