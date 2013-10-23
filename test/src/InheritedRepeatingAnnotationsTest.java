@@ -1,8 +1,3 @@
-/*
- * Written by Peter Levart <peter.levart@gmail.com>
- * and released to the public domain, as explained at
- * http://creativecommons.org/publicdomain/zero/1.0/
- */
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
@@ -13,7 +8,7 @@ import java.lang.annotation.Target;
 import java.util.Arrays;
 
 /**
- * @author peter
+ * @author peter.levart@gmail.com
  */
 public class InheritedRepeatingAnnotationsTest
 {
