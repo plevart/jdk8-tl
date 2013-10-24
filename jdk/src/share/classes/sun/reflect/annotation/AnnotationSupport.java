@@ -119,11 +119,10 @@ public final class AnnotationSupport {
         Objects.requireNonNull(declaringClass);
 
         A[] result = null;
-        boolean inherited = true;
         for (Class decl = declaringClass; decl != null; decl = decl.getSuperclass()) {
             result = getDirectlyAndIndirectlyPresent(decl, annoClass);
-            if (result.length > 0 || !inherited ||
-                !(inherited = AnnotationType.getInstance(annoClass).isInherited())) {
+            if (result.length > 0 ||
+                !AnnotationType.getInstance(annoClass).isInherited()) {
                 break;
             }
         }
