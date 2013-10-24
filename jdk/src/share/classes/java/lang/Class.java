@@ -3438,10 +3438,6 @@ public final class Class<T> implements java.io.Serializable,
         return annotationType;
     }
 
-    Map<Class<? extends Annotation>, Annotation> getDeclaredAnnotationMap() {
-        return annotationData().declaredAnnotations;
-    }
-
     /* Backing store of user-defined values pertaining to this class.
      * Maintained by the ClassValue class.
      */
