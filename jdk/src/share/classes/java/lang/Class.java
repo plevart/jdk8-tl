@@ -1571,10 +1571,6 @@ public final class Class<T> implements java.io.Serializable,
      * <p> If this {@code Class} object represents a primitive type or void,
      * then the returned array has length 0.
      *
-     * <p> Static methods declared in superinterfaces of the class or interface
-     * represented by this {@code Class} object are not considered members of
-     * the class or interface.
-     *
      * <p> The elements in the returned array are not sorted and are not in any
      * particular order.
      *
@@ -1733,10 +1729,6 @@ public final class Class<T> implements java.io.Serializable,
      * <p> If this {@code Class} object represents an array type, then this
      * method does not find the {@code clone()} method.
      *
-     * <p> Static methods declared in superinterfaces of the class or interface
-     * represented by this {@code Class} object are not considered members of
-     * the class or interface.
-     *
      * @param name the name of the method
      * @param parameterTypes the list of parameters
      * @return the {@code Method} object that matches the specified
@@ -1760,7 +1752,7 @@ public final class Class<T> implements java.io.Serializable,
     public Method getMethod(String name, Class<?>... parameterTypes)
         throws NoSuchMethodException, SecurityException {
         checkMemberAccess(Member.PUBLIC, Reflection.getCallerClass(), true);
-        Method method = getMethod0(name, parameterTypes, true);
+        Method method = getMethod0(name, parameterTypes);
         if (method == null) {
             throw new NoSuchMethodException(getName() + "." + name + argumentTypesToString(parameterTypes));
         }
@@ -2735,14 +2727,6 @@ public final class Class<T> implements java.io.Serializable,
             }
         }
 
-        void addAllNonStatic(Method[] methods) {
-            for (Method candidate : methods) {
-                if (!Modifier.isStatic(candidate.getModifiers())) {
-                    add(candidate);
-                }
-            }
-        }
-
         int length() {
             return length;
         }
@@ -2813,7 +2797,7 @@ public final class Class<T> implements java.io.Serializable,
         MethodArray inheritedMethods = new MethodArray();
         Class<?>[] interfaces = getInterfaces();
         for (int i = 0; i < interfaces.length; i++) {
-            inheritedMethods.addAllNonStatic(interfaces[i].privateGetPublicMethods());
+            inheritedMethods.addAll(interfaces[i].privateGetPublicMethods());
         }
         if (!isInterface()) {
             Class<?> c = getSuperclass();
@@ -2916,7 +2900,7 @@ public final class Class<T> implements java.io.Serializable,
     }
 
 
-    private Method getMethod0(String name, Class<?>[] parameterTypes, boolean includeStaticMethods) {
+    private Method getMethod0(String name, Class<?>[] parameterTypes) {
         // Note: the intent is that the search algorithm this routine
         // uses be equivalent to the ordering imposed by
         // privateGetPublicMethods(). It fetches only the declared
@@ -2929,23 +2913,25 @@ public final class Class<T> implements java.io.Serializable,
         if ((res = searchMethods(privateGetDeclaredMethods(true),
                                  name,
                                  parameterTypes)) != null) {
-            if (includeStaticMethods || !Modifier.isStatic(res.getModifiers()))
-                return res;
+            return res;
         }
         // Search superclass's methods
         if (!isInterface()) {
             Class<? super T> c = getSuperclass();
             if (c != null) {
-                if ((res = c.getMethod0(name, parameterTypes, true)) != null) {
+                if ((res = c.getMethod0(name, parameterTypes)) != null) {
                     return res;
                 }
             }
         }
         // Search superinterfaces' methods
         Class<?>[] interfaces = getInterfaces();
-        for (Class<?> c : interfaces)
-            if ((res = c.getMethod0(name, parameterTypes, false)) != null)
+        for (int i = 0; i < interfaces.length; i++) {
+            Class<?> c = interfaces[i];
+            if ((res = c.getMethod0(name, parameterTypes)) != null) {
                 return res;
+            }
+        }
         // Not found
         return null;
     }
