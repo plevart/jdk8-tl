@@ -25,12 +25,16 @@
 
 package java.lang.reflect;
 
-import java.lang.annotation.Annotation;
-import java.lang.annotation.AnnotationFormatError;
-import java.lang.annotation.Repeatable;
-import java.util.Objects;
 import sun.reflect.annotation.AnnotationSupport;
 import sun.reflect.annotation.AnnotationType;
+
+import java.lang.annotation.Annotation;
+import java.lang.annotation.AnnotationFormatError;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Represents an annotated element of the program currently running in this
@@ -38,7 +42,7 @@ import sun.reflect.annotation.AnnotationType;
  * annotations returned by methods in this interface are immutable and
  * serializable. The arrays returned by methods of this interface may be modified
  * by callers without affecting the arrays returned to other callers.
- *
+ * <p/>
  * <p>The {@link #getAnnotationsByType(Class)} and {@link
  * #getDeclaredAnnotationsByType(Class)} methods support multiple
  * annotations of the same type on an element. If the argument to
@@ -47,59 +51,59 @@ import sun.reflect.annotation.AnnotationType;
  * present, and return any annotations inside the container. Container
  * annotations may be generated at compile-time to wrap multiple
  * annotations of the argument type.
- *
+ * <p/>
  * <p>The terms <em>directly present</em>, <em>indirectly present</em>,
  * <em>present</em>, and <em>associated</em> are used throughout this
  * interface to describe precisely which annotations are returned by
  * methods:
- *
+ * <p/>
  * <ul>
- *
+ * <p/>
  * <li> An annotation <i>A</i> is <em>directly present</em> on an
  * element <i>E</i> if <i>E</i> has a {@code
  * RuntimeVisibleAnnotations} or {@code
  * RuntimeVisibleParameterAnnotations} or {@code
  * RuntimeVisibleTypeAnnotations} attribute, and the attribute
  * contains <i>A</i>.
- *
+ * <p/>
  * <li>An annotation <i>A</i> is <em>indirectly present</em> on an
  * element <i>E</i> if <i>E</i> has a {@code RuntimeVisibleAnnotations} or
  * {@code RuntimeVisibleParameterAnnotations} or {@code RuntimeVisibleTypeAnnotations}
  * attribute, and <i>A</i> 's type is repeatable, and the attribute contains
  * exactly one annotation whose value element contains <i>A</i> and whose
  * type is the containing annotation type of <i>A</i> 's type.
- *
+ * <p/>
  * <li>An annotation <i>A</i> is present on an element <i>E</i> if either:
- *
+ * <p/>
  * <ul>
- *
+ * <p/>
  * <li><i>A</i> is directly present on <i>E</i>; or
- *
+ * <p/>
  * <li>No annotation of <i>A</i> 's type is directly present on
  * <i>E</i>, and <i>E</i> is a class, and <i>A</i> 's type is
  * inheritable, and <i>A</i> is present on the superclass of <i>E</i>.
- *
+ * <p/>
  * </ul>
- *
+ * <p/>
  * <li>An annotation <i>A</i> is <em>associated</em> with an element <i>E</i>
  * if either:
- *
+ * <p/>
  * <ul>
- *
+ * <p/>
  * <li><i>A</i> is directly or indirectly present on <i>E</i>; or
- *
+ * <p/>
  * <li>No annotation of <i>A</i> 's type is directly or indirectly
  * present on <i>E</i>, and <i>E</i> is a class, and <i>A</i>'s type
  * is inheritable, and <i>A</i> is associated with the superclass of
  * <i>E</i>.
- *
+ * <p/>
  * </ul>
- *
+ * <p/>
  * </ul>
- *
+ * <p/>
  * <p>The table below summarizes which kind of annotation presence
  * different methods in this interface examine.
- *
+ * <p/>
  * <table border>
  * <caption>Overview of kind of presence detected by different AnnotatedElement methods</caption>
  * <tr><th colspan=2></th><th colspan=4>Kind of Presence</th>
@@ -123,59 +127,59 @@ import sun.reflect.annotation.AnnotationType;
  * <td>X</td><td>X</td><td></td><td></td>
  * </tr>
  * </table>
- *
- * <p>For an invocation of {@code get[Declared]AnnotationsByType( Class <
+ * <p/>
+ * <p>For an invocation of {@code get[Declared]AnnotationsByType(Class <
  * T >)}, the order of annotations which are directly or indirectly
  * present on an element <i>E</i> is computed as if indirectly present
  * annotations on <i>E</i> are directly present on <i>E</i> in place
  * of their container annotation, in the order in which they appear in
  * the value element of the container annotation.
-
+ * <p/>
  * <p>If an annotation returned by a method in this interface contains
  * (directly or indirectly) a {@link Class}-valued member referring to
  * a class that is not accessible in this VM, attempting to read the class
  * by calling the relevant Class-returning method on the returned annotation
  * will result in a {@link TypeNotPresentException}.
- *
+ * <p/>
  * <p>Similarly, attempting to read an enum-valued member will result in
  * a {@link EnumConstantNotPresentException} if the enum constant in the
  * annotation is no longer present in the enum type.
- *
+ * <p/>
  * <p>If an annotation type <i>T</i> is (meta-)annotated with an
  * {@code @Repeatable} annotation whose value element indicates a type
  * <i>TC</i>, but <i>TC</i> does not declare a {@code value()} method
  * with a return type of <i>T</i>{@code []}, then an exception of type
  * {@link java.lang.annotation.AnnotationFormatError} is thrown.
- *
+ * <p/>
  * <p>Finally, attempting to read a member whose definition has evolved
  * incompatibly will result in a {@link
  * java.lang.annotation.AnnotationTypeMismatchException} or an
  * {@link java.lang.annotation.IncompleteAnnotationException}.
  *
+ * @author Josh Bloch
  * @see java.lang.EnumConstantNotPresentException
  * @see java.lang.TypeNotPresentException
  * @see AnnotationFormatError
  * @see java.lang.annotation.AnnotationTypeMismatchException
  * @see java.lang.annotation.IncompleteAnnotationException
  * @since 1.5
- * @author Josh Bloch
  */
 public interface AnnotatedElement {
     /**
      * Returns true if an annotation for the specified type
      * is <em>present</em> on this element, else false.  This method
      * is designed primarily for convenient access to marker annotations.
-     *
+     * <p/>
      * <p>The truth value returned by this method is equivalent to:
      * {@code getAnnotation(annotationClass) != null}
-     *
+     * <p/>
      * <p>The body of the default method is specified to be the code
      * above.
      *
      * @param annotationClass the Class object corresponding to the
-     *        annotation type
+     *                        annotation type
      * @return true if an annotation for the specified annotation
-     *     type is present on this element, else false
+     *         type is present on this element, else false
      * @throws NullPointerException if the given annotation class is null
      * @since 1.5
      */
@@ -183,15 +187,15 @@ public interface AnnotatedElement {
         return getAnnotation(annotationClass) != null;
     }
 
-   /**
+    /**
      * Returns this element's annotation for the specified type if
      * such an annotation is <em>present</em>, else null.
      *
-     * @param <T> the type of the annotation to query for and return if present
+     * @param <T>             the type of the annotation to query for and return if present
      * @param annotationClass the Class object corresponding to the
-     *        annotation type
+     *                        annotation type
      * @return this element's annotation for the specified annotation type if
-     *     present on this element, else null
+     *         present on this element, else null
      * @throws NullPointerException if the given annotation class is null
      * @since 1.5
      */
@@ -199,10 +203,10 @@ public interface AnnotatedElement {
 
     /**
      * Returns annotations that are <em>present</em> on this element.
-     *
+     * <p/>
      * If there are no annotations <em>present</em> on this element, the return
      * value is an array of length 0.
-     *
+     * <p/>
      * The caller of this method is free to modify the returned array; it will
      * have no effect on the arrays returned to other callers.
      *
@@ -213,19 +217,25 @@ public interface AnnotatedElement {
 
     /**
      * Returns annotations that are <em>associated</em> with this element.
-     *
+     * <p/>
      * If there are no annotations <em>associated</em> with this element, the return
      * value is an array of length 0.
-     *
+     * <p/>
      * The difference between this method and {@link #getAnnotation(Class)}
      * is that this method detects if its argument is a <em>repeatable
      * annotation type</em> (JLS 9.6), and if so, attempts to find one or
      * more annotations of that type by "looking through" a container
      * annotation.
-     *
+     * <p/>
      * The caller of this method is free to modify the returned array; it will
      * have no effect on the arrays returned to other callers.
      *
+     * @param <T>             the type of the annotation to query for and return if present
+     * @param annotationClass the Class object corresponding to the
+     *                        annotation type
+     * @return all this element's annotations for the specified annotation type if
+     *         associated with this element, else an array of length zero
+     * @throws NullPointerException if the given annotation class is null
      * @implSpec The default implementation first calls {@link
      * #getDeclaredAnnotationsByType(Class)} on the argument type. If
      * the returned array has size greater than zero, the array is
@@ -235,21 +245,16 @@ public interface AnnotatedElement {
      * AnnoatedElement} is non-null, then the result of {@code
      * getAnnotationsByType(annotationClass)} on the superclass is
      * returned. Otherwise, a zero-length array is returned.
-     *
-     * @param <T> the type of the annotation to query for and return if present
-     * @param annotationClass the Class object corresponding to the
-     *        annotation type
-     * @return all this element's annotations for the specified annotation type if
-     *     associated with this element, else an array of length zero
-     * @throws NullPointerException if the given annotation class is null
      * @since 1.8
      */
     default <T extends Annotation> T[] getAnnotationsByType(Class<T> annotationClass) {
         T[] result = getDeclaredAnnotationsByType(annotationClass);
         if (result.length == 0 && this instanceof Class &&
             AnnotationType.getInstance(annotationClass).isInherited()) {
-            for (Class<?> clazz = ((Class<?>) this).getSuperclass();
-                 clazz != null; clazz = clazz.getSuperclass()) {
+            for (
+                Class<?> clazz = ((Class<?>) this).getSuperclass();
+                clazz != null; clazz = clazz.getSuperclass()
+                ) {
                 result = clazz.getDeclaredAnnotationsByType(annotationClass);
                 if (result.length > 0) {
                     break;
@@ -258,30 +263,29 @@ public interface AnnotatedElement {
         }
         return result;
     }
-    
+
     /**
      * Returns this element's annotation for the specified type if
      * such an annotation is <em>directly present</em>, else null.
-     *
+     * <p/>
      * This method ignores inherited annotations. (Returns null if no
      * annotations are directly present on this element.)
      *
+     * @param <T>             the type of the annotation to query for and return if directly present
+     * @param annotationClass the Class object corresponding to the
+     *                        annotation type
+     * @return this element's annotation for the specified annotation type if
+     *         directly present on this element, else null
+     * @throws NullPointerException if the given annotation class is null
      * @implSpec The default implementation first performs a null check
      * and then loops over the results of {@link
      * #getDeclaredAnnotations} returning the first annotation whose
      * annotation type matches the argument type.
-     *
-     * @param <T> the type of the annotation to query for and return if directly present
-     * @param annotationClass the Class object corresponding to the
-     *        annotation type
-     * @return this element's annotation for the specified annotation type if
-     *     directly present on this element, else null
-     * @throws NullPointerException if the given annotation class is null
      * @since 1.8
      */
     default <T extends Annotation> T getDeclaredAnnotation(Class<T> annotationClass) {
         Objects.requireNonNull(annotationClass);
-        Annotation[] annotations =  getDeclaredAnnotations(); // All directly-present annotations
+        Annotation[] annotations = getDeclaredAnnotations(); // All directly-present annotations
         for (Annotation annotation : annotations) {
             if (annotationClass.equals(annotation.annotationType())) {
                 // More robust to do a cast at runtime instead of
@@ -289,7 +293,7 @@ public interface AnnotatedElement {
                 return annotationClass.cast(annotation);
             }
         }
-        return null; 
+        return null;
     }
 
     /**
@@ -297,20 +301,27 @@ public interface AnnotatedElement {
      * such annotations are either <em>directly present</em> or
      * <em>indirectly present</em>. This method ignores inherited
      * annotations.
-     *
+     * <p/>
      * If there are no specified annotations directly or indirectly
      * present on this element, the return value is an array of length
      * 0.
-     *
+     * <p/>
      * The difference between this method and {@link
      * #getDeclaredAnnotation(Class)} is that this method detects if its
      * argument is a <em>repeatable annotation type</em> (JLS 9.6), and if so,
      * attempts to find one or more annotations of that type by "looking
      * through" a container annotation if one is present.
-     *
+     * <p/>
      * The caller of this method is free to modify the returned array; it will
      * have no effect on the arrays returned to other callers.
      *
+     * @param <T>             the type of the annotation to query for and return
+     *                        if directly or indirectly present
+     * @param annotationClass the Class object corresponding to the
+     *                        annotation type
+     * @return all this element's annotations for the specified annotation type if
+     *         directly or indirectly present on this element, else an array of length zero
+     * @throws NullPointerException if the given annotation class is null
      * @implSpec The default implementation may call {@link
      * #getDeclaredAnnotation(Class)} one or more times to find a
      * directly present annotation and, if the annotation type is
@@ -323,78 +334,37 @@ public interface AnnotatedElement {
      * indirectly present annotations. The results of calling {@link
      * #getDeclaredAnnotations()} are assumed to be consistent with the
      * results of calling {@code #getDeclaredAnnotation}
-     *
-     * @param <T> the type of the annotation to query for and return
-     * if directly or indirectly present
-     * @param annotationClass the Class object corresponding to the
-     *        annotation type
-     * @return all this element's annotations for the specified annotation type if
-     *     directly or indirectly present on this element, else an array of length zero
-     * @throws NullPointerException if the given annotation class is null
      * @since 1.8
      */
     default <T extends Annotation> T[] getDeclaredAnnotationsByType(Class<T> annotationClass) {
         Objects.requireNonNull(annotationClass);
-
-        Repeatable repeatable = annotationClass.getDeclaredAnnotation(Repeatable.class);
-        // non-repeatable: just delegate to getDeclaredAnnotation and return wrapped result
-        if (repeatable == null) {
-            T ann = getDeclaredAnnotation(annotationClass);
-            @SuppressWarnings("unchecked")
-            T[] result = (T[]) Array.newInstance(annotationClass, ann == null ? 0 : 1);
-            if (ann != null) result[0] = ann;
-            return result;
-        }
-
-        // repeatable: iterate all declared annotations, find directly and indirectly present
-        // and also determine the order (directlyPresentFirst)...
-        Class<? extends Annotation> containerClass = repeatable.value();
-        T directlyPresent = null;
-        T[] indirectlyPresent = null;
-        boolean directlyPresentFirst = false;
-        for (Annotation ann : getDeclaredAnnotations()) {
-            if (directlyPresent == null && annotationClass.isInstance(ann)) {
-                directlyPresent = annotationClass.cast(ann);
-                if (indirectlyPresent != null) {
-                    break;
-                }
-            } else if (indirectlyPresent == null && containerClass.isInstance(ann)) {
-                indirectlyPresent = AnnotationSupport.getValueArray(ann);
-                if (directlyPresent != null) {
-                    directlyPresentFirst = true;
-                    break;
-                }
-            }
-        }
-
-        // concatenate directlyPresent and indirectlyPresent annotations
-        @SuppressWarnings("unchecked")
-        T[] result = (directlyPresent == null && indirectlyPresent != null)
-                     ? indirectlyPresent
-                     : (T[]) Array.newInstance(annotationClass,
-                         (directlyPresent == null ? 0 : 1) +
-                         (indirectlyPresent == null ? 0 : indirectlyPresent.length));
-
-        if (directlyPresent != null) {
-            if (indirectlyPresent == null || indirectlyPresent.length == 0) {
-                result[0] = directlyPresent;
-            } else {
-                result[directlyPresentFirst ? 0 : indirectlyPresent.length] = directlyPresent;
-                System.arraycopy(indirectlyPresent, 0, result,
-                    directlyPresentFirst ? 1 : 0, indirectlyPresent.length);
-            }
-        }
-
-        return result;
+        return AnnotationSupport.getDirectlyAndIndirectlyPresent(
+            Arrays.stream(getDeclaredAnnotations()).
+                collect(
+                    Collectors.toMap(
+                        Annotation::annotationType,
+                        Function.identity(),
+                        (first, second) -> first,
+                        LinkedHashMap::new
+                    )
+//                    Collectors.toMap(
+//                        (a -> a.annotationType()),
+//                        Function.identity(),
+//                        ((first, second) -> first),
+//                        () -> new LinkedHashMap<>()
+//                    )
+                ),
+            annotationClass
+        );
     }
 
     /**
      * Returns annotations that are <em>directly present</em> on this element.
      * This method ignores inherited annotations.
-     *
+     * <p/>
      * If there are no annotations <em>directly present</em> on this element,
      * the return value is an array of length 0.
-     *
+     * <p/>
      * The caller of this method is free to modify the returned array; it will
      * have no effect on the arrays returned to other callers.
      *
