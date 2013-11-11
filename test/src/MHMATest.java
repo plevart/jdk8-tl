@@ -96,13 +96,5 @@ public class MHMATest {
         doTest(MHMATest.class.getDeclaredMethod("pubInstInt", int.class), wrongInst, new Object[] {12}, 12, new IllegalArgumentException("object is not an instance of declaring class"), new IllegalArgumentException("target or argument type mismatch"));
         doTest(MHMATest.class.getDeclaredMethod("pubInstInt", int.class), null, new Object[] {12}, 12, new NullPointerException());
         doTest(MHMATest.class.getDeclaredMethod("pubInstInt", int.class), inst, null, null, new IllegalArgumentException("wrong number of arguments"), new IllegalArgumentException("array is not of length 1"));
-
-        System.out.println(MHMethodAccessor.getCaller());
-        Method getCallerM = MHMethodAccessor.class.getDeclaredMethod("getCaller");
-        System.out.println(getCallerM.invoke(null));
-        MethodAccessor getCallerMA0 = ReflectionFactory.getReflectionFactory().newMethodAccessor(getCallerM);
-        System.out.println(getCallerMA0.invoke(null, new Object[0]));
-        MethodAccessor getCallerMA1 = new MHMethodAccessor(getCallerM);
-        System.out.println(getCallerMA1.invoke(null, new Object[0]));
     }
 }

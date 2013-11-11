@@ -16,14 +16,14 @@ import java.lang.reflect.Method;
  */
 public class MHMAPerfTest extends TestRunner {
 
-    public static String testMethod(String o) {
-        return o;
+    public static char testMethod(String s, int i) {
+        return s.charAt(i);
     }
 
     static final Method testMethod;
     static {
         try {
-            testMethod = MHMAPerfTest.class.getDeclaredMethod("testMethod", String.class);
+            testMethod = MHMAPerfTest.class.getDeclaredMethod("testMethod", String.class, int.class);
         } catch (NoSuchMethodException e) {
             throw new AssertionError(e);
         }
@@ -32,9 +32,8 @@ public class MHMAPerfTest extends TestRunner {
     public static class directInvocation extends Test {
         @Override
         protected void doLoop(Loop loop, DevNull devNull1, DevNull devNull2, DevNull devNull3, DevNull devNull4, DevNull devNull5) {
-            String arg = "BBB+";
             while (loop.nextIteration()) {
-                devNull1.yield(testMethod(arg));
+                devNull1.yield(testMethod("BBB+", 3));
             }
         }
     }
@@ -44,7 +43,7 @@ public class MHMAPerfTest extends TestRunner {
         protected void doLoop(Loop loop, DevNull devNull1, DevNull devNull2, DevNull devNull3, DevNull devNull4, DevNull devNull5) {
             try {
                 MethodAccessor ma = ReflectionFactory.getReflectionFactory().newMethodAccessor(testMethod);
-                Object[] args = new Object[] { "BBB+" };
+                Object[] args = new Object[] { "BBB+", 3 };
                 while (loop.nextIteration()) {
                     devNull1.yield(ma.invoke(null, args));
                 }
@@ -57,7 +56,7 @@ public class MHMAPerfTest extends TestRunner {
         protected void doLoop(Loop loop, DevNull devNull1, DevNull devNull2, DevNull devNull3, DevNull devNull4, DevNull devNull5) {
             try {
                 MethodAccessor ma = new MHMethodAccessor(testMethod);
-                Object[] args = new Object[] { "BBB+" };
+                Object[] args = new Object[] { "BBB+", 3 };
                 while (loop.nextIteration()) {
                     devNull1.yield(ma.invoke(null, args));
                 }
@@ -66,8 +65,8 @@ public class MHMAPerfTest extends TestRunner {
     }
 
     public static void main(String[] args) throws Exception {
-        doTest(mhAccessorInvocation.class, 2000L, 1, 4, 1);
-        doTest(directInvocation.class, 2000L, 1, 4, 1);
-        doTest(generatedAccessorInvocation.class, 2000L, 1, 4, 1);
+        doTest(directInvocation.class, 2000L, 1, 1, 1, 2, 4);
+        doTest(generatedAccessorInvocation.class, 2000L, 1, 1, 1, 2, 4);
+        doTest(mhAccessorInvocation.class, 2000L, 1, 1, 1, 2, 4);
     }
 }

@@ -1,8 +1,3 @@
-/**
- * Written by Peter.Levart@gmail.com 
- * and released to the public domain, as explained at
- * http://creativecommons.org/publicdomain/zero/1.0/
- */
 package sun.reflect;
 
 import java.lang.invoke.MethodHandle;
@@ -15,11 +10,12 @@ import java.lang.reflect.Modifier;
 
 import static java.lang.invoke.MethodHandles.catchException;
 import static java.lang.invoke.MethodHandles.dropArguments;
-import static java.lang.invoke.MethodHandles.spreadInvoker;
 import static java.lang.invoke.MethodType.methodType;
 
 /**
- * @author peter
+ * {@link MethodAccessor} implementations based on {@link MethodHandle}s
+ *
+ * @author Peter.Levart@gmail.com
  */
 public class MHMethodAccessor implements MethodAccessor {
 
@@ -73,30 +69,45 @@ public class MHMethodAccessor implements MethodAccessor {
     public MHMethodAccessor(Method method) {
         MethodHandle dmh;
         try {
+            // direct method handle of the target method
             dmh = lookup.unreflect(method);
         } catch (IllegalAccessException e) {
-            // should not happen
+            // should not happen since the almighty lookup is used
             throw new AssertionError(e);
         }
 
+        int paramCount = dmh.type().parameterCount();
+
         if (Modifier.isStatic(method.getModifiers())) {
+            // catch any Throwable and wrap it in the InvocationTargetException
             MethodHandle throwsIte = catchException(dmh, Throwable.class,
                 throwInvocationTarget.asType(methodType(
                     dmh.type().returnType(), Throwable.class))
             );
+            // MHs for static methods don't have the leading target argument
+            // so we introduce one which is ignored when called
+            // R m(P1 p1, P2 p2, ...) -> R m(Object ignored, Object[] args_p1_p2_etc)
             MethodHandle spreader = dropArguments(
-                spreadInvoker(throwsIte.type(), 0).bindTo(throwsIte),
+                throwsIte.asSpreader(Object[].class, paramCount),
                 0, Object.class
             );
+            // adapt return type
+            // R m(Object ignored, Object[] args) -> Object m(Object ignored, Object[] args)
             mh = spreader.asType(MethodAccessor_invoke_type);
-        } else {
+        } else { // instance method
+            // catch any Throwable and wrap it in the InvocationTargetException
+            // unless it is a NullPointerException caused by null target
             MethodHandle throwsIteOrNpe = catchException(dmh, Throwable.class,
                 throwInvocationTargetOrNullPointer.asType(methodType(
                     dmh.type().returnType(), Throwable.class,
                     dmh.type().parameterType(0)))
             );
+            // leave the target argument alone, spread the rest
+            // R m(T target, P1 p1, P2 p2, ...) -> R m(T target, Object[] args_p1_p2_etc)
             MethodHandle spreader =
-                spreadInvoker(throwsIteOrNpe.type(), 1).bindTo(throwsIteOrNpe);
+                throwsIteOrNpe.asSpreader(Object[].class, paramCount - 1);
+            // adapt return type and target argument type
+            // R m(T target, Object[] args) -> Object m(Object target, Object[] args)
             mh = spreader.asType(MethodAccessor_invoke_type);
         }
     }
@@ -106,17 +117,17 @@ public class MHMethodAccessor implements MethodAccessor {
         throws IllegalArgumentException, InvocationTargetException {
         try {
             return mh.invokeExact(target, args);
-        } catch (IllegalArgumentException | InvocationTargetException | NullPointerException e) {
+        } catch (IllegalArgumentException // thrown by adapters on argument count mismatch
+            | InvocationTargetException   // wrapped target exception
+            | NullPointerException e) {   // in case of instance method when target was null
+            // re-throw exceptions that are already of correct type
             throw e;
-        } catch (ClassCastException e) {
+        } catch (ClassCastException e) {  // thrown by adapters on target or argument type mismatch
+            // convert to IllegalArgumentException
             throw new IllegalArgumentException("target or argument type mismatch", e);
         } catch (Throwable e) {
+            // any other Throwable type besides those above is a bug
             throw new AssertionError("Should not happen", e);
         }
-    }
-
-    @CallerSensitive
-    public static Class<?> getCaller() {
-        return Reflection.getCallerClass();
     }
 }
