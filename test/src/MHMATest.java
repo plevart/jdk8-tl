@@ -8,10 +8,10 @@ import sun.reflect.MHMethodAccessor;
 import sun.reflect.MethodAccessor;
 import sun.reflect.ReflectionFactory;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.function.IntUnaryOperator;
 
 /**
  * @author peter
@@ -35,14 +35,13 @@ public class MHMATest {
     private int privInstInt(int i) { return i; }
 
 
-    static void doTest(MethodAccessor ma, Object target, Object[] args, Object expectedReturn, Throwable ...expectedExceptions) {
+    static void doTest(MethodAccessor ma, Object target, Object[] args, Object expectedReturn, Throwable... expectedExceptions) {
         Object ret;
         Throwable exc;
         try {
             ret = ma.invoke(target, args);
             exc = null;
-        }
-        catch (Throwable e) {
+        } catch (Throwable e) {
             ret = null;
             exc = e;
         }
@@ -62,7 +61,7 @@ public class MHMATest {
         }
     }
 
-    static void doTest(Method m, Object target, Object[] args, Object expectedReturn, Throwable ...expectedException) {
+    static void doTest(Method m, Object target, Object[] args, Object expectedReturn, Throwable... expectedException) {
         MethodAccessor ma0 = ReflectionFactory.getReflectionFactory().newMethodAccessor(m);
         MethodAccessor ma1 = new MHMethodAccessor(m);
         try {
@@ -76,25 +75,43 @@ public class MHMATest {
             throw new RuntimeException("MH method accessor for: " + m + ": " + e.getMessage(), e);
         }
     }
-    
+
     public static void main(String[] args) throws Exception {
         MHMATest inst = new MHMATest();
         Object wrongInst = new Object();
 
-        doTest(MHMATest.class.getDeclaredMethod("pubStatVoid", int.class), null, new Object[] {12}, null);
-        doTest(MHMATest.class.getDeclaredMethod("pubStatInt", int.class), null, new Object[] {12}, 12);
-        doTest(MHMATest.class.getDeclaredMethod("pubInstVoid", int.class), inst, new Object[] {12}, null);
-        doTest(MHMATest.class.getDeclaredMethod("pubInstInt", int.class), inst, new Object[] {12}, 12);
+        // test successful code paths
 
-        doTest(MHMATest.class.getDeclaredMethod("privStatVoid", int.class), null, new Object[] {12}, null);
-        doTest(MHMATest.class.getDeclaredMethod("privStatInt", int.class), null, new Object[] {12}, 12);
-        doTest(MHMATest.class.getDeclaredMethod("privInstVoid", int.class), inst, new Object[] {12}, null);
-        doTest(MHMATest.class.getDeclaredMethod("privInstInt", int.class), inst, new Object[] {12}, 12);
+        doTest(MHMATest.class.getDeclaredMethod("pubStatVoid", int.class), null, new Object[]{12}, null);
+        doTest(MHMATest.class.getDeclaredMethod("pubStatInt", int.class), null, new Object[]{12}, 12);
+        doTest(MHMATest.class.getDeclaredMethod("pubInstVoid", int.class), inst, new Object[]{12}, null);
+        doTest(MHMATest.class.getDeclaredMethod("pubInstInt", int.class), inst, new Object[]{12}, 12);
 
-        doTest(MHMATest.class.getDeclaredMethod("pubInstInt", int.class), inst, new Object[] {"a"}, null, new IllegalArgumentException("argument type mismatch"), new IllegalArgumentException("target or argument type mismatch"));
-        doTest(MHMATest.class.getDeclaredMethod("pubInstInt", int.class), inst, new Object[] {12, 13}, null, new IllegalArgumentException("wrong number of arguments"), new IllegalArgumentException("array is not of length 1"));
-        doTest(MHMATest.class.getDeclaredMethod("pubInstInt", int.class), wrongInst, new Object[] {12}, 12, new IllegalArgumentException("object is not an instance of declaring class"), new IllegalArgumentException("target or argument type mismatch"));
-        doTest(MHMATest.class.getDeclaredMethod("pubInstInt", int.class), null, new Object[] {12}, 12, new NullPointerException());
-        doTest(MHMATest.class.getDeclaredMethod("pubInstInt", int.class), inst, null, null, new IllegalArgumentException("wrong number of arguments"), new IllegalArgumentException("array is not of length 1"));
+        doTest(MHMATest.class.getDeclaredMethod("privStatVoid", int.class), null, new Object[]{12}, null);
+        doTest(MHMATest.class.getDeclaredMethod("privStatInt", int.class), null, new Object[]{12}, 12);
+        doTest(MHMATest.class.getDeclaredMethod("privInstVoid", int.class), inst, new Object[]{12}, null);
+        doTest(MHMATest.class.getDeclaredMethod("privInstInt", int.class), inst, new Object[]{12}, 12);
+
+        // test exceptions thrown
+
+        doTest(MHMATest.class.getDeclaredMethod("pubInstInt", int.class), inst, new Object[]{"a"}, null,
+            new IllegalArgumentException("argument type mismatch"), new IllegalArgumentException("target or argument type mismatch"));
+
+        doTest(MHMATest.class.getDeclaredMethod("pubInstInt", int.class), inst, new Object[]{12, 13}, null,
+            new IllegalArgumentException("wrong number of arguments"), new IllegalArgumentException("array is not of length 1"));
+
+        doTest(MHMATest.class.getDeclaredMethod("pubInstInt", int.class), wrongInst, new Object[]{12}, 12,
+            new IllegalArgumentException("object is not an instance of declaring class"), new IllegalArgumentException("target or argument type mismatch"));
+
+        doTest(MHMATest.class.getDeclaredMethod("pubInstInt", int.class), null, new Object[]{12}, 12,
+            new NullPointerException());
+
+        doTest(MHMATest.class.getDeclaredMethod("pubInstInt", int.class), inst, null, null,
+            new IllegalArgumentException("wrong number of arguments"), new IllegalArgumentException("array is not of length 1"));
+
+        // test VM-anonymous declaring classes
+        IntUnaryOperator intUnaryOp = i -> i;
+        Method applyAsIntMethod = intUnaryOp.getClass().getDeclaredMethod("applyAsInt", int.class);
+        doTest(applyAsIntMethod, intUnaryOp, new Object[]{12}, 12);
     }
 }
