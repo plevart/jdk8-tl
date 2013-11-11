@@ -34,16 +34,6 @@ public class MHMATest {
 
     private int privInstInt(int i) { return i; }
 
-    static class FaultyInitializer {
-        static {
-            ((Object)null).hashCode();
-        }
-        static void test() {}
-    }
-
-    public static void faultyInitializer() {
-        FaultyInitializer.test();
-    }
 
     static void doTest(MethodAccessor ma, Object target, Object[] args, Object expectedReturn, Throwable ...expectedExceptions) {
         Object ret;
@@ -107,6 +97,12 @@ public class MHMATest {
         doTest(MHMATest.class.getDeclaredMethod("pubInstInt", int.class), null, new Object[] {12}, 12, new NullPointerException());
         doTest(MHMATest.class.getDeclaredMethod("pubInstInt", int.class), inst, null, null, new IllegalArgumentException("wrong number of arguments"), new IllegalArgumentException("array is not of length 1"));
 
-        doTest(MHMATest.class.getDeclaredMethod("faultyInitializer"), null, null, null, new InvocationTargetException(new ExceptionInInitializerError()));
+        System.out.println(MHMethodAccessor.getCaller());
+        Method getCallerM = MHMethodAccessor.class.getDeclaredMethod("getCaller");
+        System.out.println(getCallerM.invoke(null));
+        MethodAccessor getCallerMA0 = ReflectionFactory.getReflectionFactory().newMethodAccessor(getCallerM);
+        System.out.println(getCallerMA0.invoke(null, new Object[0]));
+        MethodAccessor getCallerMA1 = new MHMethodAccessor(getCallerM);
+        System.out.println(getCallerMA1.invoke(null, new Object[0]));
     }
 }
