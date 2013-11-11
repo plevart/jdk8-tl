@@ -117,12 +117,12 @@ public class MHMethodAccessor implements MethodAccessor {
         throws IllegalArgumentException, InvocationTargetException {
         try {
             return mh.invokeExact(target, args);
-        } catch (IllegalArgumentException // thrown by adapters on argument count mismatch
+        } catch (IllegalArgumentException // thrown by MH adapters on argument count mismatch
             | InvocationTargetException   // wrapped target exception
             | NullPointerException e) {   // in case of instance method when target was null
             // re-throw exceptions that are already of correct type
             throw e;
-        } catch (ClassCastException e) {  // thrown by adapters on target or argument type mismatch
+        } catch (ClassCastException e) {  // thrown by MH adapters on target or argument type mismatch
             // convert to IllegalArgumentException
             throw new IllegalArgumentException("target or argument type mismatch", e);
         } catch (Throwable e) {
