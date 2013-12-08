@@ -107,16 +107,6 @@ public class SocketHandler extends StreamHandler {
         host = manager.getStringProperty(cname + ".host", null);
     }
 
-    // Package private support for security checking.  When isSealed
-    // returns true, we access check updates to the class.
-    // Initially the value is false, but we set to true at end of
-    // each constructor...
-    private final boolean sealed;
-
-    @Override
-    boolean isSealed() {
-        return sealed;
-    }
 
     /**
      * Create a <tt>SocketHandler</tt>, using only <tt>LogManager</tt> properties
@@ -128,15 +118,19 @@ public class SocketHandler extends StreamHandler {
      */
     public SocketHandler() throws IOException {
         // We are going to use the logging defaults.
-        configure();
-
         try {
-            connect();
-        } catch (IOException ix) {
+            doWithControlPermission(() -> {
+                configure();
+                try {
+                    connect();
+                } catch (IOException ioe) {
+                    throw new UncheckedIOException(ioe);
+                }
+            });
+        } catch (UncheckedIOException uioe) {
             System.err.println("SocketHandler: connect failed to " + host + ":" + port);
-            throw ix;
+            throw uioe.getCause();
         }
-        sealed = true;
     }
 
     /**
@@ -155,8 +149,7 @@ public class SocketHandler extends StreamHandler {
      *         host and port.
      */
     public SocketHandler(String host, int port) throws IOException {
-        configure();
-        sealed = true;
+        doWithControlPermission(this::configure);
         this.port = port;
         this.host = host;
         connect();

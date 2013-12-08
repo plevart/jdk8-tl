@@ -27,6 +27,9 @@
 package java.util.logging;
 
 import java.io.UnsupportedEncodingException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+
 /**
  * A <tt>Handler</tt> object takes log messages from a <tt>Logger</tt> and
  * exports them.  It might for example, write them to a console
@@ -61,12 +64,6 @@ public abstract class Handler {
     private volatile Level logLevel = Level.ALL;
     private volatile ErrorManager errorManager = new ErrorManager();
     private volatile String encoding;
-
-    // Package private support for security checking.  When isSealed
-    // returns true, we access check updates to the class.
-    boolean isSealed() {
-        return true;
-    }
 
     /**
      * Default constructor.  The resulting <tt>Handler</tt> has a log
@@ -304,12 +301,20 @@ public abstract class Handler {
     }
 
     // Package-private support method for security checks.
-    // If "sealed" is true, we check that the caller has
-    // appropriate security privileges to update Handler
-    // state and if not throw a SecurityException.
+    // We check that the caller has appropriate security privileges
+    // to update Handler state and if not throw a SecurityException.
     void checkPermission() throws SecurityException {
-        if (isSealed()) {
-            manager.checkPermission();
-        }
+        manager.checkPermission();
+    }
+
+    // Package-private support for executing actions with additional
+    // LoggingPermission("control", null) permission.
+    interface PrivilegedVoidAction extends PrivilegedAction<Void> {
+        default Void run() { runVoid(); return null; }
+        void runVoid();
+    }
+
+    void doWithControlPermission(PrivilegedVoidAction action) {
+        AccessController.doPrivileged(action, null, LogManager.controlPermission);
     }
 }

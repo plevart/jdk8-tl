@@ -111,24 +111,12 @@ public class MemoryHandler extends Handler {
         setFormatter(manager.getFormatterProperty(cname +".formatter", new SimpleFormatter()));
     }
 
-    // Package private support for security checking.  When isSealed
-    // returns true, we access check updates to the class.
-    // Initially the value is false, but we set to true at end of
-    // each constructor...
-    private final boolean sealed;
-
-    @Override
-    boolean isSealed() {
-        return sealed;
-    }
-
     /**
      * Create a <tt>MemoryHandler</tt> and configure it based on
      * <tt>LogManager</tt> configuration properties.
      */
     public MemoryHandler() {
-        configure();
-        sealed = true;
+        doWithControlPermission(this::configure);
 
         LogManager manager = LogManager.getLogManager();
         String handlerName = getClass().getName();
@@ -174,8 +162,7 @@ public class MemoryHandler extends Handler {
         if (size <= 0) {
             throw new IllegalArgumentException();
         }
-        configure();
-        sealed = true;
+        doWithControlPermission(this::configure);
         this.target = target;
         this.pushLevel = pushLevel;
         this.size = size;

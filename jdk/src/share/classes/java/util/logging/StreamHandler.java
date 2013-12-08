@@ -99,23 +99,11 @@ public class StreamHandler extends Handler {
         }
     }
 
-    // Package private support for security checking.  When isSealed
-    // returns true, we access check updates to the class.
-    // Initially the value is false, but we set to true at end of
-    // each constructor...
-    private final boolean sealed;
-
-    @Override
-    boolean isSealed() {
-        return sealed;
-    }
-
     /**
      * Create a <tt>StreamHandler</tt>, with no current output stream.
      */
     public StreamHandler() {
-        configure();
-        sealed = true;
+        doWithControlPermission(this::configure);
     }
 
     /**
@@ -126,10 +114,11 @@ public class StreamHandler extends Handler {
      * @param formatter   Formatter to be used to format output
      */
     public StreamHandler(OutputStream out, Formatter formatter) {
-        configure();
-        setFormatter(formatter);
-        setOutputStream(out);
-        sealed = true;
+        doWithControlPermission(() -> {
+            configure();
+            setFormatter(formatter);
+            setOutputStream(out);
+        });
     }
 
     /**

@@ -88,17 +88,6 @@ public class ConsoleHandler extends StreamHandler {
         }
     }
 
-    // Package private support for security checking.  When isSealed
-    // returns true, we access check updates to the class.
-    // Initially the value is false, but we set to true at end of
-    // each constructor...
-    private final boolean sealed;
-
-    @Override
-    boolean isSealed() {
-        return sealed;
-    }
-
     /**
      * Create a <tt>ConsoleHandler</tt> for <tt>System.err</tt>.
      * <p>
@@ -107,9 +96,10 @@ public class ConsoleHandler extends StreamHandler {
      *
      */
     public ConsoleHandler() {
-        configure();
-        setOutputStream(System.err);
-        sealed = true;
+        doWithControlPermission(() -> {
+            configure();
+            setOutputStream(System.err);
+        });
     }
 
     /**
