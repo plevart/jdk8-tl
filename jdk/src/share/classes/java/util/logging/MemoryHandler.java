@@ -123,8 +123,8 @@ public class MemoryHandler extends Handler {
      * <tt>LogManager</tt> configuration properties.
      */
     public MemoryHandler() {
-        AccessController.doPrivileged(new ConfigureAction(), null, LogManager.controlPermission);
-
+        AccessController.doPrivileged(new ConfigureAction(),
+                                      null, LogManager.controlPermission);
         LogManager manager = LogManager.getLogManager();
         String handlerName = getClass().getName();
         String targetName = manager.getProperty(handlerName+".target");
@@ -169,7 +169,8 @@ public class MemoryHandler extends Handler {
         if (size <= 0) {
             throw new IllegalArgumentException();
         }
-        AccessController.doPrivileged(new ConfigureAction(), null, LogManager.controlPermission);
+        AccessController.doPrivileged(new ConfigureAction(),
+                                      null, LogManager.controlPermission);
         this.target = target;
         this.pushLevel = pushLevel;
         this.size = size;

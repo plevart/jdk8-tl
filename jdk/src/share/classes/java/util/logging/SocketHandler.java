@@ -85,10 +85,26 @@ public class SocketHandler extends StreamHandler {
     private String host;
     private int port;
 
-    // Private PrivilegedAction to configure a SocketHandler from LogManager
-    // properties and/or default values as specified in the class
+    // Private PrivilegedAction to configure a SocketHandler from constructor parameters,
+    // LogManager properties and/or default values as specified in the class
     // javadoc.
     private class ConfigureAction implements PrivilegedAction<Void> {
+        private final String host;
+        private final int port;
+        private final boolean hostAndPortSet;
+
+        ConfigureAction() {
+            this.host = null;
+            this.port = 0;
+            this.hostAndPortSet = false;
+        }
+
+        ConfigureAction(String host, int port) {
+            this.host = host;
+            this.port = port;
+            this.hostAndPortSet = true;
+        }
+
         @Override
         public Void run() {
             LogManager manager = LogManager.getLogManager();
@@ -107,8 +123,35 @@ public class SocketHandler extends StreamHandler {
                     // assert false;
                 }
             }
-            port = manager.getIntProperty(cname + ".port", 0);
-            host = manager.getStringProperty(cname + ".host", null);
+            if (hostAndPortSet) {
+                SocketHandler.this.port = port;
+                SocketHandler.this.host = host;
+            } else {
+                SocketHandler.this.port = manager.getIntProperty(cname + ".port", 0);
+                SocketHandler.this.host = manager.getStringProperty(cname + ".host", null);
+            }
+            // Check host and port are valid.
+            if (port == 0) {
+                throw new IllegalArgumentException("Bad port: " + port);
+            }
+            if (host == null) {
+                throw new IllegalArgumentException("Null host name: " + host);
+            }
+            return null;
+        }
+    }
+
+    // Private PrivilegedAction to set outputStream from given constructor parameter.
+    private class SetOutputStreamAction implements PrivilegedAction<Void> {
+        private final OutputStream outputStream;
+
+        SetOutputStreamAction(OutputStream outputStream) {
+            this.outputStream = outputStream;
+        }
+
+        @Override
+        public Void run() {
+            setOutputStream(outputStream);
             return null;
         }
     }
@@ -123,23 +166,17 @@ public class SocketHandler extends StreamHandler {
      */
     public SocketHandler() throws IOException {
         // We are going to use the logging defaults.
+        AccessController.doPrivileged(new ConfigureAction(),
+                                      null, LogManager.controlPermission);
+        final OutputStream outputStream;
         try {
-            AccessController.doPrivileged(new ConfigureAction() {
-                @Override
-                public Void run() {
-                    super.run();
-                    try {
-                        connect();
-                    } catch (IOException ioe) {
-                        throw new UncheckedIOException(ioe);
-                    }
-                    return null;
-                }
-            }, null, LogManager.controlPermission);
-        } catch (UncheckedIOException uioe) {
+            outputStream = connect();
+        } catch (IOException e) {
             System.err.println("SocketHandler: connect failed to " + host + ":" + port);
-            throw uioe.getCause();
+            throw e;
         }
+        AccessController.doPrivileged(new SetOutputStreamAction(outputStream),
+                                      null, LogManager.controlPermission);
     }
 
     /**
@@ -158,26 +195,16 @@ public class SocketHandler extends StreamHandler {
      *         host and port.
      */
     public SocketHandler(String host, int port) throws IOException {
-        AccessController.doPrivileged(new ConfigureAction(), null, LogManager.controlPermission);
-        this.port = port;
-        this.host = host;
-        connect();
+        AccessController.doPrivileged(new ConfigureAction(host, port),
+                                      null, LogManager.controlPermission);
+        setOutputStream(connect());
     }
 
-    private void connect() throws IOException {
-        // Check the arguments are valid.
-        if (port == 0) {
-            throw new IllegalArgumentException("Bad port: " + port);
-        }
-        if (host == null) {
-            throw new IllegalArgumentException("Null host name: " + host);
-        }
-
+    private OutputStream connect() throws IOException {
         // Try to open a new socket.
         sock = new Socket(host, port);
         OutputStream out = sock.getOutputStream();
-        BufferedOutputStream bout = new BufferedOutputStream(out);
-        setOutputStream(bout);
+        return new BufferedOutputStream(out);
     }
 
     /**

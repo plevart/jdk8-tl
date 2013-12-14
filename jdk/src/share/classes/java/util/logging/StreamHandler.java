@@ -79,10 +79,26 @@ public class StreamHandler extends Handler {
     private boolean doneHeader;
     private volatile Writer writer;
 
-    // Private PrivilegedAction to configure a StreamHandler from LogManager
-    // properties and/or default values as specified in the class
+    // Private PrivilegedAction to configure a StreamHandler from constructor parameters,
+    // LogManager properties and/or default values as specified in the class
     // javadoc.
     private class ConfigureAction implements PrivilegedAction<Void> {
+        private final OutputStream out;
+        private final Formatter formatter;
+
+        ConfigureAction() {
+            this.out = null;
+            this.formatter = null;
+        }
+
+        ConfigureAction(OutputStream out, Formatter formatter) {
+            if (out == null || formatter == null) {
+                throw new NullPointerException();
+            }
+            this.out = out;
+            this.formatter = formatter;
+        }
+
         @Override
         public Void run() {
             LogManager manager = LogManager.getLogManager();
@@ -90,7 +106,9 @@ public class StreamHandler extends Handler {
 
             setLevel(manager.getLevelProperty(cname +".level", Level.INFO));
             setFilter(manager.getFilterProperty(cname +".filter", null));
-            setFormatter(manager.getFormatterProperty(cname +".formatter", new SimpleFormatter()));
+            setFormatter(formatter == null // use configured formatter if null
+                         ? manager.getFormatterProperty(cname +".formatter", new SimpleFormatter())
+                         : formatter);
             try {
                 setEncoding(manager.getStringProperty(cname +".encoding", null));
             } catch (Exception ex) {
@@ -101,6 +119,9 @@ public class StreamHandler extends Handler {
                     // assert false;
                 }
             }
+            if (out != null) { // don't set output stream if null
+                setOutputStream(out);
+            }
             return null;
         }
     }
@@ -109,7 +130,8 @@ public class StreamHandler extends Handler {
      * Create a <tt>StreamHandler</tt>, with no current output stream.
      */
     public StreamHandler() {
-        AccessController.doPrivileged(new ConfigureAction(), null, LogManager.controlPermission);
+        AccessController.doPrivileged(new ConfigureAction(),
+                                      null, LogManager.controlPermission);
     }
 
     /**
@@ -119,16 +141,9 @@ public class StreamHandler extends Handler {
      * @param out         the target output stream
      * @param formatter   Formatter to be used to format output
      */
-    public StreamHandler(final OutputStream out, final Formatter formatter) {
-        AccessController.doPrivileged(new ConfigureAction() {
-            @Override
-            public Void run() {
-                super.run();
-                setFormatter(formatter);
-                setOutputStream(out);
-                return null;
-            }
-        }, null, LogManager.controlPermission);
+    public StreamHandler(OutputStream out, Formatter formatter) {
+        AccessController.doPrivileged(new ConfigureAction(out, formatter),
+                                      null, LogManager.controlPermission);
     }
 
     /**

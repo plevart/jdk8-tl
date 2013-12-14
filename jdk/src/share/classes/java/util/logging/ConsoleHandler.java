@@ -104,7 +104,8 @@ public class ConsoleHandler extends StreamHandler {
      *
      */
     public ConsoleHandler() {
-        AccessController.doPrivileged(new ConfigureAction(), null, LogManager.controlPermission);
+        AccessController.doPrivileged(new ConfigureAction(),
+                                      null, LogManager.controlPermission);
     }
 
     /**
