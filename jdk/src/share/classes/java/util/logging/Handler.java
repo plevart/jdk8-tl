@@ -27,8 +27,6 @@
 package java.util.logging;
 
 import java.io.UnsupportedEncodingException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 /**
  * A <tt>Handler</tt> object takes log messages from a <tt>Logger</tt> and
@@ -305,16 +303,5 @@ public abstract class Handler {
     // to update Handler state and if not throw a SecurityException.
     void checkPermission() throws SecurityException {
         manager.checkPermission();
-    }
-
-    // Package-private support for executing actions with additional
-    // LoggingPermission("control", null) permission.
-    interface PrivilegedVoidAction extends PrivilegedAction<Void> {
-        default Void run() { runVoid(); return null; }
-        void runVoid();
-    }
-
-    void doWithControlPermission(PrivilegedVoidAction action) {
-        AccessController.doPrivileged(action, null, LogManager.controlPermission);
     }
 }

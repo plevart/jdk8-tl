@@ -26,6 +26,9 @@
 
 package java.util.logging;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+
 /**
  * This <tt>Handler</tt> publishes log records to <tt>System.err</tt>.
  * By default the <tt>SimpleFormatter</tt> is used to generate brief summaries.
@@ -66,25 +69,30 @@ package java.util.logging;
  * @since 1.4
  */
 public class ConsoleHandler extends StreamHandler {
-    // Private method to configure a ConsoleHandler from LogManager
+    // Private PrivilegedAction to configure a ConsoleHandler from LogManager
     // properties and/or default values as specified in the class
     // javadoc.
-    private void configure() {
-        LogManager manager = LogManager.getLogManager();
-        String cname = getClass().getName();
+    private class ConfigureAction implements PrivilegedAction<Void> {
+        @Override
+        public Void run() {
+            LogManager manager = LogManager.getLogManager();
+            String cname = ConsoleHandler.this.getClass().getName();
 
-        setLevel(manager.getLevelProperty(cname +".level", Level.INFO));
-        setFilter(manager.getFilterProperty(cname +".filter", null));
-        setFormatter(manager.getFormatterProperty(cname +".formatter", new SimpleFormatter()));
-        try {
-            setEncoding(manager.getStringProperty(cname +".encoding", null));
-        } catch (Exception ex) {
+            setLevel(manager.getLevelProperty(cname +".level", Level.INFO));
+            setFilter(manager.getFilterProperty(cname +".filter", null));
+            setFormatter(manager.getFormatterProperty(cname +".formatter", new SimpleFormatter()));
             try {
-                setEncoding(null);
-            } catch (Exception ex2) {
-                // doing a setEncoding with null should always work.
-                // assert false;
+                setEncoding(manager.getStringProperty(cname +".encoding", null));
+            } catch (Exception ex) {
+                try {
+                    setEncoding(null);
+                } catch (Exception ex2) {
+                    // doing a setEncoding with null should always work.
+                    // assert false;
+                }
             }
+            setOutputStream(System.err);
+            return null;
         }
     }
 
@@ -96,10 +104,7 @@ public class ConsoleHandler extends StreamHandler {
      *
      */
     public ConsoleHandler() {
-        doWithControlPermission(() -> {
-            configure();
-            setOutputStream(System.err);
-        });
+        AccessController.doPrivileged(new ConfigureAction(), null, LogManager.controlPermission);
     }
 
     /**

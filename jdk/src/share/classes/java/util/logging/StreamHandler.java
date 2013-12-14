@@ -27,6 +27,8 @@
 package java.util.logging;
 
 import java.io.*;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 /**
  * Stream based logging <tt>Handler</tt>.
@@ -77,25 +79,29 @@ public class StreamHandler extends Handler {
     private boolean doneHeader;
     private volatile Writer writer;
 
-    // Private method to configure a StreamHandler from LogManager
+    // Private PrivilegedAction to configure a StreamHandler from LogManager
     // properties and/or default values as specified in the class
     // javadoc.
-    private void configure() {
-        LogManager manager = LogManager.getLogManager();
-        String cname = getClass().getName();
+    private class ConfigureAction implements PrivilegedAction<Void> {
+        @Override
+        public Void run() {
+            LogManager manager = LogManager.getLogManager();
+            String cname = StreamHandler.this.getClass().getName();
 
-        setLevel(manager.getLevelProperty(cname +".level", Level.INFO));
-        setFilter(manager.getFilterProperty(cname +".filter", null));
-        setFormatter(manager.getFormatterProperty(cname +".formatter", new SimpleFormatter()));
-        try {
-            setEncoding(manager.getStringProperty(cname +".encoding", null));
-        } catch (Exception ex) {
+            setLevel(manager.getLevelProperty(cname +".level", Level.INFO));
+            setFilter(manager.getFilterProperty(cname +".filter", null));
+            setFormatter(manager.getFormatterProperty(cname +".formatter", new SimpleFormatter()));
             try {
-                setEncoding(null);
-            } catch (Exception ex2) {
-                // doing a setEncoding with null should always work.
-                // assert false;
+                setEncoding(manager.getStringProperty(cname +".encoding", null));
+            } catch (Exception ex) {
+                try {
+                    setEncoding(null);
+                } catch (Exception ex2) {
+                    // doing a setEncoding with null should always work.
+                    // assert false;
+                }
             }
+            return null;
         }
     }
 
@@ -103,7 +109,7 @@ public class StreamHandler extends Handler {
      * Create a <tt>StreamHandler</tt>, with no current output stream.
      */
     public StreamHandler() {
-        doWithControlPermission(this::configure);
+        AccessController.doPrivileged(new ConfigureAction(), null, LogManager.controlPermission);
     }
 
     /**
@@ -113,12 +119,16 @@ public class StreamHandler extends Handler {
      * @param out         the target output stream
      * @param formatter   Formatter to be used to format output
      */
-    public StreamHandler(OutputStream out, Formatter formatter) {
-        doWithControlPermission(() -> {
-            configure();
-            setFormatter(formatter);
-            setOutputStream(out);
-        });
+    public StreamHandler(final OutputStream out, final Formatter formatter) {
+        AccessController.doPrivileged(new ConfigureAction() {
+            @Override
+            public Void run() {
+                super.run();
+                setFormatter(formatter);
+                setOutputStream(out);
+                return null;
+            }
+        }, null, LogManager.controlPermission);
     }
 
     /**

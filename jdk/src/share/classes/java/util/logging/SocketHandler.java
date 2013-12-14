@@ -28,6 +28,8 @@ package java.util.logging;
 
 import java.io.*;
 import java.net.*;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 /**
  * Simple network logging <tt>Handler</tt>.
@@ -83,30 +85,33 @@ public class SocketHandler extends StreamHandler {
     private String host;
     private int port;
 
-    // Private method to configure a SocketHandler from LogManager
+    // Private PrivilegedAction to configure a SocketHandler from LogManager
     // properties and/or default values as specified in the class
     // javadoc.
-    private void configure() {
-        LogManager manager = LogManager.getLogManager();
-        String cname = getClass().getName();
+    private class ConfigureAction implements PrivilegedAction<Void> {
+        @Override
+        public Void run() {
+            LogManager manager = LogManager.getLogManager();
+            String cname = SocketHandler.this.getClass().getName();
 
-        setLevel(manager.getLevelProperty(cname +".level", Level.ALL));
-        setFilter(manager.getFilterProperty(cname +".filter", null));
-        setFormatter(manager.getFormatterProperty(cname +".formatter", new XMLFormatter()));
-        try {
-            setEncoding(manager.getStringProperty(cname +".encoding", null));
-        } catch (Exception ex) {
+            setLevel(manager.getLevelProperty(cname +".level", Level.ALL));
+            setFilter(manager.getFilterProperty(cname +".filter", null));
+            setFormatter(manager.getFormatterProperty(cname +".formatter", new XMLFormatter()));
             try {
-                setEncoding(null);
-            } catch (Exception ex2) {
-                // doing a setEncoding with null should always work.
-                // assert false;
+                setEncoding(manager.getStringProperty(cname +".encoding", null));
+            } catch (Exception ex) {
+                try {
+                    setEncoding(null);
+                } catch (Exception ex2) {
+                    // doing a setEncoding with null should always work.
+                    // assert false;
+                }
             }
+            port = manager.getIntProperty(cname + ".port", 0);
+            host = manager.getStringProperty(cname + ".host", null);
+            return null;
         }
-        port = manager.getIntProperty(cname + ".port", 0);
-        host = manager.getStringProperty(cname + ".host", null);
     }
-
 
     /**
      * Create a <tt>SocketHandler</tt>, using only <tt>LogManager</tt> properties
@@ -119,14 +124,18 @@ public class SocketHandler extends StreamHandler {
     public SocketHandler() throws IOException {
         // We are going to use the logging defaults.
         try {
-            doWithControlPermission(() -> {
-                configure();
-                try {
-                    connect();
-                } catch (IOException ioe) {
-                    throw new UncheckedIOException(ioe);
+            AccessController.doPrivileged(new ConfigureAction() {
+                @Override
+                public Void run() {
+                    super.run();
+                    try {
+                        connect();
+                    } catch (IOException ioe) {
+                        throw new UncheckedIOException(ioe);
+                    }
+                    return null;
                 }
-            });
+            }, null, LogManager.controlPermission);
         } catch (UncheckedIOException uioe) {
             System.err.println("SocketHandler: connect failed to " + host + ":" + port);
             throw uioe.getCause();
@@ -149,7 +158,7 @@ public class SocketHandler extends StreamHandler {
      *         host and port.
      */
     public SocketHandler(String host, int port) throws IOException {
-        doWithControlPermission(this::configure);
+        AccessController.doPrivileged(new ConfigureAction(), null, LogManager.controlPermission);
         this.port = port;
         this.host = host;
         connect();

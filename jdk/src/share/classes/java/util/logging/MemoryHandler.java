@@ -25,6 +25,9 @@
 
 package java.util.logging;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+
 /**
  * <tt>Handler</tt> that buffers requests in a circular buffer in memory.
  * <p>
@@ -94,21 +97,25 @@ public class MemoryHandler extends Handler {
     private LogRecord buffer[];
     int start, count;
 
-    // Private method to configure a MemoryHandler from LogManager
+    // Private PrivilegedAction to configure a MemoryHandler from LogManager
     // properties and/or default values as specified in the class
     // javadoc.
-    private void configure() {
-        LogManager manager = LogManager.getLogManager();
-        String cname = getClass().getName();
+    private class ConfigureAction implements PrivilegedAction<Void> {
+        @Override
+        public Void run() {
+            LogManager manager = LogManager.getLogManager();
+            String cname = MemoryHandler.this.getClass().getName();
 
-        pushLevel = manager.getLevelProperty(cname +".push", Level.SEVERE);
-        size = manager.getIntProperty(cname + ".size", DEFAULT_SIZE);
-        if (size <= 0) {
-            size = DEFAULT_SIZE;
+            pushLevel = manager.getLevelProperty(cname +".push", Level.SEVERE);
+            size = manager.getIntProperty(cname + ".size", DEFAULT_SIZE);
+            if (size <= 0) {
+                size = DEFAULT_SIZE;
+            }
+            setLevel(manager.getLevelProperty(cname +".level", Level.ALL));
+            setFilter(manager.getFilterProperty(cname +".filter", null));
+            setFormatter(manager.getFormatterProperty(cname +".formatter", new SimpleFormatter()));
+            return null;
         }
-        setLevel(manager.getLevelProperty(cname +".level", Level.ALL));
-        setFilter(manager.getFilterProperty(cname +".filter", null));
-        setFormatter(manager.getFormatterProperty(cname +".formatter", new SimpleFormatter()));
     }
 
     /**
@@ -116,7 +123,7 @@ public class MemoryHandler extends Handler {
      * <tt>LogManager</tt> configuration properties.
      */
     public MemoryHandler() {
-        doWithControlPermission(this::configure);
+        AccessController.doPrivileged(new ConfigureAction(), null, LogManager.controlPermission);
 
         LogManager manager = LogManager.getLogManager();
         String handlerName = getClass().getName();
@@ -162,7 +169,7 @@ public class MemoryHandler extends Handler {
         if (size <= 0) {
             throw new IllegalArgumentException();
         }
-        doWithControlPermission(this::configure);
+        AccessController.doPrivileged(new ConfigureAction(), null, LogManager.controlPermission);
         this.target = target;
         this.pushLevel = pushLevel;
         this.size = size;
