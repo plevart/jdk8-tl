@@ -65,6 +65,45 @@ public abstract class Handler {
     private volatile ErrorManager errorManager = new ErrorManager();
     private volatile String encoding;
 
+    // Package-private support for configuring various properties
+    // with specified/configured/default values
+
+    Level getDefaultLevel() { return Level.INFO; }
+
+    Formatter getDefaultFormatter() { return new SimpleFormatter(); }
+
+    void configure(Formatter specifiedFormatter) {
+        LogManager manager = LogManager.getLogManager();
+        String cname = getClass().getName();
+
+        final Level level = manager.getLevelProperty(cname + ".level", getDefaultLevel());
+        final Filter filter = manager.getFilterProperty(cname + ".filter", null);
+        final Formatter formatter = specifiedFormatter == null
+                                    ? manager.getFormatterProperty(cname + ".formatter", getDefaultFormatter())
+                                    : specifiedFormatter;
+        final String encoding = manager.getStringProperty(cname + ".encoding", null);
+
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            @Override
+            public Void run() {
+                setLevel(level);
+                setFilter(filter);
+                setFormatter(formatter);
+                try {
+                    setEncoding(encoding);
+                } catch (Exception ex) {
+                    try {
+                        setEncoding(null);
+                    } catch (Exception ex2) {
+                        // doing a setEncoding with null should always work.
+                        // assert false;
+                    }
+                }
+                return null;
+            }
+        }, null, LogManager.controlPermission);
+    }
+
     /**
      * Default constructor.  The resulting <tt>Handler</tt> has a log
      * level of <tt>Level.ALL</tt>, no <tt>Formatter</tt>, and no
@@ -305,33 +344,5 @@ public abstract class Handler {
     // to update Handler state and if not throw a SecurityException.
     void checkPermission() throws SecurityException {
         manager.checkPermission();
-    }
-
-    // Package-private support for setting various properties
-    // with elevated privilege.
-
-    final void setLevelFilterFormatterEncodingPrivileged(final Level level,
-                                                         final Filter filter,
-                                                         final Formatter formatter,
-                                                         final String encoding) {
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            @Override
-            public Void run() {
-                setLevel(level);
-                setFilter(filter);
-                setFormatter(formatter);
-                try {
-                    setEncoding(encoding);
-                } catch (Exception ex) {
-                    try {
-                        setEncoding(null);
-                    } catch (Exception ex2) {
-                        // doing a setEncoding with null should always work.
-                        // assert false;
-                    }
-                }
-                return null;
-            }
-        }, null, LogManager.controlPermission);
     }
 }

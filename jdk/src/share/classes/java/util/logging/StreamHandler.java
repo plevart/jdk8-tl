@@ -79,23 +79,6 @@ public class StreamHandler extends Handler {
     private boolean doneHeader;
     private volatile Writer writer;
 
-    // Private method to configure a StreamHandler from LogManager
-    // properties and/or default values as specified in the class
-    // javadoc.
-    private void configure(Formatter formatter) {
-        LogManager manager = LogManager.getLogManager();
-        String cname = getClass().getName();
-
-        setLevelFilterFormatterEncodingPrivileged(
-            manager.getLevelProperty(cname + ".level", Level.INFO),
-            manager.getFilterProperty(cname + ".filter", null),
-            formatter == null
-            ? manager.getFormatterProperty(cname + ".formatter", new SimpleFormatter())
-            : formatter,
-            manager.getStringProperty(cname + ".encoding", null)
-        );
-    }
-
     /**
      * Create a <tt>StreamHandler</tt>, with no current output stream.
      */

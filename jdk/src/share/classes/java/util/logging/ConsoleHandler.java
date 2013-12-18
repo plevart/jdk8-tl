@@ -66,20 +66,6 @@ package java.util.logging;
  * @since 1.4
  */
 public class ConsoleHandler extends StreamHandler {
-    // Private method to configure a ConsoleHandler from LogManager
-    // properties and/or default values as specified in the class
-    // javadoc.
-    private void configure() {
-        LogManager manager = LogManager.getLogManager();
-        String cname = getClass().getName();
-
-        setLevelFilterFormatterEncodingPrivileged(
-            manager.getLevelProperty(cname + ".level", Level.INFO),
-            manager.getFilterProperty(cname + ".filter", null),
-            manager.getFormatterProperty(cname + ".formatter", new SimpleFormatter()),
-            manager.getStringProperty(cname + ".encoding", null)
-        );
-    }
 
     /**
      * Create a <tt>ConsoleHandler</tt> for <tt>System.err</tt>.
@@ -89,7 +75,6 @@ public class ConsoleHandler extends StreamHandler {
      *
      */
     public ConsoleHandler() {
-        configure();
         setOutputStreamPrivileged(System.err);
     }
 

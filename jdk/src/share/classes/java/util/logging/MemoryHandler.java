@@ -94,10 +94,14 @@ public class MemoryHandler extends Handler {
     private LogRecord buffer[];
     int start, count;
 
-    // Private method to configure a MemoryHandler from LogManager
-    // properties and/or default values as specified in the class
-    // javadoc.
-    private void configure() {
+    // Package-private support for configuring various properties
+    // with specified/configured/default values
+
+    @Override
+    Level getDefaultLevel() { return Level.ALL; }
+
+    @Override
+    void configure(Formatter specifiedFormatter) {
         LogManager manager = LogManager.getLogManager();
         String cname = getClass().getName();
 
@@ -106,12 +110,7 @@ public class MemoryHandler extends Handler {
         if (size <= 0) {
             size = DEFAULT_SIZE;
         }
-        setLevelFilterFormatterEncodingPrivileged(
-            manager.getLevelProperty(cname + ".level", Level.ALL),
-            manager.getFilterProperty(cname + ".filter", null),
-            manager.getFormatterProperty(cname + ".formatter", new SimpleFormatter()),
-            null
-        );
+        super.configure(specifiedFormatter);
     }
 
     /**
@@ -119,7 +118,7 @@ public class MemoryHandler extends Handler {
      * <tt>LogManager</tt> configuration properties.
      */
     public MemoryHandler() {
-        configure();
+        configure(null);
 
         LogManager manager = LogManager.getLogManager();
         String handlerName = getClass().getName();
@@ -165,7 +164,7 @@ public class MemoryHandler extends Handler {
         if (size <= 0) {
             throw new IllegalArgumentException();
         }
-        configure();
+        configure(null);
         this.target = target;
         this.pushLevel = pushLevel;
         this.size = size;

@@ -83,23 +83,14 @@ public class SocketHandler extends StreamHandler {
     private String host;
     private int port;
 
-    // Private method to configure a SocketHandler from LogManager
-    // properties and/or default values as specified in the class
-    // javadoc.
-    private void configure() {
-        LogManager manager = LogManager.getLogManager();
-        String cname = getClass().getName();
+    // Package-private support for configuring various properties
+    // with specified/configured/default values
 
-        setLevelFilterFormatterEncodingPrivileged(
-            manager.getLevelProperty(cname + ".level", Level.ALL),
-            manager.getFilterProperty(cname + ".filter", null),
-            manager.getFormatterProperty(cname + ".formatter", new XMLFormatter()),
-            manager.getStringProperty(cname + ".encoding", null)
-        );
-        port = manager.getIntProperty(cname + ".port", 0);
-        host = manager.getStringProperty(cname + ".host", null);
-    }
+    @Override
+    Level getDefaultLevel() { return Level.ALL; }
 
+    @Override
+    Formatter getDefaultFormatter() { return new XMLFormatter(); }
 
     /**
      * Create a <tt>SocketHandler</tt>, using only <tt>LogManager</tt> properties
@@ -111,7 +102,10 @@ public class SocketHandler extends StreamHandler {
      */
     public SocketHandler() throws IOException {
         // We are going to use the logging defaults.
-        configure();
+        LogManager manager = LogManager.getLogManager();
+        String cname = getClass().getName();
+        port = manager.getIntProperty(cname + ".port", 0);
+        host = manager.getStringProperty(cname + ".host", null);
 
         try {
             connect();
@@ -137,7 +131,6 @@ public class SocketHandler extends StreamHandler {
      *         host and port.
      */
     public SocketHandler(String host, int port) throws IOException {
-        configure();
         this.port = port;
         this.host = host;
         connect();
