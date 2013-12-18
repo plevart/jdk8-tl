@@ -29,8 +29,6 @@ package java.util.logging;
 import java.io.UnsupportedEncodingException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 
 /**
  * A <tt>Handler</tt> object takes log messages from a <tt>Logger</tt> and
