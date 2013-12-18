@@ -28,8 +28,6 @@ package java.util.logging;
 
 import java.io.*;
 import java.net.*;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 /**
  * Simple network logging <tt>Handler</tt>.
@@ -85,76 +83,23 @@ public class SocketHandler extends StreamHandler {
     private String host;
     private int port;
 
-    // Private PrivilegedAction to configure a SocketHandler from constructor parameters,
-    // LogManager properties and/or default values as specified in the class
+    // Private method to configure a SocketHandler from LogManager
+    // properties and/or default values as specified in the class
     // javadoc.
-    private class ConfigureAction implements PrivilegedAction<Void> {
-        private final String host;
-        private final int port;
-        private final boolean hostAndPortSet;
+    private void configure() {
+        LogManager manager = LogManager.getLogManager();
+        String cname = getClass().getName();
 
-        ConfigureAction() {
-            this.host = null;
-            this.port = 0;
-            this.hostAndPortSet = false;
-        }
-
-        ConfigureAction(String host, int port) {
-            this.host = host;
-            this.port = port;
-            this.hostAndPortSet = true;
-        }
-
-        @Override
-        public Void run() {
-            LogManager manager = LogManager.getLogManager();
-            String cname = SocketHandler.this.getClass().getName();
-
-            setLevel(manager.getLevelProperty(cname +".level", Level.ALL));
-            setFilter(manager.getFilterProperty(cname +".filter", null));
-            setFormatter(manager.getFormatterProperty(cname +".formatter", new XMLFormatter()));
-            try {
-                setEncoding(manager.getStringProperty(cname +".encoding", null));
-            } catch (Exception ex) {
-                try {
-                    setEncoding(null);
-                } catch (Exception ex2) {
-                    // doing a setEncoding with null should always work.
-                    // assert false;
-                }
-            }
-            if (hostAndPortSet) {
-                SocketHandler.this.port = port;
-                SocketHandler.this.host = host;
-            } else {
-                SocketHandler.this.port = manager.getIntProperty(cname + ".port", 0);
-                SocketHandler.this.host = manager.getStringProperty(cname + ".host", null);
-            }
-            // Check host and port are valid.
-            if (port == 0) {
-                throw new IllegalArgumentException("Bad port: " + port);
-            }
-            if (host == null) {
-                throw new IllegalArgumentException("Null host name: " + host);
-            }
-            return null;
-        }
+        setLevelFilterFormatterEncodingPrivileged(
+            manager.getLevelProperty(cname + ".level", Level.ALL),
+            manager.getFilterProperty(cname + ".filter", null),
+            manager.getFormatterProperty(cname + ".formatter", new XMLFormatter()),
+            manager.getStringProperty(cname + ".encoding", null)
+        );
+        port = manager.getIntProperty(cname + ".port", 0);
+        host = manager.getStringProperty(cname + ".host", null);
     }
 
-    // Private PrivilegedAction to set outputStream from given constructor parameter.
-    private class SetOutputStreamAction implements PrivilegedAction<Void> {
-        private final OutputStream outputStream;
-
-        SetOutputStreamAction(OutputStream outputStream) {
-            this.outputStream = outputStream;
-        }
-
-        @Override
-        public Void run() {
-            setOutputStream(outputStream);
-            return null;
-        }
-    }
 
     /**
      * Create a <tt>SocketHandler</tt>, using only <tt>LogManager</tt> properties
@@ -166,17 +111,14 @@ public class SocketHandler extends StreamHandler {
      */
     public SocketHandler() throws IOException {
         // We are going to use the logging defaults.
-        AccessController.doPrivileged(new ConfigureAction(),
-                                      null, LogManager.controlPermission);
-        final OutputStream outputStream;
+        configure();
+
         try {
-            outputStream = connect();
-        } catch (IOException e) {
+            connect();
+        } catch (IOException ix) {
             System.err.println("SocketHandler: connect failed to " + host + ":" + port);
-            throw e;
+            throw ix;
         }
-        AccessController.doPrivileged(new SetOutputStreamAction(outputStream),
-                                      null, LogManager.controlPermission);
     }
 
     /**
@@ -195,16 +137,26 @@ public class SocketHandler extends StreamHandler {
      *         host and port.
      */
     public SocketHandler(String host, int port) throws IOException {
-        AccessController.doPrivileged(new ConfigureAction(host, port),
-                                      null, LogManager.controlPermission);
-        setOutputStream(connect());
+        configure();
+        this.port = port;
+        this.host = host;
+        connect();
     }
 
-    private OutputStream connect() throws IOException {
+    private void connect() throws IOException {
+        // Check the arguments are valid.
+        if (port == 0) {
+            throw new IllegalArgumentException("Bad port: " + port);
+        }
+        if (host == null) {
+            throw new IllegalArgumentException("Null host name: " + host);
+        }
+
         // Try to open a new socket.
         sock = new Socket(host, port);
         OutputStream out = sock.getOutputStream();
-        return new BufferedOutputStream(out);
+        BufferedOutputStream bout = new BufferedOutputStream(out);
+        setOutputStreamPrivileged(bout);
     }
 
     /**

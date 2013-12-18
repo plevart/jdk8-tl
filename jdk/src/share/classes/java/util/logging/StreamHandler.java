@@ -79,59 +79,28 @@ public class StreamHandler extends Handler {
     private boolean doneHeader;
     private volatile Writer writer;
 
-    // Private PrivilegedAction to configure a StreamHandler from constructor parameters,
-    // LogManager properties and/or default values as specified in the class
+    // Private method to configure a StreamHandler from LogManager
+    // properties and/or default values as specified in the class
     // javadoc.
-    private class ConfigureAction implements PrivilegedAction<Void> {
-        private final OutputStream out;
-        private final Formatter formatter;
+    private void configure(Formatter formatter) {
+        LogManager manager = LogManager.getLogManager();
+        String cname = getClass().getName();
 
-        ConfigureAction() {
-            this.out = null;
-            this.formatter = null;
-        }
-
-        ConfigureAction(OutputStream out, Formatter formatter) {
-            if (out == null || formatter == null) {
-                throw new NullPointerException();
-            }
-            this.out = out;
-            this.formatter = formatter;
-        }
-
-        @Override
-        public Void run() {
-            LogManager manager = LogManager.getLogManager();
-            String cname = StreamHandler.this.getClass().getName();
-
-            setLevel(manager.getLevelProperty(cname +".level", Level.INFO));
-            setFilter(manager.getFilterProperty(cname +".filter", null));
-            setFormatter(formatter == null // use configured formatter if null
-                         ? manager.getFormatterProperty(cname +".formatter", new SimpleFormatter())
-                         : formatter);
-            try {
-                setEncoding(manager.getStringProperty(cname +".encoding", null));
-            } catch (Exception ex) {
-                try {
-                    setEncoding(null);
-                } catch (Exception ex2) {
-                    // doing a setEncoding with null should always work.
-                    // assert false;
-                }
-            }
-            if (out != null) { // don't set output stream if null
-                setOutputStream(out);
-            }
-            return null;
-        }
+        setLevelFilterFormatterEncodingPrivileged(
+            manager.getLevelProperty(cname + ".level", Level.INFO),
+            manager.getFilterProperty(cname + ".filter", null),
+            formatter == null
+            ? manager.getFormatterProperty(cname + ".formatter", new SimpleFormatter())
+            : formatter,
+            manager.getStringProperty(cname + ".encoding", null)
+        );
     }
 
     /**
      * Create a <tt>StreamHandler</tt>, with no current output stream.
      */
     public StreamHandler() {
-        AccessController.doPrivileged(new ConfigureAction(),
-                                      null, LogManager.controlPermission);
+        configure(null);
     }
 
     /**
@@ -142,8 +111,11 @@ public class StreamHandler extends Handler {
      * @param formatter   Formatter to be used to format output
      */
     public StreamHandler(OutputStream out, Formatter formatter) {
-        AccessController.doPrivileged(new ConfigureAction(out, formatter),
-                                      null, LogManager.controlPermission);
+        if (formatter == null) {
+            throw new NullPointerException();
+        }
+        configure(formatter);
+        setOutputStreamPrivileged(out);
     }
 
     /**
@@ -323,5 +295,18 @@ public class StreamHandler extends Handler {
     @Override
     public synchronized void close() throws SecurityException {
         flushAndClose();
+    }
+
+    // Package-private support for setting OutputStream
+    // with elevated privilege.
+
+    final void setOutputStreamPrivileged(final OutputStream out) {
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            @Override
+            public Void run() {
+                setOutputStream(out);
+                return null;
+            }
+        }, null, LogManager.controlPermission);
     }
 }
