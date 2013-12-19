@@ -102,9 +102,9 @@ public class StreamHandler extends Handler {
         setOutputStreamPrivileged(out);
     }
 
-    // Package-private constructor for chaining from subclass constructors
-    // that wish to configure the handler with specific defaults and/or
-    // specified values.
+    /**
+     * @see Handler#Handler(Level, Formatter, Formatter)
+     */
     StreamHandler(Level defaultLevel,
                   Formatter defaultFormatter,
                   Formatter specifiedFormatter) {

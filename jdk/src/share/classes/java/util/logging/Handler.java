@@ -74,9 +74,18 @@ public abstract class Handler {
     protected Handler() {
     }
 
-    // Package-private constructor for chaining from subclass constructors
-    // that wish to configure the handler with specific defaults and/or
-    // specified values.
+    /**
+     * Package-private constructor for chaining from subclass constructors
+     * that wish to configure the handler with specific defaults and/or
+     * specified values.
+     *
+     * @param defaultLevel       a default {@link Level} to configure if one is
+     *                           not found in LogManager configuration properties
+     * @param defaultFormatter   a default {@link Formatter} to configure if one is
+     *                           not specified by {@code specifiedFormatter} parameter
+     *                           nor found in LogManager configuration properties
+     * @param specifiedFormatter if not null, this is the formatter to configure
+     */
     Handler(Level defaultLevel, Formatter defaultFormatter,
             Formatter specifiedFormatter) {
         LogManager manager = LogManager.getLogManager();
