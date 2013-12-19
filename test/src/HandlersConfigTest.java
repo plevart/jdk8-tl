@@ -27,8 +27,8 @@
  * @summary Test which verifies that various JDK logging Handlers are
  *          configured as specified in javadoc and that no special
  *          logging permissions are required for instantiating them.
- * @run main/othervm HandlersConfigTest$Default
- * @run main/othervm HandlersConfigTest$Configured
+ * @run main/othervm HandlersConfigTest default
+ * @run main/othervm HandlersConfigTest configured
  */
 
 import java.io.IOException;
@@ -51,6 +51,20 @@ import java.util.logging.StreamHandler;
 import java.util.logging.XMLFormatter;
 
 public abstract class HandlersConfigTest implements Runnable {
+
+    public static void main(String[] args) {
+        switch (args.length == 1 ? args[0] : "usage") {
+            case "default":
+                new Default().run();
+                break;
+            case "configured":
+                new Configured().run();
+                break;
+            default:
+                System.err.println("Usage: HandlersConfigTest [default|configured]");
+                break;
+        }
+    }
 
     static final String CONFIG_FILE_PROPERTY = "java.util.logging.config.file";
     final Field memoryHandlerTarget, memoryHandlerSize, streamHandlerOutput;
