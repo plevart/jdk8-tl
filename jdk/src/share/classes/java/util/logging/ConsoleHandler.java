@@ -75,6 +75,9 @@ public class ConsoleHandler extends StreamHandler {
      *
      */
     public ConsoleHandler() {
+        // configure with specific defaults for ConsoleHandler
+        super(Level.INFO, new SimpleFormatter(), null);
+
         setOutputStreamPrivileged(System.err);
     }
 

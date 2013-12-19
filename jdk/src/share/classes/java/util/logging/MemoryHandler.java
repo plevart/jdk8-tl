@@ -94,37 +94,24 @@ public class MemoryHandler extends Handler {
     private LogRecord buffer[];
     int start, count;
 
-    // Package-private support for configuring various properties
-    // with specified/configured/default values
-
-    @Override
-    Level getDefaultLevel() { return Level.ALL; }
-
-    @Override
-    void configure(Formatter specifiedFormatter) {
-        LogManager manager = LogManager.getLogManager();
-        String cname = getClass().getName();
-
-        pushLevel = manager.getLevelProperty(cname +".push", Level.SEVERE);
-        size = manager.getIntProperty(cname + ".size", DEFAULT_SIZE);
-        if (size <= 0) {
-            size = DEFAULT_SIZE;
-        }
-        super.configure(specifiedFormatter);
-    }
-
     /**
      * Create a <tt>MemoryHandler</tt> and configure it based on
      * <tt>LogManager</tt> configuration properties.
      */
     public MemoryHandler() {
-        configure(null);
+        // configure with specific defaults for MemoryHandler
+        super(Level.ALL, new SimpleFormatter(), null);
 
         LogManager manager = LogManager.getLogManager();
-        String handlerName = getClass().getName();
-        String targetName = manager.getProperty(handlerName+".target");
+        String cname = getClass().getName();
+        pushLevel = manager.getLevelProperty(cname +".push", Level.SEVERE);
+        size = manager.getIntProperty(cname + ".size", DEFAULT_SIZE);
+        if (size <= 0) {
+            size = DEFAULT_SIZE;
+        }
+        String targetName = manager.getProperty(cname+".target");
         if (targetName == null) {
-            throw new RuntimeException("The handler " + handlerName
+            throw new RuntimeException("The handler " + cname
                     + " does not specify a target");
         }
         Class<?> clz;
@@ -158,13 +145,15 @@ public class MemoryHandler extends Handler {
      * @throws IllegalArgumentException if {@code size is <= 0}
      */
     public MemoryHandler(Handler target, int size, Level pushLevel) {
+        // configure with specific defaults for MemoryHandler
+        super(Level.ALL, new SimpleFormatter(), null);
+
         if (target == null || pushLevel == null) {
             throw new NullPointerException();
         }
         if (size <= 0) {
             throw new IllegalArgumentException();
         }
-        configure(null);
         this.target = target;
         this.pushLevel = pushLevel;
         this.size = size;

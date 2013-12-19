@@ -29,6 +29,7 @@ package java.util.logging;
 import java.io.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Objects;
 
 /**
  * Stream based logging <tt>Handler</tt>.
@@ -83,7 +84,8 @@ public class StreamHandler extends Handler {
      * Create a <tt>StreamHandler</tt>, with no current output stream.
      */
     public StreamHandler() {
-        configure(null);
+        // configure with specific defaults for StreamHandler
+        super(Level.INFO, new SimpleFormatter(), null);
     }
 
     /**
@@ -94,11 +96,19 @@ public class StreamHandler extends Handler {
      * @param formatter   Formatter to be used to format output
      */
     public StreamHandler(OutputStream out, Formatter formatter) {
-        if (formatter == null) {
-            throw new NullPointerException();
-        }
-        configure(formatter);
+        // configure with default level but use specified formatter
+        super(Level.INFO, null, Objects.requireNonNull(formatter));
+
         setOutputStreamPrivileged(out);
+    }
+
+    // Package-private constructor for chaining from subclass constructors
+    // that wish to configure the handler with specific defaults and/or
+    // specified values.
+    StreamHandler(Level defaultLevel,
+                  Formatter defaultFormatter,
+                  Formatter specifiedFormatter) {
+        super(defaultLevel, defaultFormatter, specifiedFormatter);
     }
 
     /**
@@ -282,7 +292,6 @@ public class StreamHandler extends Handler {
 
     // Package-private support for setting OutputStream
     // with elevated privilege.
-
     final void setOutputStreamPrivileged(final OutputStream out) {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             @Override

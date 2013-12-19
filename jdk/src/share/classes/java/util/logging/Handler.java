@@ -74,6 +74,42 @@ public abstract class Handler {
     protected Handler() {
     }
 
+    // Package-private constructor for chaining from subclass constructors
+    // that wish to configure the handler with specific defaults and/or
+    // specified values.
+    Handler(Level defaultLevel, Formatter defaultFormatter,
+            Formatter specifiedFormatter) {
+        LogManager manager = LogManager.getLogManager();
+        String cname = getClass().getName();
+
+        final Level level = manager.getLevelProperty(cname + ".level", defaultLevel);
+        final Filter filter = manager.getFilterProperty(cname + ".filter", null);
+        final Formatter formatter = specifiedFormatter == null
+                                    ? manager.getFormatterProperty(cname + ".formatter", defaultFormatter)
+                                    : specifiedFormatter;
+        final String encoding = manager.getStringProperty(cname + ".encoding", null);
+
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            @Override
+            public Void run() {
+                setLevel(level);
+                setFilter(filter);
+                setFormatter(formatter);
+                try {
+                    setEncoding(encoding);
+                } catch (Exception ex) {
+                    try {
+                        setEncoding(null);
+                    } catch (Exception ex2) {
+                        // doing a setEncoding with null should always work.
+                        // assert false;
+                    }
+                }
+                return null;
+            }
+        }, null, LogManager.controlPermission);
+    }
+
     /**
      * Publish a <tt>LogRecord</tt>.
      * <p>
@@ -305,44 +341,5 @@ public abstract class Handler {
     // to update Handler state and if not throw a SecurityException.
     void checkPermission() throws SecurityException {
         manager.checkPermission();
-    }
-
-    // Package-private support for configuring various properties
-    // with specified/configured/default values
-
-    Level getDefaultLevel() { return Level.INFO; }
-
-    Formatter getDefaultFormatter() { return new SimpleFormatter(); }
-
-    void configure(Formatter specifiedFormatter) {
-        LogManager manager = LogManager.getLogManager();
-        String cname = getClass().getName();
-
-        final Level level = manager.getLevelProperty(cname + ".level", getDefaultLevel());
-        final Filter filter = manager.getFilterProperty(cname + ".filter", null);
-        final Formatter formatter = specifiedFormatter == null
-                                    ? manager.getFormatterProperty(cname + ".formatter", getDefaultFormatter())
-                                    : specifiedFormatter;
-        final String encoding = manager.getStringProperty(cname + ".encoding", null);
-
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            @Override
-            public Void run() {
-                setLevel(level);
-                setFilter(filter);
-                setFormatter(formatter);
-                try {
-                    setEncoding(encoding);
-                } catch (Exception ex) {
-                    try {
-                        setEncoding(null);
-                    } catch (Exception ex2) {
-                        // doing a setEncoding with null should always work.
-                        // assert false;
-                    }
-                }
-                return null;
-            }
-        }, null, LogManager.controlPermission);
     }
 }
