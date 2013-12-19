@@ -25,8 +25,9 @@
  * @test
  * @bug 8029781 8030801
  * @summary Test which verifies that various JDK logging Handlers are
- *          configured as specified in javadoc and that no special
- *          logging permissions are required for instantiating them.
+ *          configured correctly from defaults and/or LogManager properties
+ *          as specified in javadoc and that no special
+ *          logging permission is required for instantiating them.
  * @run main/othervm HandlersConfigTest default
  * @run main/othervm HandlersConfigTest configured
  */
