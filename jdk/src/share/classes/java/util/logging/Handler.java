@@ -76,7 +76,7 @@ public abstract class Handler {
 
     /**
      * Package-private constructor for chaining from subclass constructors
-     * that wish to configure the handler with specific defaults and/or
+     * that wish to configure the handler with specific default and/or
      * specified values.
      *
      * @param defaultLevel       a default {@link Level} to configure if one is
@@ -88,6 +88,7 @@ public abstract class Handler {
      */
     Handler(Level defaultLevel, Formatter defaultFormatter,
             Formatter specifiedFormatter) {
+
         LogManager manager = LogManager.getLogManager();
         String cname = getClass().getName();
 
