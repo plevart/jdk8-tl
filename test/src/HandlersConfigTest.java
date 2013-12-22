@@ -36,20 +36,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.net.ServerSocket;
-import java.net.SocketPermission;
 import java.net.URL;
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.Permission;
-import java.security.PermissionCollection;
-import java.security.Permissions;
-import java.security.Policy;
-import java.security.PrivilegedAction;
-import java.security.ProtectionDomain;
-import java.util.Enumeration;
-import java.util.HashSet;
 import java.util.Objects;
-import java.util.Set;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Filter;
 import java.util.logging.Formatter;
@@ -57,7 +45,6 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.LogRecord;
-import java.util.logging.LoggingPermission;
 import java.util.logging.MemoryHandler;
 import java.util.logging.SimpleFormatter;
 import java.util.logging.SocketHandler;
@@ -80,8 +67,11 @@ public abstract class HandlersConfigTest implements Runnable {
         }
     }
 
-    static final Field memoryHandlerTarget, memoryHandlerSize, streamHandlerOutput;
-    static {
+    static final String CONFIG_FILE_PROPERTY = "java.util.logging.config.file";
+    final Field memoryHandlerTarget, memoryHandlerSize, streamHandlerOutput;
+    final ServerSocket serverSocket;
+
+    HandlersConfigTest() {
         // establish access to private fields
         try {
             memoryHandlerTarget = MemoryHandler.class.getDeclaredField("target");
@@ -93,19 +83,14 @@ public abstract class HandlersConfigTest implements Runnable {
         } catch (NoSuchFieldException e) {
             throw new AssertionError(e);
         }
-    }
 
-    HandlersConfigTest() {
-        // logging properties
-        System.setProperty("java.util.logging.config.file", getFilePath(getClass(), ".props"));
-        // security policy
-        System.setProperty("java.security.policy", getURL(HandlersConfigTest.class, ".policy").toString());
-    }
-
-    ServerSocket serverSocket;
-
-    @Override
-    public final void run() {
+        // load logging.propertes for the test
+        String rname = getClass().getName().replace('.', '/') + ".props";
+        URL url = getClass().getClassLoader().getResource(rname);
+        if (url == null || !"file".equals(url.getProtocol())) {
+            throw new IllegalStateException("Resource: " + rname + " not found or not on file: " + url);
+        }
+        System.setProperty(CONFIG_FILE_PROPERTY, url.getFile());
 
         // create ServerSocket as a target for SocketHandler
         try {
@@ -115,31 +100,16 @@ public abstract class HandlersConfigTest implements Runnable {
         }
 
         // activate security
-        System.setSecurityManager(new SecurityManager());
+        System.setSecurityManager(new SecurityManager() {
+            @Override
+            public void checkConnect(String host, int port) {
+                // allow socket connections
+            }
+        });
 
         // initialize logging system
         LogManager.getLogManager();
-
-        try {
-            // execute test with sole SocketPermission("*", "connect, resolve") ...
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                @Override
-                public Void run() {
-                    doTest();
-                    return null;
-                }
-            }, null, new SocketPermission("*", "connect, resolve"));
-        } finally {
-            try {
-                closeHandlers();
-                serverSocket.close();
-            } catch (Exception e) {
-                // ignore
-            }
-        }
     }
-
-    protected abstract void doTest();
 
     // check that defaults are used as specified by javadoc
 
@@ -149,37 +119,37 @@ public abstract class HandlersConfigTest implements Runnable {
         }
 
         @Override
-        protected void doTest() {
+        public void run() {
             // MemoryHandler
 
-            check(registerClose(new MemoryHandler()),
+            check(new MemoryHandler(),
                 Level.ALL, null, null, SimpleFormatter.class,
                 ConfiguredHandler.class, 1000, Level.SEVERE);
 
-            check(registerClose(new MemoryHandler(new SpecifiedHandler(), 100, Level.WARNING)),
+            check(new MemoryHandler(new SpecifiedHandler(), 100, Level.WARNING),
                 Level.ALL, null, null, SimpleFormatter.class,
                 SpecifiedHandler.class, 100, Level.WARNING);
 
             // StreamHandler
 
-            check(registerClose(new StreamHandler()),
+            check(new StreamHandler(),
                 Level.INFO, null, null, SimpleFormatter.class,
                 null);
 
-            check(registerClose(new StreamHandler(System.out, new SpecifiedFormatter())),
+            check(new StreamHandler(System.out, new SpecifiedFormatter()),
                 Level.INFO, null, null, SpecifiedFormatter.class,
                 System.out);
 
             // ConsoleHandler
 
-            check(registerClose(new ConsoleHandler()),
+            check(new ConsoleHandler(),
                 Level.INFO, null, null, SimpleFormatter.class,
                 System.err);
 
             // SocketHandler (use the ServerSocket's port)
 
             try {
-                check(registerClose(new SocketHandler("localhost", serverSocket.getLocalPort())),
+                check(new SocketHandler("localhost", serverSocket.getLocalPort()),
                     Level.ALL, null, null, XMLFormatter.class);
             } catch (IOException e) {
                 throw new RuntimeException("Can't connect to localhost:" + serverSocket.getLocalPort(), e);
@@ -195,37 +165,37 @@ public abstract class HandlersConfigTest implements Runnable {
         }
 
         @Override
-        protected void doTest() {
+        public void run() {
             // MemoryHandler
 
-            check(registerClose(new MemoryHandler()),
+            check(new MemoryHandler(),
                 Level.FINE, null, ConfiguredFilter.class, ConfiguredFormatter.class,
                 ConfiguredHandler.class, 123, Level.FINE);
 
-            check(registerClose(new MemoryHandler(new SpecifiedHandler(), 100, Level.WARNING)),
+            check(new MemoryHandler(new SpecifiedHandler(), 100, Level.WARNING),
                 Level.FINE, null, ConfiguredFilter.class, ConfiguredFormatter.class,
                 SpecifiedHandler.class, 100, Level.WARNING);
 
             // StreamHandler
 
-            check(registerClose(new StreamHandler()),
+            check(new StreamHandler(),
                 Level.FINE, "ASCII", ConfiguredFilter.class, ConfiguredFormatter.class,
                 null);
 
-            check(registerClose(new StreamHandler(System.out, new SpecifiedFormatter())),
+            check(new StreamHandler(System.out, new SpecifiedFormatter()),
                 Level.FINE, "ASCII", ConfiguredFilter.class, SpecifiedFormatter.class,
                 System.out);
 
             // ConsoleHandler
 
-            check(registerClose(new ConsoleHandler()),
+            check(new ConsoleHandler(),
                 Level.FINE, "ASCII", ConfiguredFilter.class, ConfiguredFormatter.class,
                 System.err);
 
             // SocketHandler (use the ServerSocket's port)
 
             try {
-                check(registerClose(new SocketHandler("localhost", serverSocket.getLocalPort())),
+                check(new SocketHandler("localhost", serverSocket.getLocalPort()),
                     Level.FINE, "ASCII", ConfiguredFilter.class, ConfiguredFormatter.class);
             } catch (Exception e) {
                 throw new RuntimeException("Can't connect to localhost:" + serverSocket.getLocalPort(), e);
@@ -289,21 +259,7 @@ public abstract class HandlersConfigTest implements Runnable {
                                  ", " + message);
     }
 
-    private final Set<Handler> handlersToClose = new HashSet<>();
-
-    <H extends Handler> H registerClose(H handler) {
-        handlersToClose.add(handler);
-        return handler;
-    }
-
-    void closeHandlers() {
-        for (Handler handler : handlersToClose) {
-            handler.close();
-        }
-        handlersToClose.clear();
-    }
-
-    static Handler getTarget(MemoryHandler memoryHandler) {
+    Handler getTarget(MemoryHandler memoryHandler) {
         try {
             return (Handler) memoryHandlerTarget.get(memoryHandler);
         } catch (IllegalAccessException e) {
@@ -311,7 +267,7 @@ public abstract class HandlersConfigTest implements Runnable {
         }
     }
 
-    static int getSize(MemoryHandler memoryHandler) {
+    int getSize(MemoryHandler memoryHandler) {
         try {
             return (int) memoryHandlerSize.get(memoryHandler);
         } catch (IllegalAccessException e) {
@@ -319,29 +275,12 @@ public abstract class HandlersConfigTest implements Runnable {
         }
     }
 
-    static OutputStream getOutput(StreamHandler streamHandler) {
+    OutputStream getOutput(StreamHandler streamHandler) {
         try {
             return (OutputStream) streamHandlerOutput.get(streamHandler);
         } catch (IllegalAccessException e) {
             throw new IllegalAccessError(e.getMessage());
         }
-    }
-
-    static String getFilePath(Class<?> clazz, String ext) {
-        URL url = getURL(clazz, ext);
-        if (!"file".equals(url.getProtocol())) {
-            throw new IllegalStateException("Not a file url: " + url);
-        }
-        return url.getFile();
-    }
-
-    static URL getURL(Class<?> clazz, String ext) {
-        String rname = clazz.getName().replace('.', '/') + ext;
-        URL url = clazz.getClassLoader().getResource(rname);
-        if (url == null) {
-            throw new IllegalStateException("Resource not found: " + rname);
-        }
-        return url;
     }
 
     // various independent types of Formatters, Filters, Handlers...
