@@ -182,6 +182,8 @@ public class IntFieldHandlesTest {
 
         IntFieldHandlesTest t = new IntFieldHandlesTest();
 
+//        System.out.println((int)X.getVolatile.invokeExact((IntFieldHandlesTest) null));
+
         int n = 1000_000_000;
 
         System.out.println("\nvolatile get...");

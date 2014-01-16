@@ -77,17 +77,57 @@ public final class IntFieldHandles {
     static {
         MethodHandles.Lookup lookup = MethodHandles.Lookup.IMPL_LOOKUP;
         try {
-            unsafeGetInt = lookup.findVirtual(Unsafe.class, "getInt", methodType(int.class, Object.class, long.class)).bindTo(unsafe);
-            unsafePutInt = lookup.findVirtual(Unsafe.class, "putInt", methodType(void.class, Object.class, long.class, int.class)).bindTo(unsafe);
-            unsafeGetIntVolatile = lookup.findVirtual(Unsafe.class, "getIntVolatile", methodType(int.class, Object.class, long.class)).bindTo(unsafe);
-            unsafePutIntVolatile = lookup.findVirtual(Unsafe.class, "putIntVolatile", methodType(void.class, Object.class, long.class, int.class)).bindTo(unsafe);
-            unsafePutOrderedInt = lookup.findVirtual(Unsafe.class, "putOrderedInt", methodType(void.class, Object.class, long.class, int.class)).bindTo(unsafe);
-            unsafeGetAndSetInt = lookup.findVirtual(Unsafe.class, "getAndSetInt", methodType(int.class, Object.class, long.class, int.class)).bindTo(unsafe);
-            unsafeGetAndAddInt = lookup.findVirtual(Unsafe.class, "getAndAddInt", methodType(int.class, Object.class, long.class, int.class)).bindTo(unsafe);
-            unsafeCompareAndSwapInt = lookup.findVirtual(Unsafe.class, "compareAndSwapInt", methodType(boolean.class, Object.class, long.class, int.class, int.class)).bindTo(unsafe);
+            unsafeGetInt = lookup.findStatic(IntFieldHandles.class, "unsafeGetInt", methodType(int.class, Object.class, long.class));
+            unsafePutInt = lookup.findStatic(IntFieldHandles.class, "unsafePutInt", methodType(void.class, Object.class, long.class, int.class));
+            unsafeGetIntVolatile = lookup.findStatic(IntFieldHandles.class, "unsafeGetIntVolatile", methodType(int.class, Object.class, long.class));
+            unsafePutIntVolatile = lookup.findStatic(IntFieldHandles.class, "unsafePutIntVolatile", methodType(void.class, Object.class, long.class, int.class));
+            unsafePutOrderedInt = lookup.findStatic(IntFieldHandles.class, "unsafePutOrderedInt", methodType(void.class, Object.class, long.class, int.class));
+            unsafeGetAndSetInt = lookup.findStatic(IntFieldHandles.class, "unsafeGetAndSetInt", methodType(int.class, Object.class, long.class, int.class));
+            unsafeGetAndAddInt = lookup.findStatic(IntFieldHandles.class, "unsafeGetAndAddInt", methodType(int.class, Object.class, long.class, int.class));
+            unsafeCompareAndSwapInt = lookup.findStatic(IntFieldHandles.class, "unsafeCompareAndSwapInt", methodType(boolean.class, Object.class, long.class, int.class, int.class));
         } catch (NoSuchMethodException | IllegalAccessException e) {
             throw new Error(e);
         }
+    }
+
+    private static int unsafeGetInt(Object o, long offset) {
+        o.getClass(); // non-null check
+        return unsafe.getInt(o, offset);
+    }
+
+    private static void unsafePutInt(Object o, long offset, int x) {
+        o.getClass(); // non-null check
+        unsafe.putInt(o, offset, x);
+    }
+
+    private static int unsafeGetIntVolatile(Object o, long offset) {
+        o.getClass(); // non-null check
+        return unsafe.getIntVolatile(o, offset);
+    }
+
+    private static void unsafePutIntVolatile(Object o, long offset, int x) {
+        o.getClass(); // non-null check
+        unsafe.putIntVolatile(o, offset, x);
+    }
+
+    private static void unsafePutOrderedInt(Object o, long offset, int x) {
+        o.getClass(); // non-null check
+        unsafe.putOrderedInt(o, offset, x);
+    }
+
+    private static int unsafeGetAndSetInt(Object o, long offset, int x) {
+        o.getClass(); // non-null check
+        return unsafe.getAndSetInt(o, offset, x);
+    }
+
+    private static int unsafeGetAndAddInt(Object o, long offset, int x) {
+        o.getClass(); // non-null check
+        return unsafe.getAndAddInt(o, offset, x);
+    }
+
+    private static boolean unsafeCompareAndSwapInt(Object o, long offset, int expected, int x) {
+        o.getClass(); // non-null check
+        return unsafe.compareAndSwapInt(o, offset, expected, x);
     }
 
     /**
@@ -118,7 +158,7 @@ public final class IntFieldHandles {
      *
      * @param lookup    the {@link MethodHandles.Lookup} to use for obtaining method handles for specified field
      * @param refc      the class or interface from which the field is accessed
-     *                  (this will be the 1st argument type of all produced method handles)
+     *                  (this will be the type of 1st parameter of all produced method handles)
      * @param fieldName the name of the field
      * @throws NoSuchFieldException   if the field does not exist
      * @throws IllegalAccessException if access checking fails, or if the field is static
@@ -132,14 +172,19 @@ public final class IntFieldHandles {
         Field field = mhi.reflectAs(Field.class, lookup);
         // obtain offset
         long offset = unsafe.objectFieldOffset(field);
-        // bind offset and change type of 1st argument from Object to refc
-        getRelaxed = insertArguments(unsafeGetInt, 1, offset).asType(methodType(int.class, refc));
-        setRelaxed = insertArguments(unsafePutInt, 1, offset).asType(methodType(void.class, refc, int.class));
-        getVolatile = insertArguments(unsafeGetIntVolatile, 1, offset).asType(methodType(int.class, refc));
-        setVolatile = insertArguments(unsafePutIntVolatile, 1, offset).asType(methodType(void.class, refc, int.class));
-        setOrdered = insertArguments(unsafePutOrderedInt, 1, offset).asType(methodType(void.class, refc, int.class));
-        getAndSet = insertArguments(unsafeGetAndSetInt, 1, offset).asType(methodType(int.class, refc, int.class));
-        getAndAdd = insertArguments(unsafeGetAndAddInt, 1, offset).asType(methodType(int.class, refc, int.class));
-        compareAndSet = insertArguments(unsafeCompareAndSwapInt, 1, offset).asType(methodType(boolean.class, refc, int.class, int.class));
+        // bind offset, change type of 1st parameter from Object to refc
+        getRelaxed = bindOffsetAndChangeP0Type(unsafeGetInt, offset, refc);
+        setRelaxed = bindOffsetAndChangeP0Type(unsafePutInt, offset, refc);
+        getVolatile = bindOffsetAndChangeP0Type(unsafeGetIntVolatile, offset, refc);
+        setVolatile = bindOffsetAndChangeP0Type(unsafePutIntVolatile, offset, refc);
+        setOrdered = bindOffsetAndChangeP0Type(unsafePutOrderedInt, offset, refc);
+        getAndSet = bindOffsetAndChangeP0Type(unsafeGetAndSetInt, offset, refc);
+        getAndAdd = bindOffsetAndChangeP0Type(unsafeGetAndAddInt, offset, refc);
+        compareAndSet = bindOffsetAndChangeP0Type(unsafeCompareAndSwapInt, offset, refc);
+    }
+
+    private static MethodHandle bindOffsetAndChangeP0Type(MethodHandle mh, long offset, Class<?> p0Type) {
+        MethodHandle bmh = insertArguments(mh, 1, offset);
+        return bmh.asType(bmh.type().changeParameterType(0, p0Type));
     }
 }
