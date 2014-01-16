@@ -8,10 +8,13 @@ import java.lang.invoke.MethodHandle;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 /**
- * @author peter
+ * Abstract base for specialized subclasses that provide constant method handles for
+ * various atomic operations on specific field.
  */
 public abstract class AtomicIntegerFieldUpdaterMH<T> extends AtomicIntegerFieldUpdater<T> {
 
+    // make MH generic by changing 1st parameter type from whatever it is to erased T (Object)
+    // this inserts a checkcast operation...
     static MethodHandle makeGeneric(MethodHandle mh) {
         return mh.asType(mh.type().changeParameterType(0, Object.class));
     }

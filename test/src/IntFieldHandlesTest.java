@@ -14,14 +14,21 @@ import java.util.function.IntConsumer;
 
 import static java.lang.invoke.IntFieldHandles.intFieldHandles;
 
+/**
+ * Test performance of various implementation approaches to instance field atomic operations
+ */
 public class IntFieldHandlesTest {
+    // a volatile field "x"
     volatile int x = 4321;
 
+    // MHs for atomic operations on field "x"
     static final IntFieldHandles X = intFieldHandles("x");
 
+    // classic AtomicIntegerFieldUpdater for operations on field "x"
     static final AtomicIntegerFieldUpdater<IntFieldHandlesTest> X_FieldUpdater =
         AtomicIntegerFieldUpdater.newUpdater(IntFieldHandlesTest.class, "x");
 
+    // special MH based AtomicIntegerFieldUpdater for operations on field "x" with constant MHs (a subclass per field)
     static final AtomicIntegerFieldUpdater<IntFieldHandlesTest> X_FieldUpdaterMH = new XUpdater();
 
     static class XUpdater extends AtomicIntegerFieldUpdaterMH<IntFieldHandlesTest> {
@@ -40,6 +47,7 @@ public class IntFieldHandlesTest {
         MethodHandle compareAndSetMH() { return compareAndSet; }
     }
 
+    // Unsafe access to field "x"
     static final Unsafe U;
     static final long X_offset;
 
@@ -171,7 +179,7 @@ public class IntFieldHandlesTest {
         }
     }
 
-    // Java bytecode volatile get followed by compare-and-set
+    // Java bytecode volatile get followed by compare-and-set loop
 
     void methodHandleGetCas(int n) {
         try {
