@@ -19,10 +19,8 @@ import static java.lang.invoke.MethodType.methodType;
  * A factory and container of {@link MethodHandle}s
  * which can be used for accessing and executing atomic operations on a specific instance {@code int} field.<p>
  * The method handles are: {@link #get}, {@link #set}, {@link #getRelaxed}, {@link #setRelaxed},
- * {@link #getAcquire}, {@link #setRelease}, {@link #setSequential}, {@link #getAndSet}, {@link #getAndAdd}
+ * {@link #getVolatile}, {@link #setVolatile}, {@link #setOrdered}, {@link #getAndSet}, {@link #getAndAdd}
  * and {@link #compareAndSet}.
- *
- * @author peter.levart@gmail.com
  */
 public final class IntFieldHandles {
     /**
@@ -44,15 +42,15 @@ public final class IntFieldHandles {
     /**
      * MethodHandle of type int(T) representing volatile field getter (volatile even if field is declared non-volatile)
      */
-    public final MethodHandle getAcquire;
+    public final MethodHandle getVolatile;
     /**
      * MethodHandle of type void(T, int) representing volatile field setter (volatile even if field is declared non-volatile)
      */
-    public final MethodHandle setRelease;
+    public final MethodHandle setVolatile;
     /**
      * MethodHandle of type void(T, int) representing ordered field setter (like {@link AtomicInteger#lazySet})
      */
-    public final MethodHandle setSequential;
+    public final MethodHandle setOrdered;
     /**
      * MethodHandle of type int(T, int) representing atomic get-and-set operation (like {@link AtomicInteger#getAndSet})
      */
@@ -93,12 +91,16 @@ public final class IntFieldHandles {
     }
 
     /**
-     * Convenience method that calls constructor {@link #IntFieldHandles(MethodHandles.Lookup, Class, String)}
-     * using caller's lookup and caller's class as 1st and 2nd arguments respectively.
+     * Convenience factory method that calls constructor
+     * {@link #IntFieldHandles(MethodHandles.Lookup, Class, String)}
+     * using caller's {@link MethodHandles.Lookup} and caller's {@link Class}
+     * as 1st and 2nd arguments respectively.
      *
      * @param fieldName the name of the field
-     * @return a {@link IntFieldHandles} instance
-     * @throws IllegalArgumentException if constructor throws a checked exception
+     * @return an {@link IntFieldHandles} instance
+     * @throws IllegalArgumentException wrapping any constructor thrown
+     *                                  {@link IllegalAccessException} or
+     *                                  {@link NoSuchFieldException}
      */
     @CallerSensitive
     public static IntFieldHandles fieldHandles(String fieldName) {
@@ -114,8 +116,8 @@ public final class IntFieldHandles {
     /**
      * Constructs new instance of {@link IntFieldHandles}.
      *
-     * @param lookup    the {@link MethodHandles.Lookup} to use to obtain method handles for specified field
-     * @param refc      the class or interface from which the field will be accessed
+     * @param lookup    the {@link MethodHandles.Lookup} to use for obtaining method handles for specified field
+     * @param refc      the class or interface from which the field is accessed
      *                  (this will be the 1st argument type of all produced method handles)
      * @param fieldName the name of the field
      * @throws NoSuchFieldException   if the field does not exist
@@ -125,14 +127,17 @@ public final class IntFieldHandles {
         // obtain basic getter & setter MHs + perform access checks
         get = lookup.findGetter(refc, fieldName, int.class);
         set = lookup.findSetter(refc, fieldName, int.class);
+        // reflect into Field
         MethodHandleInfo mhi = lookup.revealDirect(get);
         Field field = mhi.reflectAs(Field.class, lookup);
+        // obtain offset
         long offset = unsafe.objectFieldOffset(field);
+        // bind offset and change type of 1st argument from Object to refc
         getRelaxed = insertArguments(unsafeGetInt, 1, offset).asType(methodType(int.class, refc));
         setRelaxed = insertArguments(unsafePutInt, 1, offset).asType(methodType(void.class, refc, int.class));
-        getAcquire = insertArguments(unsafeGetIntVolatile, 1, offset).asType(methodType(int.class, refc));
-        setRelease = insertArguments(unsafePutIntVolatile, 1, offset).asType(methodType(void.class, refc, int.class));
-        setSequential = insertArguments(unsafePutOrderedInt, 1, offset).asType(methodType(void.class, refc, int.class));
+        getVolatile = insertArguments(unsafeGetIntVolatile, 1, offset).asType(methodType(int.class, refc));
+        setVolatile = insertArguments(unsafePutIntVolatile, 1, offset).asType(methodType(void.class, refc, int.class));
+        setOrdered = insertArguments(unsafePutOrderedInt, 1, offset).asType(methodType(void.class, refc, int.class));
         getAndSet = insertArguments(unsafeGetAndSetInt, 1, offset).asType(methodType(int.class, refc, int.class));
         getAndAdd = insertArguments(unsafeGetAndAddInt, 1, offset).asType(methodType(int.class, refc, int.class));
         compareAndSet = insertArguments(unsafeCompareAndSwapInt, 1, offset).asType(methodType(boolean.class, refc, int.class, int.class));

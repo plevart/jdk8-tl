@@ -40,7 +40,7 @@ public class IntFieldHandlesTest {
     long javaSet(int n) {
         long t0 = System.nanoTime();
         for (int i = 0; i < n; i++) {
-            x = 4321;
+            this.x = 4321;
         }
         return System.nanoTime() - t0;
     }
@@ -49,47 +49,43 @@ public class IntFieldHandlesTest {
         try {
             long t0 = System.nanoTime();
             for (int i = 0; i < n; i++) {
-                X.setRelease.invokeExact(this, 4321);
+                X.setVolatile.invokeExact(this, 4321);
             }
             return System.nanoTime() - t0;
         } catch (Throwable ignore) { return 0L; }
     }
 
     long fieldUpdaterSet(int n) {
-        try {
-            long t0 = System.nanoTime();
-            for (int i = 0; i < n; i++) {
-                X_FieldUpdater.set(this, 4321);
-            }
-            return System.nanoTime() - t0;
-        } catch (Throwable ignore) { return 0L; }
+        long t0 = System.nanoTime();
+        for (int i = 0; i < n; i++) {
+            X_FieldUpdater.set(this, 4321);
+        }
+        return System.nanoTime() - t0;
     }
 
     long unsafeSet(int n) {
-        try {
-            long t0 = System.nanoTime();
-            for (int i = 0; i < n; i++) {
-                U.putIntVolatile(this, X_offset, 4321);
-            }
-            return System.nanoTime() - t0;
-        } catch (Throwable ignore) { return 0L; }
+        long t0 = System.nanoTime();
+        for (int i = 0; i < n; i++) {
+            U.putIntVolatile(this, X_offset, 4321);
+        }
+        return System.nanoTime() - t0;
     }
 
     public static void main(String[] args) throws Throwable {
 
         IntFieldHandlesTest t = new IntFieldHandlesTest();
 
-        System.out.println("            Java bytecode: " + t.javaSet(100_000_000));
-        System.out.println("            Java bytecode: " + t.javaSet(100_000_000));
-        System.out.println("            Java bytecode: " + t.javaSet(100_000_000));
-        System.out.println("                   Unsafe: " + t.unsafeSet(100_000_000));
-        System.out.println("                   Unsafe: " + t.unsafeSet(100_000_000));
-        System.out.println("                   Unsafe: " + t.unsafeSet(100_000_000));
-        System.out.println("          IntFieldHandles: " + t.methodHandleSet(100_000_000));
-        System.out.println("          IntFieldHandles: " + t.methodHandleSet(100_000_000));
-        System.out.println("          IntFieldHandles: " + t.methodHandleSet(100_000_000));
-        System.out.println("AtomicIntegerFieldUpdater: " + t.fieldUpdaterSet(100_000_000));
-        System.out.println("AtomicIntegerFieldUpdater: " + t.fieldUpdaterSet(100_000_000));
-        System.out.println("AtomicIntegerFieldUpdater: " + t.fieldUpdaterSet(100_000_000));
+        System.out.println("            Java bytecode: " + t.javaSet(1000_000_000));
+        System.out.println("            Java bytecode: " + t.javaSet(1000_000_000));
+        System.out.println("            Java bytecode: " + t.javaSet(1000_000_000));
+        System.out.println("                   Unsafe: " + t.unsafeSet(1000_000_000));
+        System.out.println("                   Unsafe: " + t.unsafeSet(1000_000_000));
+        System.out.println("                   Unsafe: " + t.unsafeSet(1000_000_000));
+        System.out.println("          IntFieldHandles: " + t.methodHandleSet(1000_000_000));
+        System.out.println("          IntFieldHandles: " + t.methodHandleSet(1000_000_000));
+        System.out.println("          IntFieldHandles: " + t.methodHandleSet(1000_000_000));
+        System.out.println("AtomicIntegerFieldUpdater: " + t.fieldUpdaterSet(1000_000_000));
+        System.out.println("AtomicIntegerFieldUpdater: " + t.fieldUpdaterSet(1000_000_000));
+        System.out.println("AtomicIntegerFieldUpdater: " + t.fieldUpdaterSet(1000_000_000));
     }
 }
