@@ -10,15 +10,12 @@ import java.lang.invoke.IntFieldHandles;
 import java.lang.reflect.Field;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
-import static java.lang.invoke.IntFieldHandles.fieldHandles;
+import static java.lang.invoke.IntFieldHandles.intFieldHandles;
 
-/**
- * @author peter.levart@gmail.com
- */
 public class IntFieldHandlesTest {
     volatile int x = 4321;
 
-    static final IntFieldHandles X = fieldHandles("x");
+    static final IntFieldHandles X = intFieldHandles("x");
 
     static final AtomicIntegerFieldUpdater<IntFieldHandlesTest> X_FieldUpdater =
         AtomicIntegerFieldUpdater.newUpdater(IntFieldHandlesTest.class, "x");
@@ -38,11 +35,12 @@ public class IntFieldHandlesTest {
     }
 
     // volatile get
-    
+
     long javaGet(int n) {
         long t0 = System.nanoTime();
         for (int i = 0; i < n; i++) {
-            if (this.x != 4321) throw new RuntimeException();
+            if (this.x != 4321)
+                throw new RuntimeException();
         }
         return System.nanoTime() - t0;
     }
@@ -51,7 +49,8 @@ public class IntFieldHandlesTest {
         try {
             long t0 = System.nanoTime();
             for (int i = 0; i < n; i++) {
-                if ((int) X.getVolatile.invokeExact(this) != 4321) throw new RuntimeException();
+                if ((int) X.getVolatile.invokeExact(this) != 4321)
+                    throw new RuntimeException();
             }
             return System.nanoTime() - t0;
         } catch (Throwable ignore) { return 0L; }
@@ -60,7 +59,8 @@ public class IntFieldHandlesTest {
     long fieldUpdaterGet(int n) {
         long t0 = System.nanoTime();
         for (int i = 0; i < n; i++) {
-            if (X_FieldUpdater.get(this) != 4321) throw new RuntimeException();
+            if (X_FieldUpdater.get(this) != 4321)
+                throw new RuntimeException();
         }
         return System.nanoTime() - t0;
     }
@@ -68,7 +68,8 @@ public class IntFieldHandlesTest {
     long unsafeGet(int n) {
         long t0 = System.nanoTime();
         for (int i = 0; i < n; i++) {
-            if (U.getIntVolatile(this, X_offset) != 4321) throw new RuntimeException();
+            if (U.getIntVolatile(this, X_offset) != 4321)
+                throw new RuntimeException();
         }
         return System.nanoTime() - t0;
     }
@@ -109,13 +110,14 @@ public class IntFieldHandlesTest {
         return System.nanoTime() - t0;
     }
 
-    // volatile set followed by get
+    // volatile set followed by volatile get
 
     long javaSetGet(int n) {
         long t0 = System.nanoTime();
         for (int i = 0; i < n; i++) {
             this.x = 4321;
-            if (this.x != 4321) throw new RuntimeException();
+            if (this.x != 4321)
+                throw new RuntimeException();
         }
         return System.nanoTime() - t0;
     }
@@ -125,7 +127,8 @@ public class IntFieldHandlesTest {
             long t0 = System.nanoTime();
             for (int i = 0; i < n; i++) {
                 X.setVolatile.invokeExact(this, 4321);
-                if ((int) X.getVolatile.invokeExact(this) != 4321) throw new RuntimeException();
+                if ((int) X.getVolatile.invokeExact(this) != 4321)
+                    throw new RuntimeException();
             }
             return System.nanoTime() - t0;
         } catch (Throwable ignore) { return 0L; }
@@ -135,7 +138,8 @@ public class IntFieldHandlesTest {
         long t0 = System.nanoTime();
         for (int i = 0; i < n; i++) {
             X_FieldUpdater.set(this, 4321);
-            if (X_FieldUpdater.get(this) != 4321) throw new RuntimeException();
+            if (X_FieldUpdater.get(this) != 4321)
+                throw new RuntimeException();
         }
         return System.nanoTime() - t0;
     }
@@ -144,7 +148,8 @@ public class IntFieldHandlesTest {
         long t0 = System.nanoTime();
         for (int i = 0; i < n; i++) {
             U.putIntVolatile(this, X_offset, 4321);
-            if (U.getIntVolatile(this, X_offset) != 4321) throw new RuntimeException();
+            if (U.getIntVolatile(this, X_offset) != 4321)
+                throw new RuntimeException();
         }
         return System.nanoTime() - t0;
     }
@@ -155,7 +160,8 @@ public class IntFieldHandlesTest {
         try {
             long t0 = System.nanoTime();
             for (int i = 0; i < n; i++) {
-                if (!(boolean) X.compareAndSet.invokeExact(this, 4321, 4321)) throw new RuntimeException();
+                if (!(boolean) X.compareAndSet.invokeExact(this, 4321, 4321))
+                    throw new RuntimeException();
             }
             return System.nanoTime() - t0;
         } catch (Throwable ignore) { return 0L; }
@@ -165,7 +171,8 @@ public class IntFieldHandlesTest {
         long t0 = System.nanoTime();
         for (int i = 0; i < n; i++) {
             X_FieldUpdater.set(this, 4321);
-            if (!X_FieldUpdater.compareAndSet(this, 4321, 4321)) throw new RuntimeException();
+            if (!X_FieldUpdater.compareAndSet(this, 4321, 4321))
+                throw new RuntimeException();
         }
         return System.nanoTime() - t0;
     }
@@ -173,7 +180,8 @@ public class IntFieldHandlesTest {
     long unsafeCas(int n) {
         long t0 = System.nanoTime();
         for (int i = 0; i < n; i++) {
-            if (!U.compareAndSwapInt(this, X_offset, 4321, 4321)) throw new RuntimeException();
+            if (!U.compareAndSwapInt(this, X_offset, 4321, 4321))
+                throw new RuntimeException();
         }
         return System.nanoTime() - t0;
     }
@@ -182,7 +190,11 @@ public class IntFieldHandlesTest {
 
         IntFieldHandlesTest t = new IntFieldHandlesTest();
 
-//        System.out.println((int)X.getVolatile.invokeExact((IntFieldHandlesTest) null));
+        try {
+            System.out.println((int) X.getVolatile.invokeExact((IntFieldHandlesTest) null));
+        } catch (NullPointerException expected) {
+            System.out.println("Expected exception: " + expected);
+        }
 
         int n = 1000_000_000;
 

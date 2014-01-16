@@ -64,6 +64,7 @@ public final class IntFieldHandles {
      */
     public final MethodHandle compareAndSet;
 
+    // unsafe method handles...
     private static final Unsafe unsafe = Unsafe.getUnsafe();
     private static final MethodHandle unsafeGetInt;
     private static final MethodHandle unsafePutInt;
@@ -143,7 +144,7 @@ public final class IntFieldHandles {
      *                                  {@link NoSuchFieldException}
      */
     @CallerSensitive
-    public static IntFieldHandles fieldHandles(String fieldName) {
+    public static IntFieldHandles intFieldHandles(String fieldName) {
         Class<?> cc = Reflection.getCallerClass();
         MethodHandles.Lookup lookup = MethodHandles.Lookup.IMPL_LOOKUP.in(cc);
         try {
@@ -173,6 +174,7 @@ public final class IntFieldHandles {
         // obtain offset
         long offset = unsafe.objectFieldOffset(field);
         // bind offset, change type of 1st parameter from Object to refc
+        // this effectively makes returned MH safe...
         getRelaxed = bindOffsetAndChangeP0Type(unsafeGetInt, offset, refc);
         setRelaxed = bindOffsetAndChangeP0Type(unsafePutInt, offset, refc);
         getVolatile = bindOffsetAndChangeP0Type(unsafeGetIntVolatile, offset, refc);
