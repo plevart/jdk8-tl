@@ -76,7 +76,8 @@ public final class IntFieldHandles {
     private static final MethodHandle unsafeCompareAndSwapInt;
 
     static {
-        MethodHandles.Lookup lookup = MethodHandles.Lookup.IMPL_LOOKUP;
+//        MethodHandles.Lookup lookup = MethodHandles.Lookup.IMPL_LOOKUP;
+        MethodHandles.Lookup lookup = MethodHandles.Lookup.IMPL_LOOKUP.in(IntFieldHandles.class);
         try {
             unsafeGetInt = lookup.findStatic(IntFieldHandles.class, "unsafeGetInt", methodType(int.class, Object.class, long.class));
             unsafePutInt = lookup.findStatic(IntFieldHandles.class, "unsafePutInt", methodType(void.class, Object.class, long.class, int.class));
