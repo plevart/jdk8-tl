@@ -134,9 +134,9 @@ public final class IntFieldHandles {
 
     /**
      * Convenience factory method that calls constructor
-     * {@link #IntFieldHandles(MethodHandles.Lookup, Class, String)}
-     * using caller's {@link MethodHandles.Lookup} and caller's {@link Class}
-     * as 1st and 2nd arguments respectively.
+     * {@link #IntFieldHandles(Class, String, MethodHandles.Lookup)}
+     * using caller's {@link Class} and caller's {@link MethodHandles.Lookup}
+     * as 1st and 3rd arguments respectively.
      *
      * @param fieldName the name of the field
      * @return an {@link IntFieldHandles} instance
@@ -149,7 +149,7 @@ public final class IntFieldHandles {
         Class<?> cc = Reflection.getCallerClass();
         MethodHandles.Lookup lookup = MethodHandles.Lookup.IMPL_LOOKUP.in(cc);
         try {
-            return new IntFieldHandles(lookup, cc, fieldName);
+            return new IntFieldHandles(cc, fieldName, lookup);
         } catch (IllegalAccessException | NoSuchFieldException e) {
             throw new IllegalArgumentException(e);
         }
@@ -158,14 +158,14 @@ public final class IntFieldHandles {
     /**
      * Constructs new instance of {@link IntFieldHandles}.
      *
-     * @param lookup    the {@link MethodHandles.Lookup} to use for obtaining method handles for specified field
      * @param refc      the class or interface from which the field is accessed
      *                  (this will be the type of 1st parameter of all produced method handles)
      * @param fieldName the name of the field
+     * @param lookup    the {@link MethodHandles.Lookup} to use for obtaining method handles for specified field
      * @throws NoSuchFieldException   if the field does not exist
      * @throws IllegalAccessException if access checking fails, or if the field is static
      */
-    public IntFieldHandles(MethodHandles.Lookup lookup, Class<?> refc, String fieldName) throws NoSuchFieldException, IllegalAccessException {
+    public IntFieldHandles(Class<?> refc, String fieldName, MethodHandles.Lookup lookup) throws NoSuchFieldException, IllegalAccessException {
         // obtain basic getter & setter MHs + perform access checks
         get = lookup.findGetter(refc, fieldName, int.class);
         set = lookup.findSetter(refc, fieldName, int.class);

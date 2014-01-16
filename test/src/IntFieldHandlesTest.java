@@ -7,6 +7,7 @@
 import sun.misc.Unsafe;
 
 import java.lang.invoke.IntFieldHandles;
+import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Field;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.function.IntConsumer;
@@ -20,6 +21,24 @@ public class IntFieldHandlesTest {
 
     static final AtomicIntegerFieldUpdater<IntFieldHandlesTest> X_FieldUpdater =
         AtomicIntegerFieldUpdater.newUpdater(IntFieldHandlesTest.class, "x");
+
+    static final AtomicIntegerFieldUpdater<IntFieldHandlesTest> X_FieldUpdaterMH = new XUpdater();
+
+    static class XUpdater extends AtomicIntegerFieldUpdaterMH<IntFieldHandlesTest> {
+        private static final MethodHandle getVolatile = makeGeneric(X.getVolatile);
+        private static final MethodHandle setVolatile = makeGeneric(X.setVolatile);
+        private static final MethodHandle setOrdered = makeGeneric(X.setOrdered);
+        private static final MethodHandle getAndSet = makeGeneric(X.getAndSet);
+        private static final MethodHandle getAndAdd = makeGeneric(X.getAndAdd);
+        private static final MethodHandle compareAndSet = makeGeneric(X.compareAndSet);
+
+        MethodHandle getVolatileMH() { return getVolatile; }
+        MethodHandle setVolatileMH() { return setVolatile; }
+        MethodHandle setOrderedMH() { return setOrdered; }
+        MethodHandle getAndSetMH() { return getAndSet; }
+        MethodHandle getAndAddMH() { return getAndAdd; }
+        MethodHandle compareAndSetMH() { return compareAndSet; }
+    }
 
     static final Unsafe U;
     static final long X_offset;
@@ -53,6 +72,13 @@ public class IntFieldHandlesTest {
         } catch (Throwable ignore) {}
     }
 
+    void fieldUpdaterMhGet(int n) {
+        for (int i = 0; i < n; i++) {
+            if (X_FieldUpdaterMH.get(this) != 4321)
+                throw new RuntimeException();
+        }
+    }
+
     void fieldUpdaterGet(int n) {
         for (int i = 0; i < n; i++) {
             if (X_FieldUpdater.get(this) != 4321)
@@ -81,6 +107,12 @@ public class IntFieldHandlesTest {
                 X.setVolatile.invokeExact(this, 4321);
             }
         } catch (Throwable ignore) {}
+    }
+
+    void fieldUpdaterMhSet(int n) {
+        for (int i = 0; i < n; i++) {
+            X_FieldUpdaterMH.set(this, 4321);
+        }
     }
 
     void fieldUpdaterSet(int n) {
@@ -115,6 +147,14 @@ public class IntFieldHandlesTest {
         } catch (Throwable ignore) {}
     }
 
+    void fieldUpdaterMhSetGet(int n) {
+        for (int i = 0; i < n; i++) {
+            X_FieldUpdaterMH.set(this, 4321);
+            if (X_FieldUpdaterMH.get(this) != 4321)
+                throw new RuntimeException();
+        }
+    }
+
     void fieldUpdaterSetGet(int n) {
         for (int i = 0; i < n; i++) {
             X_FieldUpdater.set(this, 4321);
@@ -142,6 +182,15 @@ public class IntFieldHandlesTest {
                 }
             }
         } catch (Throwable ignore) {}
+    }
+
+    void fieldUpdaterMhGetCas(int n) {
+        for (int i = 0; i < n; i++) {
+            int x = this.x;
+            while (!X_FieldUpdaterMH.compareAndSet(this, x, 4321)) {
+                x = this.x;
+            }
+        }
     }
 
     void fieldUpdaterGetCas(int n) {
@@ -172,7 +221,7 @@ public class IntFieldHandlesTest {
         test.accept(n);
         long nanos = System.nanoTime() - t0;
         double nsPerOp = (double) nanos / (double) n;
-        System.out.printf("%26s: %12d ns (%6.2f ns/op)\n", name, nanos, nsPerOp);
+        System.out.printf("%28s: %12d ns (%6.2f ns/op)\n", name, nanos, nsPerOp);
     }
 
     public static void main(String[] args) throws Throwable {
@@ -186,26 +235,30 @@ public class IntFieldHandlesTest {
         }
 
         System.out.println("\nvolatile get...");
-        doTest("            Java bytecode", t::javaGet);
-        doTest("                   Unsafe", t::unsafeGet);
-        doTest("          IntFieldHandles", t::methodHandleGet);
+        doTest("Java bytecode", t::javaGet);
+        doTest("Unsafe", t::unsafeGet);
+        doTest("IntFieldHandles", t::methodHandleGet);
+        doTest("AtomicIntegerFieldUpdaterMH", t::fieldUpdaterMhGet);
         doTest("AtomicIntegerFieldUpdater", t::fieldUpdaterGet);
 
         System.out.println("\nvolatile set...");
-        doTest("            Java bytecode", t::javaSet);
-        doTest("                   Unsafe", t::unsafeSet);
-        doTest("          IntFieldHandles", t::methodHandleSet);
+        doTest("Java bytecode", t::javaSet);
+        doTest("Unsafe", t::unsafeSet);
+        doTest("IntFieldHandles", t::methodHandleSet);
+        doTest("AtomicIntegerFieldUpdaterMH", t::fieldUpdaterMhSet);
         doTest("AtomicIntegerFieldUpdater", t::fieldUpdaterSet);
 
         System.out.println("\nvolatile set followed by volatile get...");
-        doTest("            Java bytecode", t::javaSetGet);
-        doTest("                   Unsafe", t::unsafeSetGet);
-        doTest("          IntFieldHandles", t::methodHandleSetGet);
+        doTest("Java bytecode", t::javaSetGet);
+        doTest("Unsafe", t::unsafeSetGet);
+        doTest("IntFieldHandles", t::methodHandleSetGet);
+        doTest("AtomicIntegerFieldUpdaterMH", t::fieldUpdaterMhSetGet);
         doTest("AtomicIntegerFieldUpdater", t::fieldUpdaterSetGet);
 
-        System.out.println("\nJava bytecode volatile get followed by compare-and-set...");
-        doTest("                   Unsafe", t::unsafeGetCas);
-        doTest("          IntFieldHandles", t::methodHandleGetCas);
+        System.out.println("\nJava bytecode volatile get followed by compare-and-set loop...");
+        doTest("Unsafe", t::unsafeGetCas);
+        doTest("IntFieldHandles", t::methodHandleGetCas);
+        doTest("AtomicIntegerFieldUpdaterMH", t::fieldUpdaterMhGetCas);
         doTest("AtomicIntegerFieldUpdater", t::fieldUpdaterGetCas);
     }
 }
