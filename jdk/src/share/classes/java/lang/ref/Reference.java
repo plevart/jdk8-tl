@@ -90,13 +90,14 @@ public abstract class Reference<T> {
 
     private T referent;         /* Treated specially by GC */
 
-    ReferenceQueue<? super T> queue;
+    volatile ReferenceQueue<? super T> queue;
 
     /* When active:   NULL
      *     pending:   this
      *    Enqueued:   next reference in queue (or this if last)
      *    Inactive:   this
      */
+    @SuppressWarnings("rawtypes")
     Reference next;
 
     /* When active:   next element in a discovered reference list maintained by GC (or this if last)
@@ -120,7 +121,7 @@ public abstract class Reference<T> {
      * them.  This list is protected by the above lock object. The
      * list uses the discovered field to link its elements.
      */
-    private static Reference pending = null;
+    private static Reference<Object> pending = null;
 
     /* High-priority thread to enqueue pending References
      */
@@ -141,7 +142,7 @@ public abstract class Reference<T> {
 
         public void run() {
             for (;;) {
-                Reference r;
+                Reference<Object> r;
                 Cleaner c;
                 try {
                     synchronized (lock) {
@@ -180,7 +181,7 @@ public abstract class Reference<T> {
                     continue;
                 }
 
-                ReferenceQueue q = r.queue;
+                ReferenceQueue<Object> q = r.queue;
                 if (q != ReferenceQueue.NULL) q.enqueue(r);
             }
         }
@@ -239,9 +240,7 @@ public abstract class Reference<T> {
      *           been enqueued
      */
     public boolean isEnqueued() {
-        synchronized (this) {
-            return (this.next != null && this.queue == ReferenceQueue.ENQUEUED);
-        }
+        return (this.queue == ReferenceQueue.ENQUEUED);
     }
 
     /**
