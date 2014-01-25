@@ -26,7 +26,6 @@
 package java.lang.ref;
 
 import sun.misc.Cleaner;
-import sun.misc.Unsafe;
 
 /**
  * Abstract base class for reference objects.  This class defines the
@@ -127,13 +126,20 @@ public abstract class Reference<T> {
      */
     private static class ReferenceHandler extends Thread {
 
+        private static void ensureClassInitialized(Class<?> clazz) {
+            try {
+                Class.forName(clazz.getName(), true, clazz.getClassLoader());
+            } catch (ClassNotFoundException e) {
+                throw (Error) new NoClassDefFoundError(e.getMessage()).initCause(e);
+            }
+        }
+
         static {
             // pre-load and initialize InterruptedException and Cleaner classes
             // so that we don't get into trouble later in the run loop if there's
             // memory shortage while loading/initializing them lazily.
-            Unsafe unsafe = Unsafe.getUnsafe();
-            unsafe.ensureClassInitialized(InterruptedException.class);
-            unsafe.ensureClassInitialized(Cleaner.class);
+            ensureClassInitialized(InterruptedException.class);
+            ensureClassInitialized(Cleaner.class);
         }
 
         ReferenceHandler(ThreadGroup g, String name) {
@@ -146,8 +152,8 @@ public abstract class Reference<T> {
                 Cleaner c;
                 try {
                     synchronized (lock) {
-                        r = pending;
-                        if (r != null) {
+                        if (pending != null) {
+                            r = pending;
                             // 'instanceof' might throw OOME sometimes so do this before
                             // unlinking 'r' from the 'pending' chain...
                             c = r instanceof Cleaner ? (Cleaner) r : null;
@@ -162,7 +168,6 @@ public abstract class Reference<T> {
                         }
                     }
                 } catch (OutOfMemoryError x) {
-                    // Catch OOME from 'r instanceof Cleaner' or 'lock.wait()'.
                     // Give other threads CPU time so they hopefully drop some live references
                     // and GC reclaims some space.
                     // Also prevent CPU intensive spinning in case 'r instanceof Cleaner' above
@@ -171,7 +176,7 @@ public abstract class Reference<T> {
                     // retry
                     continue;
                 } catch (InterruptedException x) {
-                    // Catch InterruptedException from 'lock.wait()' and retry
+                    // retry
                     continue;
                 }
 
