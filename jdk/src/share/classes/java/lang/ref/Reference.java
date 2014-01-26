@@ -111,7 +111,7 @@ public abstract class Reference<T> {
      * therefore critical that any code holding this lock complete as quickly
      * as possible, allocate no new objects, and avoid calling user code.
      */
-    static private class Lock { };
+    static private class Lock { }
     private static Lock lock = new Lock();
 
 
@@ -154,15 +154,15 @@ public abstract class Reference<T> {
                     synchronized (lock) {
                         if (pending != null) {
                             r = pending;
-                            // 'instanceof' might throw OOME sometimes so do this before
-                            // unlinking 'r' from the 'pending' chain...
+                            // 'instanceof' might throw OutOfMemoryError sometimes
+                            // so do this before un-linking 'r' from the 'pending' chain...
                             c = r instanceof Cleaner ? (Cleaner) r : null;
                             // unlink 'r' from 'pending' chain
                             pending = r.discovered;
                             r.discovered = null;
                         } else {
-                            // The waiting on the lock may cause an OOME because it may try to allocate
-                            // exception objects.
+                            // The waiting on the lock may cause an OutOfMemoryError
+                            // because it may try to allocate exception objects.
                             lock.wait();
                             continue;
                         }
@@ -186,7 +186,7 @@ public abstract class Reference<T> {
                     continue;
                 }
 
-                ReferenceQueue<Object> q = r.queue;
+                ReferenceQueue<? super Object> q = r.queue;
                 if (q != ReferenceQueue.NULL) q.enqueue(r);
             }
         }
