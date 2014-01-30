@@ -186,7 +186,7 @@ public abstract class Reference<T> {
                     continue;
                 }
 
-                ReferenceQueue<? super Object> q = r.queue;
+                ReferenceQueue<Object> q = r.queue;
                 if (q != ReferenceQueue.NULL) q.enqueue(r);
             }
         }
