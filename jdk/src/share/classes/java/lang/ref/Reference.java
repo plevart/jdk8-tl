@@ -190,6 +190,7 @@ public abstract class Reference<T> {
                     if (waitForNotify) {
                         lock.wait();
                     }
+                    // retry if waited
                     return waitForNotify;
                 }
             }
@@ -200,10 +201,10 @@ public abstract class Reference<T> {
             // persistently throws OOME for some time...
             Thread.yield();
             // retry
-            return waitForNotify;
+            return true;
         } catch (InterruptedException x) {
             // retry
-            return waitForNotify;
+            return true;
         }
 
         // Fast path for cleaners

@@ -29,6 +29,7 @@ import java.security.AccessController;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 
+import sun.misc.JavaLangRefAccess;
 import sun.misc.SharedSecrets;
 import sun.misc.Unsafe;
 import sun.misc.VM;
@@ -650,10 +651,12 @@ class Bits {                            // package-private
             return;
         }
 
+        final JavaLangRefAccess jlra = SharedSecrets.getJavaLangRefAccess();
+
         // retry while helping enqueue pending Reference objects
-        // and executing pending Cleaner(s)
-        while (SharedSecrets.getJavaLangRefAccess()
-            .tryHandlePendingReference()) {
+        // which includes executing pending Cleaner(s) which includes
+        // Cleaner(s) that free direct buffer memory
+        while (jlra.tryHandlePendingReference()) {
             if (tryReserveMemory(size, cap)) {
                 return;
             }
@@ -675,8 +678,7 @@ class Bits {                            // package-private
                 if (sleeps >= MAX_SLEEPS) {
                     break;
                 }
-                if (!SharedSecrets.getJavaLangRefAccess()
-                    .tryHandlePendingReference()) {
+                if (!jlra.tryHandlePendingReference()) {
                     try {
                         Thread.sleep(sleepTime);
                         sleepTime <<= 1;
