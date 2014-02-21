@@ -29,10 +29,11 @@
  * @run main/othervm -XX:MaxDirectMemorySize=128m DirectBufferAllocTest
  */
 
-import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
-import java.util.concurrent.atomic.LongAdder;
+import java.util.List;
+import java.util.concurrent.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class DirectBufferAllocTest {
     // defaults
@@ -46,9 +47,7 @@ public class DirectBufferAllocTest {
      * {@link ByteBuffer}s in a loop, trying to provoke {@link OutOfMemoryError}.<p>
      * When run without command-line arguments, it runs as a regression test
      * for at most 5 seconds.<p>
-     *
      * Command line arguments:
-     *
      * <pre>
      * -r run-time-seconds <i>(duration of successful test - default 5 s)</i>
      * -t threads <i>(default is 2 * # of CPUs, at least 4 but no more than 64)</i>
@@ -56,10 +55,8 @@ public class DirectBufferAllocTest {
      * -p print-alloc-time-batch-size <i>(every "batch size" iterations,
      *                                 average time per allocation is printed)</i>
      * </pre>
-     *
      * Use something like the following to run a 10 minute stress test and
      * print allocation times as it goes:
-     *
      * <pre>
      * java -XX:MaxDirectMemorySize=128m DirectBufferAllocTest -r 600 -t 32 -p 5000
      * </pre>
@@ -105,49 +102,73 @@ public class DirectBufferAllocTest {
             }
         }
 
-        System.out.println(
-            "Allocating direct ByteBuffers with capacity " +
-            capacity + " bytes, " +
-            "using " + threads + " threads for " + runTimeSeconds + " seconds..."
+        System.out.printf(
+            "Allocating direct ByteBuffers with capacity %d bytes, using %d threads for %d seconds...\n",
+            capacity, threads, runTimeSeconds
         );
 
-        for (int i = 0; i < threads; i++) {
-            final int pbs = printBatchSize;
-            final int cap = capacity;
-            new Thread("thread-" + i) {
-                public void run() {
-                    int it = 0;
-                    try {
-                        long t0 = System.nanoTime();
-                        while (true) {
-                            for (int i = 0; pbs == 0 || i < pbs; i++) {
-                                ByteBuffer.allocateDirect(cap);
-                                it++;
-                            }
-                            long t1 = System.nanoTime();
-                            if (pbs > 0) {
-                                System.out.printf(
-                                    "%10s: %5.2f ms/allocation\n",
-                                    getName(),
-                                    ((double) (t1 - t0) / (1_000_000d * pbs))
-                                );
-                            }
-                            t0 = t1;
-                        }
-                    } catch (OutOfMemoryError t) {
-                        System.err.println(
-                            Thread.currentThread().getName() +
-                            " got an OOM on iteration " + it
-                        );
-                        t.printStackTrace();
-                        System.exit(1);
-                    }
-                }
-            }.start();
+        ExecutorService executor = Executors.newFixedThreadPool(threads);
+
+        int pbs = printBatchSize;
+        int cap = capacity;
+
+        List<Future<Void>> futures =
+            IntStream.range(0, threads)
+                     .mapToObj(
+                         i -> (Callable<Void>) () -> {
+                             long t0 = System.nanoTime();
+                             loop:
+                             while (true) {
+                                 for (int n = 0; pbs == 0 || n < pbs; n++) {
+                                     if (Thread.interrupted()) {
+                                         break loop;
+                                     }
+                                     ByteBuffer.allocateDirect(cap);
+                                 }
+                                 long t1 = System.nanoTime();
+                                 if (pbs > 0) {
+                                     System.out.printf(
+                                         "Thread %2d: %5.2f ms/allocation\n",
+                                         i, ((double) (t1 - t0) / (1_000_000d * pbs))
+                                     );
+                                 }
+                                 t0 = t1;
+                             }
+                             return null;
+                         }
+                     )
+                     .map(executor::submit)
+                     .collect(Collectors.toList());
+
+        for (int i = 0; i < runTimeSeconds; i++) {
+            if (futures.stream().anyMatch(Future::isDone)) {
+                break;
+            }
+            Thread.sleep(1000L);
         }
 
-        Thread.sleep(1000L * runTimeSeconds);
-        System.out.println("No errors after " + runTimeSeconds + " seconds.");
-        System.exit(0);
+        Exception exception = null;
+        for (Future<Void> future : futures) {
+            if (future.isDone()) {
+                try {
+                    future.get();
+                } catch (ExecutionException e) {
+                    if (exception == null) {
+                        exception = new RuntimeException("Errors encountered!");
+                    }
+                    exception.addSuppressed(e.getCause());
+                }
+            } else {
+                future.cancel(true);
+            }
+        }
+
+        executor.shutdown();
+
+        if (exception != null) {
+            throw exception;
+        } else {
+            System.out.printf("No errors after %d seconds.\n", runTimeSeconds);
+        }
     }
 }
