@@ -203,28 +203,58 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
     }
 
     /**
-     * Triggers all enabled completions reachable from b.  Loopifies
-     * the final recursive call for each stage to avoid potential
-     * StackOverflowErrors in cases of long linear chains.
+     * Simple linked list nodes to organize a stack of CompletableFutures
+     * with pending completions while traversing a tree of completions.
+     */
+    static class CFNode {
+        CFNode(int i) {}
+        CompletableFuture<?> cf;
+        CFNode next;
+    }
+
+    /**
+     * Triggers all enabled completions reachable from b.
+     * Loopifies recursive calls for each stage to avoid potential
+     * StackOverflowErrors in cases of long branches.
      *
      * @param b if non-null, a completed CompletableFuture
      */
     static final void removeAndTriggerCompletions(CompletableFuture<?> b) {
-        CompletionNode h; Completion c; CompletableFuture<?> f;
-        while (b != null && (h = b.completions) != null) {
-            if (UNSAFE.compareAndSwapObject(b, COMPLETIONS, h, h.next) &&
-                (c = h.completion) != null &&
-                (f = c.trigger()) != null &&
-                f.result != null) {
-                f.removeAndSignalWaiters();
-                if (f.completions != null) {
-                    if (b.completions == null)
-                        b = f; // tail-recurse
-                    else
-                        removeAndTriggerCompletions(f);
+
+        CFNode pending = null, spare = null;
+        int cfnodecount = 0;
+        while (true) {
+            CompletionNode h; Completion c; CompletableFuture<?> f;
+            while (b != null && (h = b.completions) != null) {
+                if (UNSAFE.compareAndSwapObject(b, COMPLETIONS, h, h.next) &&
+                    (c = h.completion) != null &&
+                    (f = c.trigger()) != null &&
+                    f.result != null) {
+                    f.removeAndSignalWaiters();
+                    if (f.completions != null) {
+                        if (b.completions == null)
+                            b = f; // tail-recurse
+                        else {
+                            // push on stack
+                            CFNode n = spare == null ? new CFNode(cfnodecount++) : spare;
+                            spare = n.next;
+                            n.cf = f;
+                            n.next = pending;
+                            pending = n;
+                        }
+                    }
                 }
             }
+            if (pending == null) break;
+            // pop from stack
+            CFNode n = pending;
+            b = n.cf;
+            pending = n.next;
+            n.cf = null;
+            n.next = spare;
+            spare = n;
         }
+        if (cfnodecount > 0) System.out.println(cfnodecount + " CFNodes created");
     }
 
     /**

@@ -47,6 +47,7 @@ public class FibonacciPrimes {
         CompletableFuture<BigInteger> f0 = new CompletableFuture<>();
         CompletableFuture<BigInteger> f1 = new CompletableFuture<>();
 
+        long t0 = System.currentTimeMillis();
         int n = 10000;
         Future<Set<BigInteger>> primes = fibonacciPrimes(f0, f1, n);
 
@@ -57,5 +58,6 @@ public class FibonacciPrimes {
         for (BigInteger prime : primes.get()) {
             System.out.println(prime);
         }
+        System.out.println((System.currentTimeMillis() - t0) + " millis.");
     }
 }
